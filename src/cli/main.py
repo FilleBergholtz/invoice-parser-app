@@ -11,6 +11,7 @@ from typing import Dict, List, Optional
 import pdfplumber
 
 from ..models.document import Document
+from ..models.invoice_header import InvoiceHeader
 from ..models.invoice_line import InvoiceLine
 from ..pipeline.invoice_line_parser import extract_invoice_lines
 from ..pipeline.pdf_detection import detect_pdf_type, route_extraction_path
@@ -18,7 +19,11 @@ from ..pipeline.reader import read_pdf, PDFReadError
 from ..pipeline.row_grouping import group_tokens_to_rows
 from ..pipeline.segment_identification import identify_segments
 from ..pipeline.tokenizer import extract_tokens_from_page
+from ..pipeline.header_extractor import extract_header_fields
+from ..pipeline.footer_extractor import extract_total_amount
+from ..pipeline.validation import validate_invoice
 from ..export.excel_export import export_to_excel
+from ..export.review_report import create_review_report
 
 
 class InvoiceProcessingError(Exception):
@@ -119,11 +124,22 @@ def process_invoice(
         if footer_segment and invoice_header:
             extract_total_amount(footer_segment, all_invoice_lines, invoice_header)
         
+        # Step 8: Run validation
+        validation_result = None
+        if invoice_header:
+            validation_result = validate_invoice(invoice_header, all_invoice_lines)
+            # Use ValidationResult.status instead of hardcoded status
+            status = validation_result.status
+        else:
+            # No invoice_header → REVIEW (cannot validate)
+            status = "REVIEW"
+        
         return {
-            "status": "OK" if all_invoice_lines else "PARTIAL",
+            "status": status,
             "line_count": len(all_invoice_lines),
             "invoice_lines": all_invoice_lines,
             "invoice_header": invoice_header,
+            "validation_result": validation_result,
             "error": None
         }
         
@@ -181,7 +197,7 @@ def process_batch(
     errors_dir.mkdir(exist_ok=True)
     
     # Process each invoice
-    all_invoice_lines = []
+    # Note: invoice_lines are collected via invoice_results, not all_invoice_lines
     results = {
         "processed": 0,
         "ok": 0,
@@ -192,6 +208,9 @@ def process_batch(
     }
     
     total = len(pdf_files)
+    
+    # Track invoice results per invoice (for grouping validation data)
+    invoice_results = []
     
     for i, pdf_file in enumerate(pdf_files, start=1):
         print(f"Processing {i}/{total}...")
@@ -217,26 +236,85 @@ def process_batch(
             
             if fail_fast:
                 break
-        elif result["status"] == "OK":
-            results["ok"] += 1
-            all_invoice_lines.extend(result["invoice_lines"])
-        elif result["status"] == "PARTIAL":
-            results["partial"] += 1
-            all_invoice_lines.extend(result["invoice_lines"])
+        else:
+            # Collect invoice results (OK/PARTIAL/REVIEW)
+            if result["invoice_header"] and result["validation_result"]:
+                invoice_results.append({
+                    "invoice_header": result["invoice_header"],
+                    "validation_result": result["validation_result"],
+                    "invoice_lines": result["invoice_lines"],
+                    "pdf_path": str(pdf_file),
+                    "filename": pdf_file.name,
+                })
+                
+                # Create review report if REVIEW status
+                if result["validation_result"].status == "REVIEW":
+                    try:
+                        create_review_report(
+                            result["invoice_header"],
+                            result["validation_result"],
+                            result["invoice_lines"],
+                            str(pdf_file),
+                            output_dir_obj
+                        )
+                    except Exception as e:
+                        # Log warning but continue batch
+                        if verbose:
+                            print(f"Warning: Failed to create review report for {pdf_file.name}: {e}")
+            
+            # Update counters
+            if result["status"] == "OK":
+                results["ok"] += 1
+            elif result["status"] == "PARTIAL":
+                results["partial"] += 1
+            elif result["status"] == "REVIEW":
+                results["review"] = results.get("review", 0) + 1
+            # Note: invoice_lines are collected via invoice_results, not all_invoice_lines
         
         # Status output per invoice
         status_line = f"[{i}/{total}] {pdf_file.name} → {result['status']}"
+        if result.get("validation_result") and result.get("invoice_header"):
+            validation = result["validation_result"]
+            if validation.status == "REVIEW":
+                status_line += f" (InvoiceNoConfidence={result['invoice_header'].invoice_number_confidence:.2f}, TotalConfidence={result['invoice_header'].total_confidence:.2f})"
+            elif validation.status == "PARTIAL":
+                if validation.diff is not None:
+                    status_line += f" (Diff={validation.diff:.2f} SEK)"
         if result["line_count"] > 0:
             status_line += f" ({result['line_count']} rader)"
         print(status_line)
     
-    # Export consolidated Excel
-    if all_invoice_lines:
+    # Export consolidated Excel with validation data
+    if invoice_results:
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         excel_filename = f"invoices_{timestamp}.xlsx"
         excel_path = output_dir_obj / excel_filename
         
-        export_to_excel(all_invoice_lines, str(excel_path))
+        # Prepare invoice results for Excel export (list of dicts with invoice_lines and invoice_metadata)
+        excel_invoice_results = []
+        for invoice_result in invoice_results:
+            invoice_header = invoice_result["invoice_header"]
+            validation_result = invoice_result["validation_result"]
+            
+            # Prepare metadata with validation fields
+            invoice_metadata = {
+                "fakturanummer": invoice_header.invoice_number or "TBD",
+                "foretag": invoice_header.supplier_name or "TBD",
+                "fakturadatum": invoice_header.invoice_date.isoformat() if invoice_header.invoice_date else "TBD",
+                "status": validation_result.status,
+                "lines_sum": validation_result.lines_sum,
+                "diff": validation_result.diff if validation_result.diff is not None else "N/A",
+                "invoice_number_confidence": invoice_header.invoice_number_confidence,
+                "total_confidence": invoice_header.total_confidence,
+            }
+            
+            excel_invoice_results.append({
+                "invoice_lines": invoice_result["invoice_lines"],
+                "invoice_metadata": invoice_metadata,
+            })
+        
+        # Export to Excel (using updated function that accepts list of invoice results)
+        export_to_excel(excel_invoice_results, str(excel_path))
         results["excel_path"] = str(excel_path)
     else:
         results["excel_path"] = None
@@ -297,10 +375,15 @@ def main():
             verbose=args.verbose
         )
         
-        # Final summary
-        print(f"\nDone: {results['processed']} processed. "
-              f"OK={results['ok']}, PARTIAL={results['partial']}, "
-              f"REVIEW={results['review']}, failed={results['failed']}.")
+        # Final summary with validation statistics
+        review_count = results.get("review", 0)
+        summary = f"\nDone: {results['processed']} processed. "
+        summary += f"OK={results['ok']}, PARTIAL={results['partial']}, REVIEW={review_count}, failed={results['failed']}."
+        
+        if review_count > 0:
+            summary += f"\nReview reports: {review_count} invoice(s) in review/ folder"
+        
+        print(summary)
         
         if results.get("excel_path"):
             print(f"Excel: {results['excel_path']}")
