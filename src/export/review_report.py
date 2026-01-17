@@ -4,7 +4,7 @@ import json
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from ..models.invoice_header import InvoiceHeader
 from ..models.invoice_line import InvoiceLine
@@ -16,7 +16,8 @@ def create_review_report(
     validation_result: ValidationResult,
     line_items: List[InvoiceLine],
     pdf_path: str,
-    output_dir: Path
+    output_dir: Path,
+    virtual_invoice_id: Optional[str] = None
 ) -> Path:
     """Create review report (folder with PDF + metadata.json).
     
@@ -26,18 +27,23 @@ def create_review_report(
         line_items: List of InvoiceLine objects
         pdf_path: Path to original PDF
         output_dir: Output directory (parent of review folder)
+        virtual_invoice_id: Optional virtual invoice ID (format: "{file_stem}__{index}").
+                           If provided, used for folder name. Otherwise uses PDF filename stem.
         
     Returns:
         Path to review folder
         
     Creates:
-    - review/{invoice_filename}/ folder
-    - {invoice_filename}.pdf (copy of original)
+    - review/{virtual_invoice_id or pdf_filename}/ folder
+    - {pdf_filename}.pdf (copy of original)
     - metadata.json (InvoiceHeader + Traceability + Validation data)
     """
-    # Create review folder
-    pdf_filename = Path(pdf_path).stem
-    review_folder = output_dir / "review" / pdf_filename
+    # Create review folder (use virtual_invoice_id if provided)
+    if virtual_invoice_id:
+        folder_name = virtual_invoice_id
+    else:
+        folder_name = Path(pdf_path).stem
+    review_folder = output_dir / "review" / folder_name
     review_folder.mkdir(parents=True, exist_ok=True)
     
     # Copy PDF

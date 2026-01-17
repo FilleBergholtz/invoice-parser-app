@@ -38,10 +38,11 @@ def export_to_excel(
     - One row per InvoiceLine (product row)
     - Swedish column names: Fakturanummer, Referenser, Företag, Fakturadatum,
       Beskrivning, Antal, Enhet, Á-pris, Rabatt, Summa, Hela summan,
-      Status, Radsumma, Avvikelse, Fakturanummer-konfidens, Totalsumma-konfidens
+      Faktura-ID, Status, Radsumma, Avvikelse, Fakturanummer-konfidens, Totalsumma-konfidens
     - Invoice metadata repeated per row
     - Line item data from InvoiceLine objects
     - Control columns with validation data (after existing columns)
+    - Faktura-ID column shows virtual_invoice_id for multi-invoice PDFs (format: "{file_stem}__{index}")
     """
     # Determine if invoice_data is batch mode (list of dicts) or legacy mode (list of InvoiceLine)
     if invoice_data and isinstance(invoice_data[0], dict) and "invoice_lines" in invoice_data[0]:
@@ -56,6 +57,7 @@ def export_to_excel(
             foretag = invoice_metadata.get("foretag", "TBD")
             fakturadatum = invoice_metadata.get("fakturadatum", "TBD")
             referenser = invoice_metadata.get("referenser", "")
+            virtual_invoice_id = invoice_metadata.get("virtual_invoice_id", "")
             
             # Extract validation fields
             status = invoice_metadata.get("status", "REVIEW")
@@ -82,6 +84,7 @@ def export_to_excel(
                     "Summa": line.total_amount,
                     "Hela summan": hela_summan,
                     # Control columns (after existing columns)
+                    "Faktura-ID": virtual_invoice_id,  # Virtual invoice ID for multi-invoice PDFs
                     "Status": status,
                     "Radsumma": lines_sum,
                     "Avvikelse": diff,

@@ -1,0 +1,77 @@
+[
+  {
+    "filename": "export_2026-01-13_08-57-43.pdf",
+    "error": "PDF read error: Failed to read PDF tests\\fixtures\\pdfs\\export_2026-01-13_08-57-43.pdf: Page count mismatch: expected 222, got 0 pages",
+    "timestamp": "2026-01-17T15:21:31.416607"
+  },
+  {
+    "filename": "export_2026-01-13_08-58-57.pdf",
+    "error": "PDF read error: Failed to read PDF tests\\fixtures\\pdfs\\export_2026-01-13_08-58-57.pdf: Page count mismatch: expected 31, got 0 pages",
+    "timestamp": "2026-01-17T15:21:31.453737"
+  },
+  {
+    "filename": "export_2026-01-13_09-00-14.pdf",
+    "error": "PDF read error: Failed to read PDF tests\\fixtures\\pdfs\\export_2026-01-13_09-00-14.pdf: Page count mismatch: expected 121, got 0 pages",
+    "timestamp": "2026-01-17T15:21:31.508233"
+  },
+  {
+    "filename": "export_2026-01-13_09-01-06.pdf",
+    "error": "PDF read error: Failed to read PDF tests\\fixtures\\pdfs\\export_2026-01-13_09-01-06.pdf: Page count mismatch: expected 6, got 0 pages",
+    "timestamp": "2026-01-17T15:21:31.536755"
+  },
+  {
+    "filename": "export_2026-01-13_09-03-15.pdf",
+    "error": "PDF read error: Failed to read PDF tests\\fixtures\\pdfs\\export_2026-01-13_09-03-15.pdf: Page count mismatch: expected 15, got 0 pages",
+    "timestamp": "2026-01-17T15:21:31.574283"
+  },
+  {
+    "filename": "export_2026-01-13_09-03-49.pdf",
+    "error": "PDF read error: Failed to read PDF tests\\fixtures\\pdfs\\export_2026-01-13_09-03-49.pdf: Page count mismatch: expected 3, got 0 pages",
+    "timestamp": "2026-01-17T15:21:31.589442"
+  },
+  {
+    "filename": "export_2026-01-13_09-04-40.pdf",
+    "error": "PDF read error: Failed to read PDF tests\\fixtures\\pdfs\\export_2026-01-13_09-04-40.pdf: Page count mismatch: expected 24, got 0 pages",
+    "timestamp": "2026-01-17T15:21:31.613411"
+  },
+  {
+    "filename": "export_2026-01-13_09-05-28.pdf",
+    "error": "PDF read error: Failed to read PDF tests\\fixtures\\pdfs\\export_2026-01-13_09-05-28.pdf: Page count mismatch: expected 1, got 0 pages",
+    "timestamp": "2026-01-17T15:21:31.631038"
+  },
+  {
+    "filename": "export_2026-01-13_09-06-42.pdf",
+    "error": "PDF read error: Failed to read PDF tests\\fixtures\\pdfs\\export_2026-01-13_09-06-42.pdf: Page count mismatch: expected 5, got 0 pages",
+    "timestamp": "2026-01-17T15:21:31.665166"
+  },
+  {
+    "filename": "export_2026-01-13_09-07-16.pdf",
+    "error": "PDF read error: Failed to read PDF tests\\fixtures\\pdfs\\export_2026-01-13_09-07-16.pdf: Page count mismatch: expected 1, got 0 pages",
+    "timestamp": "2026-01-17T15:21:31.685687"
+  },
+  {
+    "filename": "export_2026-01-13_09-07-48.pdf",
+    "error": "PDF read error: Failed to read PDF tests\\fixtures\\pdfs\\export_2026-01-13_09-07-48.pdf: Page count mismatch: expected 26, got 0 pages",
+    "timestamp": "2026-01-17T15:21:31.717093"
+  },
+  {
+    "filename": "export_2026-01-13_09-08-34.pdf",
+    "error": "PDF read error: Failed to read PDF tests\\fixtures\\pdfs\\export_2026-01-13_09-08-34.pdf: Page count mismatch: expected 3, got 0 pages",
+    "timestamp": "2026-01-17T15:21:31.755720"
+  },
+  {
+    "filename": "export_2026-01-13_09-09-09.pdf",
+    "error": "PDF read error: Failed to read PDF tests\\fixtures\\pdfs\\export_2026-01-13_09-09-09.pdf: Page count mismatch: expected 14, got 0 pages",
+    "timestamp": "2026-01-17T15:21:31.777444"
+  },
+  {
+    "filename": "export_2026-01-13_09-09-57.pdf",
+    "error": "PDF read error: Failed to read PDF tests\\fixtures\\pdfs\\export_2026-01-13_09-09-57.pdf: Page count mismatch: expected 1, got 0 pages",
+    "timestamp": "2026-01-17T15:21:31.794845"
+  },
+  {
+    "filename": "export_2026-01-13_09-10-31.pdf",
+    "error": "PDF read error: Failed to read PDF tests\\fixtures\\pdfs\\export_2026-01-13_09-10-31.pdf: Page count mismatch: expected 2, got 0 pages",
+    "timestamp": "2026-01-17T15:21:31.837790"
+  }
+]

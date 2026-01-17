@@ -20,6 +20,7 @@ import pdfplumber
 from ..models.document import Document
 from ..models.invoice_header import InvoiceHeader
 from ..models.invoice_line import InvoiceLine
+from ..models.virtual_invoice_result import VirtualInvoiceResult
 from ..pipeline.invoice_line_parser import extract_invoice_lines
 from ..pipeline.pdf_detection import detect_pdf_type, route_extraction_path
 from ..pipeline.reader import read_pdf, PDFReadError
@@ -29,6 +30,7 @@ from ..pipeline.tokenizer import extract_tokens_from_page
 from ..pipeline.header_extractor import extract_header_fields
 from ..pipeline.footer_extractor import extract_total_amount
 from ..pipeline.validation import validate_invoice
+from ..pipeline.invoice_boundary_detection import detect_invoice_boundaries
 from ..export.excel_export import export_to_excel
 from ..export.review_report import create_review_report
 
@@ -166,6 +168,213 @@ def process_invoice(
         }
 
 
+def process_virtual_invoice(
+    doc: Document,
+    page_start: int,
+    page_end: int,
+    virtual_invoice_index: int,
+    extraction_path: str,
+    verbose: bool = False
+) -> VirtualInvoiceResult:
+    """Process a single virtual invoice within a PDF (given page range).
+    
+    Args:
+        doc: Document object
+        page_start: Starting page number (1-based)
+        page_end: Ending page number (1-based, inclusive)
+        virtual_invoice_index: Index of this invoice within PDF (1-based)
+        extraction_path: "pdfplumber" or "ocr"
+        verbose: Enable verbose output
+        
+    Returns:
+        VirtualInvoiceResult object
+    """
+    # Generate virtual_invoice_id
+    file_stem = Path(doc.filename).stem
+    virtual_invoice_id = f"{file_stem}__{virtual_invoice_index}"
+    
+    # Extract pages for this virtual invoice
+    invoice_pages = [p for p in doc.pages if page_start <= p.page_number <= page_end]
+    
+    if not invoice_pages:
+        return VirtualInvoiceResult(
+            virtual_invoice_id=virtual_invoice_id,
+            source_pdf=doc.filename,
+            virtual_invoice_index=virtual_invoice_index,
+            page_start=page_start,
+            page_end=page_end,
+            status="FAILED",
+            error=f"No pages found in range {page_start}-{page_end}"
+        )
+    
+    try:
+        # Extract tokens from pages in range
+        all_invoice_lines = []
+        all_segments = []
+        line_number_global = 1
+        
+        # Open PDF once for all pages (more efficient)
+        pdf = None
+        if extraction_path == "pdfplumber":
+            pdf = pdfplumber.open(doc.filepath)
+        
+        try:
+            for page in invoice_pages:
+                if extraction_path == "pdfplumber" and pdf:
+                    pdfplumber_page = pdf.pages[page.page_number - 1]
+                    tokens = extract_tokens_from_page(page, pdfplumber_page)
+                else:
+                    if verbose:
+                        print(f"  Warning: OCR path not yet implemented")
+                    tokens = []
+                
+                if not tokens:
+                    continue
+                
+                # Group tokens to rows
+                rows = group_tokens_to_rows(tokens)
+                
+                # Identify segments
+                segments = identify_segments(rows, page)
+                all_segments.extend(segments)
+                
+                # Extract line items from items segment
+                items_segment = next((s for s in segments if s.segment_type == "items"), None)
+                
+                if items_segment:
+                    invoice_lines = extract_invoice_lines(items_segment)
+                    
+                    for line in invoice_lines:
+                        line.line_number = line_number_global
+                        line_number_global += 1
+                    
+                    all_invoice_lines.extend(invoice_lines)
+        finally:
+            if pdf:
+                pdf.close()
+        
+        # Find header segment (from first page of this invoice)
+        header_segment = None
+        if invoice_pages:
+            first_page = invoice_pages[0]
+            first_page_segments = [s for s in all_segments if s.page == first_page]
+            header_segment = next((s for s in first_page_segments if s.segment_type == "header"), None)
+        
+        # Find footer segment (from last page of this invoice)
+        footer_segment = None
+        if invoice_pages:
+            last_page = invoice_pages[-1]
+            last_page_segments = [s for s in all_segments if s.page == last_page]
+            footer_segment = next((s for s in last_page_segments if s.segment_type == "footer"), None)
+        
+        # Create InvoiceHeader
+        invoice_header = None
+        if header_segment:
+            invoice_header = InvoiceHeader(segment=header_segment)
+            extract_header_fields(header_segment, invoice_header)
+        
+        # Extract total amount from footer
+        if footer_segment and invoice_header:
+            extract_total_amount(footer_segment, all_invoice_lines, invoice_header)
+        
+        # Run validation
+        validation_result = None
+        if invoice_header:
+            validation_result = validate_invoice(invoice_header, all_invoice_lines)
+            status = validation_result.status
+        else:
+            status = "REVIEW"
+        
+        return VirtualInvoiceResult(
+            virtual_invoice_id=virtual_invoice_id,
+            source_pdf=doc.filename,
+            virtual_invoice_index=virtual_invoice_index,
+            page_start=page_start,
+            page_end=page_end,
+            status=status,
+            invoice_header=invoice_header,
+            invoice_lines=all_invoice_lines,
+            validation_result=validation_result,
+            error=None
+        )
+        
+    except Exception as e:
+        return VirtualInvoiceResult(
+            virtual_invoice_id=virtual_invoice_id,
+            source_pdf=doc.filename,
+            virtual_invoice_index=virtual_invoice_index,
+            page_start=page_start,
+            page_end=page_end,
+            status="FAILED",
+            error=f"Processing error: {str(e)}"
+        )
+
+
+def process_pdf(
+    pdf_path: str,
+    output_dir: str,
+    verbose: bool = False
+) -> List[VirtualInvoiceResult]:
+    """Process a PDF file that may contain multiple invoices.
+    
+    Args:
+        pdf_path: Path to PDF file
+        output_dir: Output directory (used for error reporting, not in this function)
+        verbose: Enable verbose output
+        
+    Returns:
+        List of VirtualInvoiceResult objects (one per detected invoice, or one if detection fails)
+    """
+    try:
+        # Step 1: Read PDF
+        doc = read_pdf(pdf_path)
+        
+        # Step 2: Detect PDF type and route
+        pdf_type = detect_pdf_type(doc)
+        extraction_path = route_extraction_path(doc)
+        
+        # Step 3: Detect invoice boundaries
+        boundaries = detect_invoice_boundaries(doc, extraction_path, verbose)
+        
+        if not boundaries:
+            # Fail-safe: treat entire PDF as one invoice
+            boundaries = [(1, len(doc.pages))]
+        
+        # Step 4: Process each virtual invoice
+        results = []
+        for index, (page_start, page_end) in enumerate(boundaries, start=1):
+            result = process_virtual_invoice(
+                doc, page_start, page_end, index, extraction_path, verbose
+            )
+            results.append(result)
+        
+        return results
+        
+    except PDFReadError as e:
+        # Return single failed result
+        file_stem = Path(pdf_path).stem
+        return [VirtualInvoiceResult(
+            virtual_invoice_id=f"{file_stem}__1",
+            source_pdf=Path(pdf_path).name,
+            virtual_invoice_index=1,
+            page_start=1,
+            page_end=1,
+            status="FAILED",
+            error=f"PDF read error: {str(e)}"
+        )]
+    except Exception as e:
+        file_stem = Path(pdf_path).stem
+        return [VirtualInvoiceResult(
+            virtual_invoice_id=f"{file_stem}__1",
+            source_pdf=Path(pdf_path).name,
+            virtual_invoice_index=1,
+            page_start=1,
+            page_end=1,
+            status="FAILED",
+            error=f"Processing error: {str(e)}"
+        )]
+
+
 def process_batch(
     input_path: str,
     output_dir: str,
@@ -222,74 +431,95 @@ def process_batch(
     for i, pdf_file in enumerate(pdf_files, start=1):
         print(f"Processing {i}/{total}...")
         
-        result = process_invoice(str(pdf_file), str(output_dir), verbose)
+        # Process PDF (may return multiple virtual invoices)
+        virtual_results = process_pdf(str(pdf_file), str(output_dir), verbose)
         
-        results["processed"] += 1
-        
-        if result["status"] == "FAILED":
+        if not virtual_results:
+            # No invoices found
             results["failed"] += 1
             results["errors"].append({
                 "filename": pdf_file.name,
-                "error": result["error"],
+                "error": "No invoices found in PDF",
                 "timestamp": datetime.now().isoformat()
             })
+            continue
+        
+        # Process each virtual invoice result
+        for virtual_result in virtual_results:
+            results["processed"] += 1
             
-            # Move corrupt PDF to errors directory
-            error_pdf_path = errors_dir / pdf_file.name
-            try:
-                shutil.move(str(pdf_file), str(error_pdf_path))
-            except Exception:
-                pass  # Continue even if move fails
-            
-            if fail_fast:
-                break
-        else:
-            # Collect invoice results (OK/PARTIAL/REVIEW)
-            if result["invoice_header"] and result["validation_result"]:
-                invoice_results.append({
-                    "invoice_header": result["invoice_header"],
-                    "validation_result": result["validation_result"],
-                    "invoice_lines": result["invoice_lines"],
-                    "pdf_path": str(pdf_file),
+            if virtual_result.status == "FAILED":
+                results["failed"] += 1
+                results["errors"].append({
                     "filename": pdf_file.name,
+                    "virtual_invoice_id": virtual_result.virtual_invoice_id,
+                    "error": virtual_result.error or "Processing failed",
+                    "timestamp": datetime.now().isoformat()
                 })
                 
-                # Create review report if REVIEW status
-                if result["validation_result"].status == "REVIEW":
+                # Move corrupt PDF to errors directory (only once per PDF file)
+                if virtual_result.virtual_invoice_index == 1:
+                    error_pdf_path = errors_dir / pdf_file.name
                     try:
-                        create_review_report(
-                            result["invoice_header"],
-                            result["validation_result"],
-                            result["invoice_lines"],
-                            str(pdf_file),
-                            output_dir_obj
-                        )
-                    except Exception as e:
-                        # Log warning but continue batch
-                        if verbose:
-                            print(f"Warning: Failed to create review report for {pdf_file.name}: {e}")
+                        shutil.move(str(pdf_file), str(error_pdf_path))
+                    except Exception:
+                        pass  # Continue even if move fails
+                
+                if fail_fast:
+                    break
+            else:
+                # Collect invoice results (OK/PARTIAL/REVIEW)
+                if virtual_result.invoice_header and virtual_result.validation_result:
+                    invoice_results.append({
+                        "invoice_header": virtual_result.invoice_header,
+                        "validation_result": virtual_result.validation_result,
+                        "invoice_lines": virtual_result.invoice_lines,
+                        "pdf_path": str(pdf_file),
+                        "filename": pdf_file.name,
+                        "virtual_invoice_id": virtual_result.virtual_invoice_id,
+                    })
+                    
+                    # Create review report if REVIEW status
+                    if virtual_result.validation_result.status == "REVIEW":
+                        try:
+                            create_review_report(
+                                virtual_result.invoice_header,
+                                virtual_result.validation_result,
+                                virtual_result.invoice_lines,
+                                str(pdf_file),
+                                output_dir_obj,
+                                virtual_invoice_id=virtual_result.virtual_invoice_id
+                            )
+                        except Exception as e:
+                            # Log warning but continue batch
+                            if verbose:
+                                print(f"Warning: Failed to create review report for {virtual_result.virtual_invoice_id}: {e}")
+                
+                # Update counters
+                if virtual_result.status == "OK":
+                    results["ok"] += 1
+                elif virtual_result.status == "PARTIAL":
+                    results["partial"] += 1
+                elif virtual_result.status == "REVIEW":
+                    results["review"] = results.get("review", 0) + 1
             
-            # Update counters
-            if result["status"] == "OK":
-                results["ok"] += 1
-            elif result["status"] == "PARTIAL":
-                results["partial"] += 1
-            elif result["status"] == "REVIEW":
-                results["review"] = results.get("review", 0) + 1
-            # Note: invoice_lines are collected via invoice_results, not all_invoice_lines
+            # Status output per virtual invoice
+            # Format: [PDF#/total] filename.pdf#invoice_index -> STATUS
+            invoice_suffix = f"#{virtual_result.virtual_invoice_index}" if len(virtual_results) > 1 else ""
+            status_line = f"[{i}/{total}] {pdf_file.name}{invoice_suffix} -> {virtual_result.status}"
+            if virtual_result.validation_result and virtual_result.invoice_header:
+                validation = virtual_result.validation_result
+                if validation.status == "REVIEW":
+                    status_line += f" (InvoiceNoConfidence={virtual_result.invoice_header.invoice_number_confidence:.2f}, TotalConfidence={virtual_result.invoice_header.total_confidence:.2f})"
+                elif validation.status == "PARTIAL":
+                    if validation.diff is not None:
+                        status_line += f" (Diff={validation.diff:.2f} SEK)"
+            if virtual_result.line_count > 0:
+                status_line += f" ({virtual_result.line_count} rader)"
+            print(status_line)
         
-        # Status output per invoice
-        status_line = f"[{i}/{total}] {pdf_file.name} -> {result['status']}"
-        if result.get("validation_result") and result.get("invoice_header"):
-            validation = result["validation_result"]
-            if validation.status == "REVIEW":
-                status_line += f" (InvoiceNoConfidence={result['invoice_header'].invoice_number_confidence:.2f}, TotalConfidence={result['invoice_header'].total_confidence:.2f})"
-            elif validation.status == "PARTIAL":
-                if validation.diff is not None:
-                    status_line += f" (Diff={validation.diff:.2f} SEK)"
-        if result["line_count"] > 0:
-            status_line += f" ({result['line_count']} rader)"
-        print(status_line)
+        if fail_fast and any(r.status == "FAILED" for r in virtual_results):
+            break
     
     # Export consolidated Excel with validation data
     if invoice_results:
@@ -308,6 +538,7 @@ def process_batch(
                 "fakturanummer": invoice_header.invoice_number or "TBD",
                 "foretag": invoice_header.supplier_name or "TBD",
                 "fakturadatum": invoice_header.invoice_date.isoformat() if invoice_header.invoice_date else "TBD",
+                "virtual_invoice_id": invoice_result.get("virtual_invoice_id", ""),  # Include virtual invoice ID
                 "status": validation_result.status,
                 "lines_sum": validation_result.lines_sum,
                 "diff": validation_result.diff if validation_result.diff is not None else "N/A",
