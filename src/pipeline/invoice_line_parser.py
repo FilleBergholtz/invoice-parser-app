@@ -1,12 +1,140 @@
 """Line item extraction from items segment using layout-driven approach."""
 
 import re
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from ..models.invoice_line import InvoiceLine
 from ..models.row import Row
 from ..models.segment import Segment
 from ..pipeline.wrap_detection import detect_wrapped_rows, consolidate_wrapped_description
+
+
+def _extract_amount_from_row_text(row: Row) -> Optional[Tuple[float, Optional[float], int]]:
+    """Extract total amount and discount from row.text with support for thousand separators.
+    
+    Args:
+        row: Row object with text property
+        
+    Returns:
+        Tuple of (total_amount, discount, amount_token_idx) if amount found, None otherwise
+        - total_amount: Extracted numeric amount (must be positive)
+        - discount: Optional discount amount (if negative amount found before total_amount)
+        - amount_token_idx: Index of token containing or closest to total_amount
+        
+    This function extracts amounts from row.text instead of token-by-token,
+    which better handles thousand separators (spaces) that may span multiple tokens.
+    Also detects negative amounts (discounts) before the total amount.
+    
+    Examples: 
+    - "1 072,60" → (1072.60, None, idx)
+    - "440,00 -88,00 1 672,00" → (1672.00, 88.00, idx)
+    - "-2 007,28 10 000,00" → (10000.00, 2007.28, idx)
+    """
+    currency_symbols = ['kr', 'SEK', 'sek', ':-']
+    
+    # Pattern for amounts (positive or negative) with thousand separators (spaces)
+    # Matches: "123,45", "-123,45", "1 234,56", "-1 234,56", "-2 007,28", etc.
+    # Also handles period as decimal: "123.45", "-123.45"
+    # Pattern: optional minus sign, then digits with optional thousand separators, then decimal
+    amount_pattern = re.compile(r'-?\d{1,3}(?:\s+\d{3})*(?:[.,]\d{2})|-?\d+(?:[.,]\d{2})')
+    
+    # Find all amount matches in row.text
+    matches = list(amount_pattern.finditer(row.text))
+    if not matches:
+        return None
+    
+    # Extract all amounts with their positions and values
+    amounts = []  # List of (value, is_negative, match_start, match_end)
+    
+    for match in matches:
+        amount_text = match.group(0)
+        is_negative = amount_text.startswith('-')
+        
+        # Clean and convert to float
+        cleaned = amount_text
+        for sym in currency_symbols:
+            cleaned = cleaned.replace(sym, '')
+        cleaned = cleaned.replace(' ', '').replace(',', '.').lstrip('-')
+        
+        try:
+            value = float(cleaned)
+            if value > 0:  # Only process positive values (we handle sign separately)
+                amounts.append((value, is_negative, match.start(), match.end()))
+        except ValueError:
+            continue
+    
+    if not amounts:
+        return None
+    
+    # Find rightmost positive amount (this is total_amount)
+    total_amount = None
+    total_amount_pos = None
+    total_amount_match = None
+    
+    for value, is_negative, start_pos, end_pos in amounts:
+        if not is_negative:
+            # This is a positive amount - track rightmost one
+            if total_amount_pos is None or start_pos > total_amount_pos:
+                total_amount = value
+                total_amount_pos = start_pos
+                total_amount_match = (start_pos, end_pos)
+    
+    if total_amount is None or total_amount <= 0:
+        return None
+    
+    # Find negative amounts before total_amount (this is discount)
+    # Use the rightmost negative amount before total_amount as discount
+    discount = None
+    discount_pos = None
+    for value, is_negative, start_pos, end_pos in amounts:
+        if is_negative and start_pos < total_amount_pos:
+            # This is a negative amount before total_amount - use rightmost one as discount
+            if discount_pos is None or start_pos > discount_pos:
+                discount = value
+                discount_pos = start_pos
+    
+    # Map character position back to token index
+    # Find which token contains the total amount (or is closest)
+    amount_start_pos, amount_end_pos = total_amount_match
+    
+    # Build character position mapping for tokens (reconstruct row.text)
+    # row.text is created as " ".join(token.text for token in sorted_tokens)
+    # So we need to map character positions in row.text back to token indices
+    char_pos = 0
+    token_positions = []  # List of (token_idx, start_pos, end_pos)
+    
+    sorted_tokens = sorted(row.tokens, key=lambda t: t.x)  # Same order as row.text
+    
+    for i, token in enumerate(sorted_tokens):
+        token_start = char_pos
+        token_end = char_pos + len(token.text)
+        # Find original token index in row.tokens
+        original_idx = row.tokens.index(token)
+        token_positions.append((original_idx, token_start, token_end))
+        # Add space between tokens (as in row.text: " ".join(...))
+        char_pos = token_end + 1
+    
+    # Find token that contains or is closest to the amount
+    amount_token_idx = None
+    for token_idx, start_pos, end_pos in token_positions:
+        # Check if amount overlaps with this token
+        if not (amount_end_pos < start_pos or amount_start_pos > end_pos):
+            amount_token_idx = token_idx
+            break
+    
+    # If no overlap, find closest token (shouldn't happen, but fallback)
+    if amount_token_idx is None:
+        # Find token with minimum distance to amount center
+        amount_center = (amount_start_pos + amount_end_pos) / 2
+        min_dist = float('inf')
+        for token_idx, start_pos, end_pos in token_positions:
+            token_center = (start_pos + end_pos) / 2
+            dist = abs(amount_center - token_center)
+            if dist < min_dist:
+                min_dist = dist
+                amount_token_idx = token_idx
+    
+    return (total_amount, discount, amount_token_idx)
 
 
 def extract_invoice_lines(items_segment: Segment) -> List[InvoiceLine]:
@@ -83,38 +211,12 @@ def _extract_line_from_row(
     # Rule: "rad med belopp = produktrad"
     # Check if row contains a numeric amount
     
-    # Find numeric tokens (potential amounts)
-    # Look for patterns: numbers with decimal, currency symbols, etc.
-    amount_pattern = re.compile(r'[\d\s]+[.,]\d{2}')  # Matches "123,45" or "123.45"
-    currency_symbols = ['kr', 'SEK', 'sek', ':-']
-    
-    total_amount = None
-    amount_token_idx = None
-    
-    # Search from right to left for amount (usually rightmost numeric)
-    for i in range(len(row.tokens) - 1, -1, -1):
-        token = row.tokens[i]
-        token_text = token.text.strip()
-        
-        # Check if token text matches amount pattern
-        if amount_pattern.search(token_text):
-            # Extract numeric value
-            # Remove currency symbols, spaces, convert comma to dot
-            cleaned = token_text
-            for sym in currency_symbols:
-                cleaned = cleaned.replace(sym, '')
-            cleaned = cleaned.replace(',', '.').replace(' ', '')
-            
-            try:
-                total_amount = float(cleaned)
-                amount_token_idx = i
-                break
-            except ValueError:
-                continue
-    
-    # If no amount found, this is not a product row
-    if total_amount is None or total_amount <= 0:
+    # Extract amount and discount from row.text (supports thousand separators across tokens)
+    result = _extract_amount_from_row_text(row)
+    if result is None:
         return None
+    
+    total_amount, discount, amount_token_idx = result
     
     # Extract description: leftmost text before amount column
     description_tokens = row.tokens[:amount_token_idx] if amount_token_idx else row.tokens
@@ -174,7 +276,7 @@ def _extract_line_from_row(
         quantity=quantity,
         unit=unit,
         unit_price=unit_price,
-        discount=None,  # Rare in Phase 1
+        discount=discount,  # Extracted from negative amounts before total_amount
         total_amount=total_amount,
         vat_rate=None,  # Not extracted in Phase 1
         line_number=line_number,
