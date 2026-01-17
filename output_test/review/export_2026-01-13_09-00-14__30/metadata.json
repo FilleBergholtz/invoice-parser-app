@@ -1,0 +1,151 @@
+{
+  "invoice_header": {
+    "invoice_number": "3421454",
+    "invoice_number_confidence": 0.7200000000000001,
+    "total_amount": 639.74,
+    "total_confidence": 0.25,
+    "supplier_name": "RentaAB",
+    "invoice_date": "2025-04-30",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "3421454",
+      "confidence": 0.7200000000000001,
+      "evidence": {
+        "page_number": 30,
+        "bbox": [
+          70.5827000000001,
+          111.55160000000001,
+          44.44999999999999,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "3421454 AB",
+        "tokens": [
+          {
+            "text": "3421454",
+            "bbox": [
+              70.5827000000001,
+              111.55160000000001,
+              44.44999999999999,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "639.74",
+      "confidence": 0.25,
+      "evidence": {
+        "page_number": 30,
+        "bbox": [
+          68.77880000000047,
+          650.7927999999996,
+          501.7961,
+          7.0
+        ],
+        "row_index": 5,
+        "text_excerpt": "26 Trygghetslösning 1 EA 1 639,74 1 639,74",
+        "tokens": [
+          {
+            "text": "26",
+            "bbox": [
+              68.77880000000047,
+              650.7927999999996,
+              8.889999999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "Trygghetslösning",
+            "bbox": [
+              171.33790000000047,
+              650.7927999999996,
+              60.06699999999998,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "1",
+            "bbox": [
+              356.0454000000005,
+              650.7927999999996,
+              4.444999999999993,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "EA",
+            "bbox": [
+              368.8970000000005,
+              650.7927999999996,
+              9.204999999999984,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "1",
+            "bbox": [
+              426.3478000000005,
+              650.7927999999996,
+              4.444999999999993,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "639,74",
+            "bbox": [
+              433.2498000000005,
+              650.7927999999996,
+              24.76600000000002,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "1",
+            "bbox": [
+              538.9069000000005,
+              650.7927999999996,
+              4.44500000000005,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "639,74",
+            "bbox": [
+              545.8089000000006,
+              650.7927999999996,
+              24.765999999999963,
+              7.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 2794.0,
+    "diff": -2154.26,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.7200000000000001,
+    "total_confidence": 0.25,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.72, total_confidence=0.25"
+    ],
+    "warnings": [],
+    "line_count": 9
+  },
+  "timestamp": "2026-01-17T18:05:17.539961"
+}

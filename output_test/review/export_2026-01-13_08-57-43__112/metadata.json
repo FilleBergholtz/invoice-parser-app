@@ -1,0 +1,185 @@
+{
+  "invoice_header": {
+    "invoice_number": "579273",
+    "invoice_number_confidence": 0.92,
+    "total_amount": 870.4,
+    "total_confidence": 0.25,
+    "supplier_name": "WangeskogHyrcenterAB",
+    "invoice_date": "2025-09-14",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "579273",
+      "confidence": 0.92,
+      "evidence": {
+        "page_number": 144,
+        "bbox": [
+          70.58260000000001,
+          111.55160000000001,
+          38.099999999999994,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "579273 AB",
+        "tokens": [
+          {
+            "text": "579273",
+            "bbox": [
+              70.58260000000001,
+              111.55160000000001,
+              38.099999999999994,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "870.4",
+      "confidence": 0.25,
+      "evidence": {
+        "page_number": 144,
+        "bbox": [
+          68.78069999999997,
+          596.2562999999997,
+          501.7959,
+          7.0
+        ],
+        "row_index": 0,
+        "text_excerpt": "63 769112 BYGGSTÄNGSELPL1 2 300 EA 2,40 -2 649,60 2 870,40",
+        "tokens": [
+          {
+            "text": "63",
+            "bbox": [
+              68.78069999999997,
+              596.2562999999997,
+              8.889999999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "769112",
+            "bbox": [
+              102.56019999999997,
+              596.2562999999997,
+              26.67,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "BYGGSTÄNGSELPL1",
+            "bbox": [
+              171.33969999999997,
+              596.2562999999997,
+              72.638,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "2",
+            "bbox": [
+              340.2372,
+              596.2562999999997,
+              4.444999999999993,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "300",
+            "bbox": [
+              347.13919999999996,
+              596.2562999999997,
+              13.33499999999998,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "EA",
+            "bbox": [
+              368.8988,
+              596.2562999999997,
+              9.204999999999984,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "2,40",
+            "bbox": [
+              442.1596,
+              596.2562999999997,
+              15.875999999999976,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "-2",
+            "bbox": [
+              471.9491,
+              596.2562999999997,
+              7.625,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "649,60",
+            "bbox": [
+              482.0311,
+              596.2562999999997,
+              24.76600000000002,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "2",
+            "bbox": [
+              538.9086,
+              596.2562999999997,
+              4.44500000000005,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "870,40",
+            "bbox": [
+              545.8106,
+              596.2562999999997,
+              24.765999999999963,
+              7.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 1475.84,
+    "diff": -605.4399999999999,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.92,
+    "total_confidence": 0.25,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.92, total_confidence=0.25"
+    ],
+    "warnings": [
+      "Rad 1: Antal × A-pris (162.00) ≠ Summa (157.44), avvikelse: 4.56 SEK",
+      "Rad 2: Antal × A-pris (58.00) ≠ Summa (768.24), avvikelse: 710.24 SEK",
+      "Rad 3: Antal × A-pris (271.40) ≠ Summa (550.16), avvikelse: 278.76 SEK"
+    ],
+    "line_count": 3
+  },
+  "timestamp": "2026-01-17T19:41:19.583499"
+}

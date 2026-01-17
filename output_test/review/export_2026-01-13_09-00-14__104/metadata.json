@@ -1,0 +1,161 @@
+{
+  "invoice_header": {
+    "invoice_number": "3735808",
+    "invoice_number_confidence": 0.7200000000000001,
+    "total_amount": 440.0,
+    "total_confidence": 0.44999999999999996,
+    "supplier_name": "RentaAB",
+    "invoice_date": "2025-11-30",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "3735808",
+      "confidence": 0.7200000000000001,
+      "evidence": {
+        "page_number": 104,
+        "bbox": [
+          70.5827000000001,
+          111.55160000000001,
+          44.44999999999999,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "3735808 BYGG BIFROSTGATAN42",
+        "tokens": [
+          {
+            "text": "3735808",
+            "bbox": [
+              70.5827000000001,
+              111.55160000000001,
+              44.44999999999999,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "440.0",
+      "confidence": 0.44999999999999996,
+      "evidence": {
+        "page_number": 104,
+        "bbox": [
+          9.740000000000435,
+          672.87,
+          560.8356,
+          39.0
+        ],
+        "row_index": 9,
+        "text_excerpt": ":ecruoS|83:50 13 92683 KonferensbodK11kököppenlångsida 12 EA 120,00 1 440,00",
+        "tokens": [
+          {
+            "text": ":ecruoS|83:50",
+            "bbox": [
+              9.740000000000435,
+              672.87,
+              5.000000000000002,
+              39.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "13",
+            "bbox": [
+              68.77960000000039,
+              675.1687999999996,
+              8.889999999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "92683",
+            "bbox": [
+              102.55910000000038,
+              675.1687999999996,
+              22.22500000000001,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "KonferensbodK11kököppenlångsida",
+            "bbox": [
+              171.33860000000038,
+              675.1687999999996,
+              134.84200000000004,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "12",
+            "bbox": [
+              351.59610000000043,
+              675.1687999999996,
+              8.889999999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "EA",
+            "bbox": [
+              368.89770000000044,
+              675.1687999999996,
+              9.204999999999984,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "120,00",
+            "bbox": [
+              433.2585000000004,
+              675.1687999999996,
+              24.76600000000002,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "1",
+            "bbox": [
+              538.9076000000005,
+              675.1687999999996,
+              4.44500000000005,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "440,00",
+            "bbox": [
+              545.8096000000005,
+              675.1687999999996,
+              24.765999999999963,
+              7.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 3080.0,
+    "diff": -2640.0,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.7200000000000001,
+    "total_confidence": 0.44999999999999996,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.72, total_confidence=0.45"
+    ],
+    "warnings": [],
+    "line_count": 7
+  },
+  "timestamp": "2026-01-17T18:05:49.219515"
+}

@@ -1,0 +1,178 @@
+{
+  "invoice_header": {
+    "invoice_number": "560747",
+    "invoice_number_confidence": 0.92,
+    "total_amount": 146.6,
+    "total_confidence": 0.25,
+    "supplier_name": "WangeskogHyrcenterAB",
+    "invoice_date": "2025-04-14",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "560747",
+      "confidence": 0.92,
+      "evidence": {
+        "page_number": 76,
+        "bbox": [
+          70.5827000000001,
+          111.55160000000001,
+          38.099999999999994,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "560747 AB",
+        "tokens": [
+          {
+            "text": "560747",
+            "bbox": [
+              70.5827000000001,
+              111.55160000000001,
+              38.099999999999994,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "146.6",
+      "confidence": 0.25,
+      "evidence": {
+        "page_number": 76,
+        "bbox": [
+          68.7799000000004,
+          617.7635999999997,
+          501.7959,
+          7.0
+        ],
+        "row_index": 2,
+        "text_excerpt": "54 60081 KOMBIHAMMAREBATTERITE-6A 18 EA 122,50 -1 058,40 1 146,60",
+        "tokens": [
+          {
+            "text": "54",
+            "bbox": [
+              68.7799000000004,
+              617.7635999999997,
+              8.889999999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "60081",
+            "bbox": [
+              102.5594000000004,
+              617.7635999999997,
+              22.22500000000001,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "KOMBIHAMMAREBATTERITE-6A",
+            "bbox": [
+              171.3389000000004,
+              617.7635999999997,
+              115.7327,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "18",
+            "bbox": [
+              351.59640000000036,
+              617.7635999999997,
+              8.889999999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "EA",
+            "bbox": [
+              368.89800000000037,
+              617.7635999999997,
+              9.204999999999984,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "122,50",
+            "bbox": [
+              433.25880000000035,
+              617.7635999999997,
+              24.76600000000002,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "-1",
+            "bbox": [
+              471.94830000000036,
+              617.7635999999997,
+              7.625,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "058,40",
+            "bbox": [
+              482.03030000000035,
+              617.7635999999997,
+              24.76600000000002,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "1",
+            "bbox": [
+              538.9078000000004,
+              617.7635999999997,
+              4.44500000000005,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "146,60",
+            "bbox": [
+              545.8098000000005,
+              617.7635999999997,
+              24.765999999999963,
+              7.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 2971.99,
+    "diff": -2825.39,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.92,
+    "total_confidence": 0.25,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.92, total_confidence=0.25"
+    ],
+    "warnings": [
+      "Rad 1: Antal × A-pris (5084.00) ≠ Summa (838.24), avvikelse: 4245.76 SEK",
+      "Rad 2: Antal × A-pris (3560.40) ≠ Summa (684.25), avvikelse: 2876.15 SEK",
+      "Rad 3: Antal × A-pris (8836.00) ≠ Summa (188.00), avvikelse: 8648.00 SEK",
+      "Rad 4: Antal × A-pris (28861.00) ≠ Summa (294.50), avvikelse: 28566.50 SEK",
+      "Rad 5: Antal × A-pris (100.00) ≠ Summa (499.00), avvikelse: 399.00 SEK",
+      "Rad 6: Antal × A-pris (2550.00) ≠ Summa (468.00), avvikelse: 2082.00 SEK"
+    ],
+    "line_count": 6
+  },
+  "timestamp": "2026-01-17T19:41:16.754221"
+}

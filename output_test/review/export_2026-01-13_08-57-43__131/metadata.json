@@ -1,0 +1,138 @@
+{
+  "invoice_header": {
+    "invoice_number": "586865",
+    "invoice_number_confidence": 0.92,
+    "total_amount": 341.25,
+    "total_confidence": 0.44999999999999996,
+    "supplier_name": "WangeskogHyrcenterAB",
+    "invoice_date": "2025-11-14",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "586865",
+      "confidence": 0.92,
+      "evidence": {
+        "page_number": 169,
+        "bbox": [
+          70.58260000000001,
+          111.55160000000001,
+          38.099999999999994,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "586865 AB",
+        "tokens": [
+          {
+            "text": "586865",
+            "bbox": [
+              70.58260000000001,
+              111.55160000000001,
+              38.099999999999994,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "341.25",
+      "confidence": 0.44999999999999996,
+      "evidence": {
+        "page_number": 169,
+        "bbox": [
+          68.78070000000014,
+          676.3146999999996,
+          501.8040000000001,
+          7.0
+        ],
+        "row_index": 8,
+        "text_excerpt": "39 7615 STÅLBALKSTVING 175 EA 1,95 341,25",
+        "tokens": [
+          {
+            "text": "39",
+            "bbox": [
+              68.78070000000014,
+              676.3146999999996,
+              8.889999999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "7615",
+            "bbox": [
+              102.56020000000014,
+              676.3146999999996,
+              17.779999999999987,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "STÅLBALKSTVING",
+            "bbox": [
+              171.33970000000014,
+              676.3146999999996,
+              63.553,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "175",
+            "bbox": [
+              347.1472000000001,
+              676.3146999999996,
+              13.33499999999998,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "EA",
+            "bbox": [
+              368.8988000000001,
+              676.3146999999996,
+              9.204999999999984,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "1,95",
+            "bbox": [
+              442.1596000000001,
+              676.3146999999996,
+              15.875999999999976,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "341,25",
+            "bbox": [
+              545.8187000000001,
+              676.3146999999996,
+              24.766000000000076,
+              7.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 2285.23,
+    "diff": -1943.98,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.92,
+    "total_confidence": 0.44999999999999996,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.92, total_confidence=0.45"
+    ],
+    "warnings": [
+      "Rad 1: Antal × A-pris (54.00) ≠ Summa (409.22), avvikelse: 355.22 

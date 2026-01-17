@@ -1,0 +1,62 @@
+{
+  "invoice_header": {
+    "invoice_number": "557442",
+    "invoice_number_confidence": 0.92,
+    "total_amount": null,
+    "total_confidence": 0.0,
+    "supplier_name": "WangeskogHyrcenterAB",
+    "invoice_date": "2025-03-17",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "557442",
+      "confidence": 0.92,
+      "evidence": {
+        "page_number": 65,
+        "bbox": [
+          70.5827000000001,
+          111.55160000000001,
+          38.099999999999994,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "557442 AB",
+        "tokens": [
+          {
+            "text": "557442",
+            "bbox": [
+              70.5827000000001,
+              111.55160000000001,
+              38.099999999999994,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": null
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 6855.0,
+    "diff": null,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.92,
+    "total_confidence": 0.0,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.92, total_confidence=0.00"
+    ],
+    "warnings": [
+      "Rad 2: Antal × A-pris (715.00) ≠ Summa (936.38), avvikelse: 221.38 SEK",
+      "Rad 5: Antal × A-pris (32168.00) ≠ Summa (992.62), avvikelse: 31175.38 SEK",
+      "Rad 6: Antal × A-pris (153520.00) ≠ Summa (939.29), avvikelse: 152580.71 SEK",
+      "Rad 7: Antal × A-pris (4040.00) ≠ Summa (953.63), avvikelse: 3086.37 SEK",
+      "Rad 8: Antal × A-pris (4046.00) ≠ Summa (350.00), avvikelse: 3696.00 SEK",
+      "Rad 9: Antal × A-pris (16204.00) ≠ Summa (509.96), avvikelse: 15694.04 SEK",
+      "Rad 10: Antal × A-pris (3025.00) ≠ Summa (745.50), avvikelse: 2279.50 SEK"
+    ],
+    "line_count": 10
+  },
+  "timestamp": "2026-01-17T19:41:16.230411"
+}

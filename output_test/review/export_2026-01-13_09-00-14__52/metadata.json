@@ -1,0 +1,151 @@
+{
+  "invoice_header": {
+    "invoice_number": "3508980",
+    "invoice_number_confidence": 0.7200000000000001,
+    "total_amount": 116.8,
+    "total_confidence": 0.25,
+    "supplier_name": "RentaAB",
+    "invoice_date": "2025-06-30",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "3508980",
+      "confidence": 0.7200000000000001,
+      "evidence": {
+        "page_number": 52,
+        "bbox": [
+          70.58260000000001,
+          111.55160000000001,
+          44.44999999999999,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "3508980 AB",
+        "tokens": [
+          {
+            "text": "3508980",
+            "bbox": [
+              70.58260000000001,
+              111.55160000000001,
+              44.44999999999999,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "116.8",
+      "confidence": 0.25,
+      "evidence": {
+        "page_number": 52,
+        "bbox": [
+          68.77870000000027,
+          605.7635999999997,
+          501.8139000000001,
+          7.0
+        ],
+        "row_index": 1,
+        "text_excerpt": "52 Stolfbesök 480 EA 4,41 -2 116,80 0,00",
+        "tokens": [
+          {
+            "text": "52",
+            "bbox": [
+              68.77870000000027,
+              605.7635999999997,
+              8.889999999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "Stolfbesök",
+            "bbox": [
+              171.33780000000027,
+              605.7635999999997,
+              41.63829999999999,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "480",
+            "bbox": [
+              347.1452000000003,
+              605.7635999999997,
+              13.33499999999998,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "EA",
+            "bbox": [
+              368.89680000000027,
+              605.7635999999997,
+              9.204999999999984,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "4,41",
+            "bbox": [
+              442.1576000000003,
+              605.7635999999997,
+              15.875999999999976,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "-2",
+            "bbox": [
+              471.94710000000026,
+              605.7635999999997,
+              7.625,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "116,80",
+            "bbox": [
+              482.02910000000026,
+              605.7635999999997,
+              24.76600000000002,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "0,00",
+            "bbox": [
+              554.7166000000003,
+              605.7635999999997,
+              15.87600000000009,
+              7.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 1922.6,
+    "diff": -1805.8,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.7200000000000001,
+    "total_confidence": 0.25,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.72, total_confidence=0.25"
+    ],
+    "warnings": [],
+    "line_count": 10
+  },
+  "timestamp": "2026-01-17T18:05:26.969921"
+}

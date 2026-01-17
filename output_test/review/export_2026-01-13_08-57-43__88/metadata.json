@@ -1,0 +1,192 @@
+{
+  "invoice_header": {
+    "invoice_number": "571557",
+    "invoice_number_confidence": 0.92,
+    "total_amount": 469.25,
+    "total_confidence": 0.44999999999999996,
+    "supplier_name": "WangeskogHyrcenterAB",
+    "invoice_date": "2025-07-15",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "571557",
+      "confidence": 0.92,
+      "evidence": {
+        "page_number": 115,
+        "bbox": [
+          70.58260000000001,
+          111.55160000000001,
+          38.099999999999994,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "571557 AB",
+        "tokens": [
+          {
+            "text": "571557",
+            "bbox": [
+              70.58260000000001,
+              111.55160000000001,
+              38.099999999999994,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "469.25",
+      "confidence": 0.44999999999999996,
+      "evidence": {
+        "page_number": 115,
+        "bbox": [
+          68.78120000000024,
+          676.3146999999996,
+          501.7908000000001,
+          7.0
+        ],
+        "row_index": 8,
+        "text_excerpt": "39 762244 KRAVALLSTAKET2,25M 2 728 EA 10,20 -13 356,35 14 469,25",
+        "tokens": [
+          {
+            "text": "39",
+            "bbox": [
+              68.78120000000024,
+              676.3146999999996,
+              8.889999999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "762244",
+            "bbox": [
+              102.56070000000024,
+              676.3146999999996,
+              26.67,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "KRAVALLSTAKET2,25M",
+            "bbox": [
+              171.34020000000024,
+              676.3146999999996,
+              82.75330000000002,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "2",
+            "bbox": [
+              340.23760000000027,
+              676.3146999999996,
+              4.444999999999993,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "728",
+            "bbox": [
+              347.13960000000026,
+              676.3146999999996,
+              13.335000000000036,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "EA",
+            "bbox": [
+              368.8992000000003,
+              676.3146999999996,
+              9.204999999999984,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "10,20",
+            "bbox": [
+              437.71000000000026,
+              676.3146999999996,
+              20.32099999999997,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "-13",
+            "bbox": [
+              467.49950000000024,
+              676.3146999999996,
+              12.069999999999993,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "356,35",
+            "bbox": [
+              482.0265000000002,
+              676.3146999999996,
+              24.76600000000002,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "14",
+            "bbox": [
+              534.4590000000003,
+              676.3146999999996,
+              8.8900000000001,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "469,25",
+            "bbox": [
+              545.8060000000003,
+              676.3146999999996,
+              24.766000000000076,
+              7.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 4371.75,
+    "diff": -3902.5,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.92,
+    "total_confidence": 0.44999999999999996,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.92, total_confidence=0.45"
+    ],
+    "warnings": [
+      "Rad 1: Antal × A-pris (32.94) ≠ Summa (38.00), avvikelse: 5.06 SEK",
+      "Rad 2: Antal × A-pris (34.16) ≠ Summa (304.60), avvikelse: 270.44 SEK",
+      "Rad 3: Antal × A-pris (29.00) ≠ Summa (53.20), avvikelse: 24.20 SEK",
+      "Rad 4: Antal × A-pris (112.50) ≠ Summa (930.00), avvikelse: 817.50 SEK",
+      "Rad 5: Antal × A-pris (62.00) ≠ Summa (115.75), avvikelse: 53.75 SEK",
+      "Rad 6: Antal × A-pris (32.00) ≠ Summa (934.40), avvikelse: 902.40 SEK",
+      "Rad 7: Antal × A-pris (363.00) ≠ Summa (220.00), avvikelse: 143.00 SEK",
+      "Rad 8: Antal × A-pris (68.00) ≠ Summa (790.00), avvikelse: 722.00 SEK",
+      "Rad 9: Antal × A-pris (68.25) ≠ Summa (906.75), avvikelse: 838.50 SEK",
+      "Rad 10: Antal × A-pris (30.60) ≠ Summa (79.05), avvikelse: 48.45 SEK"
+    ],
+    "line_count": 10
+  },
+  "timestamp": "2026-01-17T19:41:18.101347"
+}

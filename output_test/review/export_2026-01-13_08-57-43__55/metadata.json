@@ -1,0 +1,150 @@
+{
+  "invoice_header": {
+    "invoice_number": "560747",
+    "invoice_number_confidence": 0.92,
+    "total_amount": 720.0,
+    "total_confidence": 0.25,
+    "supplier_name": "WangeskogHyrcenterAB",
+    "invoice_date": "2025-04-14",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "560747",
+      "confidence": 0.92,
+      "evidence": {
+        "page_number": 75,
+        "bbox": [
+          70.5827000000001,
+          111.55160000000001,
+          38.099999999999994,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "560747 AB",
+        "tokens": [
+          {
+            "text": "560747",
+            "bbox": [
+              70.5827000000001,
+              111.55160000000001,
+              38.099999999999994,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "720.0",
+      "confidence": 0.25,
+      "evidence": {
+        "page_number": 75,
+        "bbox": [
+          68.78029999999995,
+          593.7489999999997,
+          501.80390000000006,
+          7.0
+        ],
+        "row_index": 0,
+        "text_excerpt": "38 84006 SLITAGEDIAMANTSKIVA180MM 1 EA 720,00 720,00",
+        "tokens": [
+          {
+            "text": "38",
+            "bbox": [
+              68.78029999999995,
+              593.7489999999997,
+              8.889999999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "84006",
+            "bbox": [
+              102.55979999999995,
+              593.7489999999997,
+              22.22500000000001,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "SLITAGEDIAMANTSKIVA180MM",
+            "bbox": [
+              171.33929999999995,
+              593.7489999999997,
+              115.48959999999997,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "1",
+            "bbox": [
+              356.04669999999993,
+              593.7489999999997,
+              4.444999999999993,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "EA",
+            "bbox": [
+              368.89829999999995,
+              593.7489999999997,
+              9.204999999999984,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "720,00",
+            "bbox": [
+              433.25909999999993,
+              593.7489999999997,
+              24.76600000000002,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "720,00",
+            "bbox": [
+              545.8181999999999,
+              593.7489999999997,
+              24.766000000000076,
+              7.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 3712.13,
+    "diff": -2992.13,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.92,
+    "total_confidence": 0.25,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.92, total_confidence=0.25"
+    ],
+    "warnings": [
+      "Rad 1: Antal × A-pris (2497.50) ≠ Summa (481.00), avvikelse: 2016.50 SEK",
+      "Rad 2: Antal × A-pris (4350.00) ≠ Summa (150.00), avvikelse: 4200.00 SEK",
+      "Rad 3: Antal × A-pris (23700.00) ≠ Summa (395.00), avvikelse: 23305.00 SEK",
+      "Rad 4: Antal × A-pris (3062.80) ≠ Summa (513.80), avvikelse: 2549.00 SEK",
+      "Rad 5: Antal × A-pris (3209.60) ≠ Summa (638.17), avvikelse: 2571.43 SEK",
+      "Rad 6: Antal × A-pris (1165.50) ≠ Summa (225.16), avvikelse: 940.34 SEK",
+      "Rad 7: Antal × A-pris (21204.00) ≠ Summa (589.00), avvikelse: 20615.00 SEK",
+      "Rad 8: Antal × A-pris (26640.00) ≠ Summa (720.00), avvikelse: 25920.00 SEK"
+    ],
+    "line_count": 8
+  },
+  "timestamp": "2026-01-17T19:41:16.690468"
+}

@@ -1,0 +1,141 @@
+{
+  "invoice_header": {
+    "invoice_number": "24081",
+    "invoice_number_confidence": 0.92,
+    "total_amount": 120.0,
+    "total_confidence": 0.25,
+    "supplier_name": "SmartaStädiVästAB",
+    "invoice_date": "2024-10-09",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "24081",
+      "confidence": 0.92,
+      "evidence": {
+        "page_number": 2,
+        "bbox": [
+          70.5827000000001,
+          111.55160000000001,
+          31.75,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "24081 Box 99",
+        "tokens": [
+          {
+            "text": "24081",
+            "bbox": [
+              70.5827000000001,
+              111.55160000000001,
+              31.75,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "120.0",
+      "confidence": 0.25,
+      "evidence": {
+        "page_number": 2,
+        "bbox": [
+          68.77940000000089,
+          609.4864999999998,
+          501.8040000000001,
+          7.0
+        ],
+        "row_index": 1,
+        "text_excerpt": "11 M25 Toalettborste 6 EA 20,00 120,00",
+        "tokens": [
+          {
+            "text": "11",
+            "bbox": [
+              68.77940000000089,
+              609.4864999999998,
+              8.889999999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "M25",
+            "bbox": [
+              102.55890000000089,
+              609.4864999999998,
+              14.784000000000006,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "Toalettborste",
+            "bbox": [
+              171.3384000000009,
+              609.4864999999998,
+              46.501000000000005,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "6",
+            "bbox": [
+              356.04590000000087,
+              609.4864999999998,
+              4.444999999999993,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "EA",
+            "bbox": [
+              368.8975000000009,
+              609.4864999999998,
+              9.204999999999984,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "20,00",
+            "bbox": [
+              437.7083000000009,
+              609.4864999999998,
+              20.32099999999997,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "120,00",
+            "bbox": [
+              545.8174000000009,
+              609.4864999999998,
+              24.766000000000076,
+              7.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 3630.0,
+    "diff": -3510.0,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.92,
+    "total_confidence": 0.25,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.92, total_confidence=0.25"
+    ],
+    "warnings": [],
+    "line_count": 9
+  },
+  "timestamp": "2026-01-17T17:57:11.111830"
+}

@@ -1,0 +1,151 @@
+{
+  "invoice_header": {
+    "invoice_number": "25866",
+    "invoice_number_confidence": 0.92,
+    "total_amount": 440.0,
+    "total_confidence": 0.25,
+    "supplier_name": "SmartaStädiVästAB",
+    "invoice_date": "2025-08-02",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "25866",
+      "confidence": 0.92,
+      "evidence": {
+        "page_number": 19,
+        "bbox": [
+          70.5827000000001,
+          111.55160000000001,
+          31.75,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "25866 Box 99",
+        "tokens": [
+          {
+            "text": "25866",
+            "bbox": [
+              70.5827000000001,
+              111.55160000000001,
+              31.75,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "440.0",
+      "confidence": 0.25,
+      "evidence": {
+        "page_number": 19,
+        "bbox": [
+          68.77940000000046,
+          595.4717999999997,
+          501.79600000000005,
+          7.0
+        ],
+        "row_index": 0,
+        "text_excerpt": "13 M9 Toabal-standard 5 EA 440,00 2 200,00",
+        "tokens": [
+          {
+            "text": "13",
+            "bbox": [
+              68.77940000000046,
+              595.4717999999997,
+              8.889999999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "M9",
+            "bbox": [
+              102.55890000000046,
+              595.4717999999997,
+              10.339000000000013,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "Toabal-standard",
+            "bbox": [
+              171.33840000000046,
+              595.4717999999997,
+              61.522699999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "5",
+            "bbox": [
+              356.0459000000005,
+              595.4717999999997,
+              4.444999999999993,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "EA",
+            "bbox": [
+              368.8975000000005,
+              595.4717999999997,
+              9.204999999999984,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "440,00",
+            "bbox": [
+              433.2583000000005,
+              595.4717999999997,
+              24.76600000000002,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "2",
+            "bbox": [
+              538.9074000000005,
+              595.4717999999997,
+              4.44500000000005,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "200,00",
+            "bbox": [
+              545.8094000000006,
+              595.4717999999997,
+              24.765999999999963,
+              7.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 5100.0,
+    "diff": -4660.0,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.92,
+    "total_confidence": 0.25,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.92, total_confidence=0.25"
+    ],
+    "warnings": [],
+    "line_count": 8
+  },
+  "timestamp": "2026-01-17T17:57:15.500261"
+}

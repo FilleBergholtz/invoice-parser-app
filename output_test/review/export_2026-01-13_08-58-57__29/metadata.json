@@ -1,0 +1,151 @@
+{
+  "invoice_header": {
+    "invoice_number": "26678",
+    "invoice_number_confidence": 0.92,
+    "total_amount": 646.0,
+    "total_confidence": 0.25,
+    "supplier_name": "SmartaStädiVästAB",
+    "invoice_date": "2026-01-04",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "26678",
+      "confidence": 0.92,
+      "evidence": {
+        "page_number": 29,
+        "bbox": [
+          70.58260000000001,
+          111.55160000000001,
+          31.75,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "26678 Box 99",
+        "tokens": [
+          {
+            "text": "26678",
+            "bbox": [
+              70.58260000000001,
+              111.55160000000001,
+              31.75,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "646.0",
+      "confidence": 0.25,
+      "evidence": {
+        "page_number": 29,
+        "bbox": [
+          68.7794000000001,
+          646.0083999999997,
+          501.8039000000001,
+          7.0
+        ],
+        "row_index": 4,
+        "text_excerpt": "14 M10 Tvål500ml1kartong/12st 2 EA 340,00 -34,00 646,00",
+        "tokens": [
+          {
+            "text": "14",
+            "bbox": [
+              68.7794000000001,
+              646.0083999999997,
+              8.889999999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "M10",
+            "bbox": [
+              102.5589000000001,
+              646.0083999999997,
+              14.784000000000006,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "Tvål500ml1kartong/12st",
+            "bbox": [
+              171.3384000000001,
+              646.0083999999997,
+              93.40469999999999,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "2",
+            "bbox": [
+              356.0459000000001,
+              646.0083999999997,
+              4.444999999999993,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "EA",
+            "bbox": [
+              368.8975000000001,
+              646.0083999999997,
+              9.204999999999984,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "340,00",
+            "bbox": [
+              433.2583000000001,
+              646.0083999999997,
+              24.76600000000002,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "-34,00",
+            "bbox": [
+              483.3078000000001,
+              646.0083999999997,
+              23.500999999999976,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "646,00",
+            "bbox": [
+              545.8173000000002,
+              646.0083999999997,
+              24.766000000000076,
+              7.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 1813.0,
+    "diff": -1167.0,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.92,
+    "total_confidence": 0.25,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.92, total_confidence=0.25"
+    ],
+    "warnings": [],
+    "line_count": 5
+  },
+  "timestamp": "2026-01-17T17:57:17.953272"
+}

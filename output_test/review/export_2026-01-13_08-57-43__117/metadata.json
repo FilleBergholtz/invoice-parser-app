@@ -1,0 +1,173 @@
+{
+  "invoice_header": {
+    "invoice_number": "582621",
+    "invoice_number_confidence": 0.92,
+    "total_amount": 47.7,
+    "total_confidence": 0.25,
+    "supplier_name": "WangeskogHyrcenterAB",
+    "invoice_date": "2025-10-15",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "582621",
+      "confidence": 0.92,
+      "evidence": {
+        "page_number": 153,
+        "bbox": [
+          70.58260000000001,
+          111.55160000000001,
+          38.099999999999994,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "582621 AB",
+        "tokens": [
+          {
+            "text": "582621",
+            "bbox": [
+              70.58260000000001,
+              111.55160000000001,
+              38.099999999999994,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "47.7",
+      "confidence": 0.25,
+      "evidence": {
+        "page_number": 153,
+        "bbox": [
+          9.740000000000435,
+          615.87,
+          560.8498999999997,
+          18.0
+        ],
+        "row_index": 2,
+        "text_excerpt": "LOPPEP 13 27947 ELCENTRALUC-63A 1 EA 47,70 -22,90 24,80",
+        "tokens": [
+          {
+            "text": "LOPPEP",
+            "bbox": [
+              9.740000000000435,
+              615.87,
+              5.000000000000002,
+              18.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "13",
+            "bbox": [
+              68.78100000000012,
+              620.8403999999997,
+              8.889999999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "27947",
+            "bbox": [
+              102.56050000000012,
+              620.8403999999997,
+              22.22500000000001,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "ELCENTRALUC-63A",
+            "bbox": [
+              171.34000000000012,
+              620.8403999999997,
+              69.98769999999999,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "1",
+            "bbox": [
+              356.0475000000001,
+              620.8403999999997,
+              4.444999999999993,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "EA",
+            "bbox": [
+              368.89910000000015,
+              620.8403999999997,
+              9.204999999999984,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "47,70",
+            "bbox": [
+              437.7099000000002,
+              620.8403999999997,
+              20.32099999999997,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "-22,90",
+            "bbox": [
+              483.30940000000015,
+              620.8403999999997,
+              23.500999999999976,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "24,80",
+            "bbox": [
+              550.2689000000001,
+              620.8403999999997,
+              20.321000000000026,
+              7.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 5790.65,
+    "diff": -5742.95,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.92,
+    "total_confidence": 0.25,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.92, total_confidence=0.25"
+    ],
+    "warnings": [
+      "Rad 2: Antal × A-pris (1350.00) ≠ Summa (675.00), avvikelse: 675.00 SEK",
+      "Rad 3: Antal × A-pris (2025.00) ≠ Summa (675.00), avvikelse: 1350.00 SEK",
+      "Rad 4: Antal × A-pris (2700.00) ≠ Summa (675.00), avvikelse: 2025.00 SEK",
+      "Rad 5: Antal × A-pris (3375.00) ≠ Summa (675.00), avvikelse: 2700.00 SEK",
+      "Rad 6: Antal × A-pris (18.00) ≠ Summa (300.00), avvikelse: 282.00 SEK",
+      "Rad 7: Antal × A-pris (91.00) ≠ Summa (273.00), avvikelse: 182.00 SEK",
+      "Rad 8: Antal × A-pris (8.00) ≠ Summa (600.00), avvikelse: 592.00 SEK",
+      "Rad 9: Antal × A-pris (36.00) ≠ Summa (236.96), avvikelse: 200.96 SEK",
+      "Rad 10: Antal × A-pris (255.00) ≠ Summa (278.46), avvikelse: 23.46 SEK",
+      "Rad 11: Antal × A-pris (280.50) ≠ Summa (278.46), avvikelse: 2.04 SEK",
+      "Rad 12: Antal × A-pris (493.20) ≠ Summa (448.77), avvikelse: 44.43 SEK"
+    ],
+    "line_count": 12
+  },
+  "timestamp": "2026-01-17T19:41:19.750779"
+}

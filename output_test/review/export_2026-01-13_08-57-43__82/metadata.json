@@ -1,0 +1,63 @@
+{
+  "invoice_header": {
+    "invoice_number": "567805",
+    "invoice_number_confidence": 0.92,
+    "total_amount": null,
+    "total_confidence": 0.0,
+    "supplier_name": "WangeskogHyrcenterAB",
+    "invoice_date": "2025-06-14",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "567805",
+      "confidence": 0.92,
+      "evidence": {
+        "page_number": 106,
+        "bbox": [
+          70.58260000000001,
+          111.55160000000001,
+          38.099999999999994,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "567805 AB",
+        "tokens": [
+          {
+            "text": "567805",
+            "bbox": [
+              70.58260000000001,
+              111.55160000000001,
+              38.099999999999994,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": null
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 5569.33,
+    "diff": null,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.92,
+    "total_confidence": 0.0,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.92, total_confidence=0.00"
+    ],
+    "warnings": [
+      "Rad 1: Antal × A-pris (106.00) ≠ Summa (755.00), avvikelse: 649.00 SEK",
+      "Rad 3: Antal × A-pris (2139.00) ≠ Summa (323.03), avvikelse: 1815.97 SEK",
+      "Rad 5: Antal × A-pris (60315.00) ≠ Summa (677.87), avvikelse: 59637.13 SEK",
+      "Rad 6: Antal × A-pris (238360.00) ≠ Summa (830.24), avvikelse: 237529.76 SEK",
+      "Rad 7: Antal × A-pris (48480.00) ≠ Summa (813.79), avvikelse: 47666.21 SEK",
+      "Rad 8: Antal × A-pris (0.00) ≠ Summa (675.00), avvikelse: 675.00 SEK",
+      "Rad 9: Antal × A-pris (16204.00) ≠ Summa (295.20), avvikelse: 15908.80 SEK",
+      "Rad 10: Antal × A-pris (8649.00) ≠ Summa (292.10), avvikelse: 8356.90 SEK"
+    ],
+    "line_count": 10
+  },
+  "timestamp": "2026-01-17T19:41:17.805583"
+}

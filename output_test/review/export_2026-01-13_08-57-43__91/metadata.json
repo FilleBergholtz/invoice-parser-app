@@ -1,0 +1,147 @@
+{
+  "invoice_header": {
+    "invoice_number": "571557",
+    "invoice_number_confidence": 0.92,
+    "total_amount": 580.0,
+    "total_confidence": 0.25,
+    "supplier_name": "WangeskogHyrcenterAB",
+    "invoice_date": "2025-07-15",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "571557",
+      "confidence": 0.92,
+      "evidence": {
+        "page_number": 118,
+        "bbox": [
+          70.58260000000001,
+          111.55160000000001,
+          38.099999999999994,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "571557 AB",
+        "tokens": [
+          {
+            "text": "571557",
+            "bbox": [
+              70.58260000000001,
+              111.55160000000001,
+              38.099999999999994,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "580.0",
+      "confidence": 0.25,
+      "evidence": {
+        "page_number": 118,
+        "bbox": [
+          68.78139999999996,
+          602.2562999999997,
+          501.8039000000001,
+          7.0
+        ],
+        "row_index": 0,
+        "text_excerpt": "77 12225 CONTAINER20\"UNILOCK 20 EA 29,00 580,00",
+        "tokens": [
+          {
+            "text": "77",
+            "bbox": [
+              68.78139999999996,
+              602.2562999999997,
+              8.889999999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "12225",
+            "bbox": [
+              102.56089999999996,
+              602.2562999999997,
+              22.22500000000001,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "CONTAINER20\"UNILOCK",
+            "bbox": [
+              171.34039999999996,
+              602.2562999999997,
+              91.25729999999996,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "20",
+            "bbox": [
+              351.59779999999995,
+              602.2562999999997,
+              8.889999999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "EA",
+            "bbox": [
+              368.89939999999996,
+              602.2562999999997,
+              9.204999999999984,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "29,00",
+            "bbox": [
+              437.7102,
+              602.2562999999997,
+              20.32099999999997,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "580,00",
+            "bbox": [
+              545.8193,
+              602.2562999999997,
+              24.766000000000076,
+              7.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 3294.4,
+    "diff": -2714.4,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.92,
+    "total_confidence": 0.25,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.92, total_confidence=0.25"
+    ],
+    "warnings": [
+      "Rad 1: Antal × A-pris (132.00) ≠ Summa (780.00), avvikelse: 648.00 SEK",
+      "Rad 2: Antal × A-pris (134.00) ≠ Summa (833.00), avvikelse: 699.00 SEK",
+      "Rad 3: Antal × A-pris (70.00) ≠ Summa (390.40), avvikelse: 320.40 SEK",
+      "Rad 4: Antal × A-pris (2714.40) ≠ Summa (392.00), avvikelse: 2322.40 SEK",
+      "Rad 5: Antal × A-pris (2117.00) ≠ Summa (899.00), avvikelse: 1218.00 SEK"
+    ],
+    "line_count": 5
+  },
+  "timestamp": "2026-01-17T19:41:18.201339"
+}

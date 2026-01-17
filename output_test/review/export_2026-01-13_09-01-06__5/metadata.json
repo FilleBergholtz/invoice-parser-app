@@ -1,0 +1,54 @@
+{
+  "invoice_header": {
+    "invoice_number": "43122",
+    "invoice_number_confidence": 0.65,
+    "total_amount": null,
+    "total_confidence": 0.0,
+    "supplier_name": "Ramirent AB",
+    "invoice_date": "2025-10-31",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "43122",
+      "confidence": 0.65,
+      "evidence": {
+        "page_number": 5,
+        "bbox": [
+          342.98899996999995,
+          158.65450037000005,
+          20.850000000000023,
+          7.5
+        ],
+        "row_index": 7,
+        "text_excerpt": "3533436 8.00 43122 MÖLNDAL",
+        "tokens": [
+          {
+            "text": "43122",
+            "bbox": [
+              342.98899996999995,
+              158.65450037000005,
+              20.850000000000023,
+              7.5
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": null
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 25.0,
+    "diff": null,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.65,
+    "total_confidence": 0.0,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.65, total_confidence=0.00"
+    ],
+    "warnings": [],
+    "line_count": 1
+  },
+  "timestamp": "2026-01-17T18:05:59.938712"
+}

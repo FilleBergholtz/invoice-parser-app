@@ -1,0 +1,151 @@
+{
+  "invoice_header": {
+    "invoice_number": "3554032",
+    "invoice_number_confidence": 0.7200000000000001,
+    "total_amount": 200.0,
+    "total_confidence": 0.25,
+    "supplier_name": "RentaAB",
+    "invoice_date": "2025-07-30",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "3554032",
+      "confidence": 0.7200000000000001,
+      "evidence": {
+        "page_number": 63,
+        "bbox": [
+          70.5827000000001,
+          111.55160000000001,
+          44.44999999999999,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "3554032 AB",
+        "tokens": [
+          {
+            "text": "3554032",
+            "bbox": [
+              70.5827000000001,
+              111.55160000000001,
+              44.44999999999999,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "200.0",
+      "confidence": 0.25,
+      "evidence": {
+        "page_number": 63,
+        "bbox": [
+          68.77950000000041,
+          620.2708999999996,
+          501.79600000000005,
+          7.0
+        ],
+        "row_index": 2,
+        "text_excerpt": "39 93178 KonferensbodK11kököppenlångsida 10 EA 120,00 1 200,00",
+        "tokens": [
+          {
+            "text": "39",
+            "bbox": [
+              68.77950000000041,
+              620.2708999999996,
+              8.889999999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "93178",
+            "bbox": [
+              102.55900000000041,
+              620.2708999999996,
+              22.22500000000001,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "KonferensbodK11kököppenlångsida",
+            "bbox": [
+              171.3385000000004,
+              620.2708999999996,
+              134.84200000000004,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "10",
+            "bbox": [
+              351.59600000000046,
+              620.2708999999996,
+              8.889999999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "EA",
+            "bbox": [
+              368.89760000000047,
+              620.2708999999996,
+              9.204999999999984,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "120,00",
+            "bbox": [
+              433.25840000000045,
+              620.2708999999996,
+              24.76600000000002,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "1",
+            "bbox": [
+              538.9075000000005,
+              620.2708999999996,
+              4.44500000000005,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "200,00",
+            "bbox": [
+              545.8095000000005,
+              620.2708999999996,
+              24.765999999999963,
+              7.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 1680.83,
+    "diff": -1480.83,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.7200000000000001,
+    "total_confidence": 0.25,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.72, total_confidence=0.25"
+    ],
+    "warnings": [],
+    "line_count": 9
+  },
+  "timestamp": "2026-01-17T18:05:31.819518"
+}

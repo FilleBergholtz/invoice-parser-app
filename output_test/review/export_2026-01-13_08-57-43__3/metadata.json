@@ -1,0 +1,68 @@
+{
+  "invoice_header": {
+    "invoice_number": "536943",
+    "invoice_number_confidence": 0.92,
+    "total_amount": null,
+    "total_confidence": 0.0,
+    "supplier_name": "WangeskogHyrcenterAB",
+    "invoice_date": "2024-09-14",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "536943",
+      "confidence": 0.92,
+      "evidence": {
+        "page_number": 5,
+        "bbox": [
+          70.5827000000001,
+          111.55160000000001,
+          38.099999999999994,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "536943 AB",
+        "tokens": [
+          {
+            "text": "536943",
+            "bbox": [
+              70.5827000000001,
+              111.55160000000001,
+              38.099999999999994,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": null
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 5531.92,
+    "diff": null,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.92,
+    "total_confidence": 0.0,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.92, total_confidence=0.00"
+    ],
+    "warnings": [
+      "Rad 1: Antal × A-pris (13.00) ≠ Summa (299.00), avvikelse: 286.00 SEK",
+      "Rad 2: Antal × A-pris (4.00) ≠ Summa (196.00), avvikelse: 192.00 SEK",
+      "Rad 3: Antal × A-pris (12.00) ≠ Summa (640.48), avvikelse: 628.48 SEK",
+      "Rad 4: Antal × A-pris (300.00) ≠ Summa (75.00), avvikelse: 225.00 SEK",
+      "Rad 5: Antal × A-pris (2475.00) ≠ Summa (495.00), avvikelse: 1980.00 SEK",
+      "Rad 6: Antal × A-pris (2970.00) ≠ Summa (495.00), avvikelse: 2475.00 SEK",
+      "Rad 7: Antal × A-pris (3465.00) ≠ Summa (495.00), avvikelse: 2970.00 SEK",
+      "Rad 8: Antal × A-pris (8.00) ≠ Summa (562.50), avvikelse: 554.50 SEK",
+      "Rad 9: Antal × A-pris (9.00) ≠ Summa (562.50), avvikelse: 553.50 SEK",
+      "Rad 10: Antal × A-pris (10.00) ≠ Summa (562.50), avvikelse: 552.50 SEK",
+      "Rad 12: Antal × A-pris (24240.00) ≠ Summa (172.50), avvikelse: 24067.50 SEK",
+      "Rad 13: Antal × A-pris (28357.00) ≠ Summa (210.48), avvikelse: 28146.52 SEK",
+      "Rad 14: Antal × A-pris (169.00) ≠ Summa (382.98), avvikelse: 213.98 SEK"
+    ],
+    "line_count": 14
+  },
+  "timestamp": "2026-01-17T19:41:14.371858"
+}

@@ -1,0 +1,171 @@
+{
+  "invoice_header": {
+    "invoice_number": "559153",
+    "invoice_number_confidence": 0.92,
+    "total_amount": 738.8,
+    "total_confidence": 0.25,
+    "supplier_name": "WangeskogHyrcenterAB",
+    "invoice_date": "2025-04-01",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "559153",
+      "confidence": 0.92,
+      "evidence": {
+        "page_number": 67,
+        "bbox": [
+          70.5827000000001,
+          111.55160000000001,
+          38.099999999999994,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "559153 AB",
+        "tokens": [
+          {
+            "text": "559153",
+            "bbox": [
+              70.5827000000001,
+              111.55160000000001,
+              38.099999999999994,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "738.8",
+      "confidence": 0.25,
+      "evidence": {
+        "page_number": 67,
+        "bbox": [
+          9.740000000000435,
+          635.3476999999997,
+          560.8554999999996,
+          34.522300000000314
+        ],
+        "row_index": 4,
+        "text_excerpt": ":nigirO|IDE 14 93.4041 -KLOTTERSANERING1STLÅNGSI 0 EA 1 738,80 0,00",
+        "tokens": [
+          {
+            "text": ":nigirO|IDE",
+            "bbox": [
+              9.740000000000435,
+              636.87,
+              5.000000000000002,
+              33.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "14",
+            "bbox": [
+              68.7815,
+              635.3476999999997,
+              8.889999999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "93.4041",
+            "bbox": [
+              102.56099999999999,
+              635.3476999999997,
+              29.211,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "-KLOTTERSANERING1STLÅNGSI",
+            "bbox": [
+              171.3405,
+              635.3476999999997,
+              120.50499999999997,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "0",
+            "bbox": [
+              356.04799999999994,
+              635.3476999999997,
+              4.444999999999993,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "EA",
+            "bbox": [
+              368.89959999999996,
+              635.3476999999997,
+              9.204999999999984,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "1",
+            "bbox": [
+              426.3504,
+              635.3476999999997,
+              4.444999999999993,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "738,80",
+            "bbox": [
+              433.25239999999997,
+              635.3476999999997,
+              24.76600000000002,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "0,00",
+            "bbox": [
+              554.7194999999999,
+              635.3476999999997,
+              15.87600000000009,
+              7.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 3903.8,
+    "diff": -3165.0,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.92,
+    "total_confidence": 0.25,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.92, total_confidence=0.25"
+    ],
+    "warnings": [
+      "Rad 2: Antal × A-pris (1350.00) ≠ Summa (675.00), avvikelse: 675.00 SEK",
+      "Rad 3: Antal × A-pris (33.00) ≠ Summa (375.00), avvikelse: 342.00 SEK",
+      "Rad 4: Antal × A-pris (32.00) ≠ Summa (750.00), avvikelse: 718.00 SEK",
+      "Rad 5: Antal × A-pris (50.00) ≠ Summa (500.00), avvikelse: 450.00 SEK",
+      "Rad 6: Antal × A-pris (18.00) ≠ Summa (810.00), avvikelse: 792.00 SEK",
+      "Rad 7: Antal × A-pris (9.18) ≠ Summa (5.30), avvikelse: 3.88 SEK",
+      "Rad 8: Antal × A-pris (37.50) ≠ Summa (19.50), avvikelse: 18.00 SEK",
+      "Rad 9: Antal × A-pris (539.00) ≠ Summa (49.00), avvikelse: 490.00 SEK",
+      "Rad 10: Antal × A-pris (540.00) ≠ Summa (45.00), avvikelse: 495.00 SEK"
+    ],
+    "line_count": 10
+  },
+  "timestamp": "2026-01-17T19:41:16.263261"
+}

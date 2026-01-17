@@ -1,0 +1,151 @@
+{
+  "invoice_header": {
+    "invoice_number": "1148635509",
+    "invoice_number_confidence": 0.7200000000000001,
+    "total_amount": 551.2884,
+    "total_confidence": 0.25,
+    "supplier_name": "PREVEXAB",
+    "invoice_date": "2025-01-18",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "1148635509",
+      "confidence": 0.7200000000000001,
+      "evidence": {
+        "page_number": 1,
+        "bbox": [
+          70.5827000000001,
+          111.55160000000001,
+          63.5,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "1148635509 212006 Postbox 284",
+        "tokens": [
+          {
+            "text": "1148635509",
+            "bbox": [
+              70.5827000000001,
+              111.55160000000001,
+              63.5,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "551.2884",
+      "confidence": 0.25,
+      "evidence": {
+        "page_number": 1,
+        "bbox": [
+          68.77960000000007,
+          603.5084999999997,
+          501.7962,
+          7.000100000000089
+        ],
+        "row_index": 1,
+        "text_excerpt": "5 898109 PRESENNINGGRÖN/VIT5X8M180G 6 EA 551,2884 3 307,73",
+        "tokens": [
+          {
+            "text": "5",
+            "bbox": [
+              68.77960000000007,
+              603.5085999999998,
+              4.444999999999993,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "898109",
+            "bbox": [
+              102.55910000000007,
+              603.5085999999998,
+              26.67,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "PRESENNINGGRÖN/VIT5X8M180G",
+            "bbox": [
+              171.33860000000007,
+              603.5085999999998,
+              128.81339999999997,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "6",
+            "bbox": [
+              356.0463000000001,
+              603.5084999999997,
+              4.444999999999993,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "EA",
+            "bbox": [
+              368.8979000000001,
+              603.5084999999997,
+              9.204999999999984,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "551,2884",
+            "bbox": [
+              424.3587000000001,
+              603.5084999999997,
+              33.656000000000006,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "3",
+            "bbox": [
+              538.9078000000001,
+              603.5084999999997,
+              4.44500000000005,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "307,73",
+            "bbox": [
+              545.8098000000001,
+              603.5084999999997,
+              24.765999999999963,
+              7.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 745.88,
+    "diff": -194.59159999999997,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.7200000000000001,
+    "total_confidence": 0.25,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.72, total_confidence=0.25"
+    ],
+    "warnings": [],
+    "line_count": 3
+  },
+  "timestamp": "2026-01-17T18:06:05.745316"
+}

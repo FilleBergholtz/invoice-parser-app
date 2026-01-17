@@ -1,0 +1,64 @@
+{
+  "invoice_header": {
+    "invoice_number": "571557",
+    "invoice_number_confidence": 0.92,
+    "total_amount": null,
+    "total_confidence": 0.0,
+    "supplier_name": "WangeskogHyrcenterAB",
+    "invoice_date": "2025-07-15",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "571557",
+      "confidence": 0.92,
+      "evidence": {
+        "page_number": 120,
+        "bbox": [
+          70.58260000000001,
+          111.55160000000001,
+          38.099999999999994,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "571557 AB",
+        "tokens": [
+          {
+            "text": "571557",
+            "bbox": [
+              70.58260000000001,
+              111.55160000000001,
+              38.099999999999994,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": null
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 3344.42,
+    "diff": null,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.92,
+    "total_confidence": 0.0,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.92, total_confidence=0.00"
+    ],
+    "warnings": [
+      "Rad 1: Antal × A-pris (93.00) ≠ Summa (220.00), avvikelse: 127.00 SEK",
+      "Rad 2: Antal × A-pris (94.00) ≠ Summa (196.00), avvikelse: 102.00 SEK",
+      "Rad 4: Antal × A-pris (1764.00) ≠ Summa (51.55), avvikelse: 1712.45 SEK",
+      "Rad 7: Antal × A-pris (44231.00) ≠ Summa (518.80), avvikelse: 43712.20 SEK",
+      "Rad 8: Antal × A-pris (210080.00) ≠ Summa (339.21), avvikelse: 209740.79 SEK",
+      "Rad 9: Antal × A-pris (52520.00) ≠ Summa (131.40), avvikelse: 52388.60 SEK",
+      "Rad 10: Antal × A-pris (4046.00) ≠ Summa (320.00), avvikelse: 3726.00 SEK",
+      "Rad 11: Antal × A-pris (20255.00) ≠ Summa (896.80), avvikelse: 19358.20 SEK",
+      "Rad 12: Antal × A-pris (7056.00) ≠ Summa (206.21), avvikelse: 6849.79 SEK"
+    ],
+    "line_count": 12
+  },
+  "timestamp": "2026-01-17T19:41:18.374238"
+}

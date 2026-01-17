@@ -1,0 +1,161 @@
+{
+  "invoice_header": {
+    "invoice_number": "25573",
+    "invoice_number_confidence": 0.92,
+    "total_amount": 800.0,
+    "total_confidence": 0.25,
+    "supplier_name": "SmartaStädiVästAB",
+    "invoice_date": "2025-06-09",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "25573",
+      "confidence": 0.92,
+      "evidence": {
+        "page_number": 15,
+        "bbox": [
+          70.5827000000001,
+          111.55160000000001,
+          31.75,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "25573 Box 99",
+        "tokens": [
+          {
+            "text": "25573",
+            "bbox": [
+              70.5827000000001,
+              111.55160000000001,
+              31.75,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "800.0",
+      "confidence": 0.25,
+      "evidence": {
+        "page_number": 15,
+        "bbox": [
+          68.77930000000052,
+          595.7489999999997,
+          501.7959000000001,
+          7.0
+        ],
+        "row_index": 0,
+        "text_excerpt": "26 M6 H5-HandservetterTork 2 EA 800,00 -80,00 1 520,00",
+        "tokens": [
+          {
+            "text": "26",
+            "bbox": [
+              68.77930000000052,
+              595.7489999999997,
+              8.889999999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "M6",
+            "bbox": [
+              102.55880000000052,
+              595.7489999999997,
+              10.339000000000013,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "H5-HandservetterTork",
+            "bbox": [
+              171.33830000000052,
+              595.7489999999997,
+              83.4597,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "2",
+            "bbox": [
+              356.04580000000055,
+              595.7489999999997,
+              4.444999999999993,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "EA",
+            "bbox": [
+              368.8974000000006,
+              595.7489999999997,
+              9.204999999999984,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "800,00",
+            "bbox": [
+              433.25820000000056,
+              595.7489999999997,
+              24.76600000000002,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "-80,00",
+            "bbox": [
+              483.3077000000006,
+              595.7489999999997,
+              23.500999999999976,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "1",
+            "bbox": [
+              538.9072000000006,
+              595.7489999999997,
+              4.44500000000005,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "520,00",
+            "bbox": [
+              545.8092000000006,
+              595.7489999999997,
+              24.765999999999963,
+              7.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 3501.5,
+    "diff": -2701.5,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.92,
+    "total_confidence": 0.25,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.92, total_confidence=0.25"
+    ],
+    "warnings": [],
+    "line_count": 10
+  },
+  "timestamp": "2026-01-17T17:57:14.443715"
+}

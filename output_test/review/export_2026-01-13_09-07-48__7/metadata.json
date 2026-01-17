@@ -1,0 +1,54 @@
+{
+  "invoice_header": {
+    "invoice_number": "212021",
+    "invoice_number_confidence": 0.65,
+    "total_amount": null,
+    "total_confidence": 0.0,
+    "supplier_name": "EnterStällningarAB",
+    "invoice_date": "2025-03-07",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "212021",
+      "confidence": 0.65,
+      "evidence": {
+        "page_number": 7,
+        "bbox": [
+          70.5827000000001,
+          194.19400000000007,
+          38.099999999999994,
+          10.0
+        ],
+        "row_index": 13,
+        "text_excerpt": "212021",
+        "tokens": [
+          {
+            "text": "212021",
+            "bbox": [
+              70.5827000000001,
+              194.19400000000007,
+              38.099999999999994,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": null
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 3440.0,
+    "diff": null,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.65,
+    "total_confidence": 0.0,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.65, total_confidence=0.00"
+    ],
+    "warnings": [],
+    "line_count": 4
+  },
+  "timestamp": "2026-01-17T18:07:04.226648"
+}

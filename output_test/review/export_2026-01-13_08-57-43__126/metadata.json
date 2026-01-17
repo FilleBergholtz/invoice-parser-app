@@ -1,0 +1,148 @@
+{
+  "invoice_header": {
+    "invoice_number": "582621",
+    "invoice_number_confidence": 0.92,
+    "total_amount": 625.0,
+    "total_confidence": 0.25,
+    "supplier_name": "WangeskogHyrcenterAB",
+    "invoice_date": "2025-10-15",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "582621",
+      "confidence": 0.92,
+      "evidence": {
+        "page_number": 162,
+        "bbox": [
+          70.58260000000001,
+          111.55160000000001,
+          38.099999999999994,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "582621 AB",
+        "tokens": [
+          {
+            "text": "582621",
+            "bbox": [
+              70.58260000000001,
+              111.55160000000001,
+              38.099999999999994,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "625.0",
+      "confidence": 0.25,
+      "evidence": {
+        "page_number": 162,
+        "bbox": [
+          68.78079999999977,
+          602.2562999999997,
+          501.79600000000005,
+          7.0
+        ],
+        "row_index": 0,
+        "text_excerpt": "131 990014 ARBETSKOSTNADELEKTRIKER 12 EA 625,00 7 500,00",
+        "tokens": [
+          {
+            "text": "131",
+            "bbox": [
+              68.78079999999977,
+              602.2562999999997,
+              13.335000000000008,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "990014",
+            "bbox": [
+              102.56029999999977,
+              602.2562999999997,
+              26.67,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "ARBETSKOSTNADELEKTRIKER",
+            "bbox": [
+              171.33979999999977,
+              602.2562999999997,
+              109.04400000000001,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "12",
+            "bbox": [
+              351.5972999999998,
+              602.2562999999997,
+              8.889999999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "EA",
+            "bbox": [
+              368.8988999999998,
+              602.2562999999997,
+              9.204999999999984,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "625,00",
+            "bbox": [
+              433.2596999999998,
+              602.2562999999997,
+              24.76600000000002,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "7",
+            "bbox": [
+              538.9087999999998,
+              602.2562999999997,
+              4.44500000000005,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "500,00",
+            "bbox": [
+              545.8107999999999,
+              602.2562999999997,
+              24.765999999999963,
+              7.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 4545.19,
+    "diff": -3920.1899999999996,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.92,
+    "total_confidence": 0.25,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.92, total_confidence=0.25"
+    ],
+    "warnings": [
+      "Rad 1: Antal × A-pris (1332.00) ≠ Summa (121.17), avvikelse: 1210.

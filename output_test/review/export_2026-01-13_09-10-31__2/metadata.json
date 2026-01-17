@@ -1,0 +1,54 @@
+{
+  "invoice_header": {
+    "invoice_number": "4578138002",
+    "invoice_number_confidence": 0.7200000000000001,
+    "total_amount": null,
+    "total_confidence": 0.0,
+    "supplier_name": "11798STOCKHOLM 2024-08-22 7 517,00 SEK",
+    "invoice_date": "2024-08-22",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "4578138002",
+      "confidence": 0.7200000000000001,
+      "evidence": {
+        "page_number": 2,
+        "bbox": [
+          70.58260000000001,
+          111.55160000000001,
+          63.5,
+          10.0
+        ],
+        "row_index": 5,
+        "text_excerpt": "4578138002 Raine 0767-615433 ALFAGATAN7",
+        "tokens": [
+          {
+            "text": "4578138002",
+            "bbox": [
+              70.58260000000001,
+              111.55160000000001,
+              63.5,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": null
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 1034.0,
+    "diff": null,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.7200000000000001,
+    "total_confidence": 0.0,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.72, total_confidence=0.00"
+    ],
+    "warnings": [],
+    "line_count": 4
+  },
+  "timestamp": "2026-01-17T18:07:33.612958"
+}

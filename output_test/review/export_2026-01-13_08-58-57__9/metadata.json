@@ -1,0 +1,161 @@
+{
+  "invoice_header": {
+    "invoice_number": "24970",
+    "invoice_number_confidence": 0.92,
+    "total_amount": 836.0,
+    "total_confidence": 0.25,
+    "supplier_name": "SmartaStädiVästAB",
+    "invoice_date": "2025-03-06",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "24970",
+      "confidence": 0.92,
+      "evidence": {
+        "page_number": 9,
+        "bbox": [
+          70.5827000000001,
+          111.55160000000001,
+          31.75,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "24970 Box 99",
+        "tokens": [
+          {
+            "text": "24970",
+            "bbox": [
+              70.5827000000001,
+              111.55160000000001,
+              31.75,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "836.0",
+      "confidence": 0.25,
+      "evidence": {
+        "page_number": 9,
+        "bbox": [
+          9.740000000000435,
+          613.4865999999997,
+          560.8429000000003,
+          20.38340000000028
+        ],
+        "row_index": 1,
+        "text_excerpt": "LOPPEP 12 M9 Toabal-standard 2 EA 440,00 -44,00 836,00",
+        "tokens": [
+          {
+            "text": "LOPPEP",
+            "bbox": [
+              9.740000000000435,
+              615.87,
+              5.000000000000002,
+              18.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "12",
+            "bbox": [
+              68.77900000000068,
+              613.4865999999997,
+              8.889999999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "M9",
+            "bbox": [
+              102.55850000000068,
+              613.4865999999997,
+              10.339000000000013,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "Toabal-standard",
+            "bbox": [
+              171.33800000000068,
+              613.4865999999997,
+              61.522699999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "2",
+            "bbox": [
+              356.0455000000007,
+              613.4865999999997,
+              4.444999999999993,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "EA",
+            "bbox": [
+              368.8971000000007,
+              613.4865999999997,
+              9.204999999999984,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "440,00",
+            "bbox": [
+              433.2579000000007,
+              613.4865999999997,
+              24.76600000000002,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "-44,00",
+            "bbox": [
+              483.3074000000007,
+              613.4865999999997,
+              23.500999999999976,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "836,00",
+            "bbox": [
+              545.8169000000007,
+              613.4865999999997,
+              24.766000000000076,
+              7.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 3439.5,
+    "diff": -2603.5,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.92,
+    "total_confidence": 0.25,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.92, total_confidence=0.25"
+    ],
+    "warnings": [],
+    "line_count": 8
+  },
+  "timestamp": "2026-01-17T17:57:12.878433"
+}

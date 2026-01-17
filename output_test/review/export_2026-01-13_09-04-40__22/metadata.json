@@ -1,0 +1,101 @@
+{
+  "invoice_header": {
+    "invoice_number": "10250021057",
+    "invoice_number_confidence": 0.7200000000000001,
+    "total_amount": 431445450.0431445,
+    "total_confidence": 0.44999999999999996,
+    "supplier_name": "KranpunkteniBåstadAB",
+    "invoice_date": "2025-08-30",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "10250021057",
+      "confidence": 0.7200000000000001,
+      "evidence": {
+        "page_number": 22,
+        "bbox": [
+          70.58260000000001,
+          111.55160000000001,
+          69.85,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "10250021057 BRA Bygg TBA BOX 99",
+        "tokens": [
+          {
+            "text": "10250021057",
+            "bbox": [
+              70.58260000000001,
+              111.55160000000001,
+              69.85,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "431445450.0431445",
+      "confidence": 0.44999999999999996,
+      "evidence": {
+        "page_number": 22,
+        "bbox": [
+          63.77939999999995,
+          798.0142000000001,
+          373.8016999999999,
+          7.0
+        ],
+        "row_index": 15,
+        "text_excerpt": "KranpunkteniBåstadAB 0431445450,0431445450 556362-8055",
+        "tokens": [
+          {
+            "text": "KranpunkteniBåstadAB",
+            "bbox": [
+              63.77939999999995,
+              798.0142000000001,
+              87.9127,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "0431445450,0431445450",
+            "bbox": [
+              185.82659999999996,
+              798.0142000000001,
+              93.95669999999998,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "556362-8055",
+            "bbox": [
+              389.9210999999999,
+              798.0142000000001,
+              47.65999999999997,
+              7.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 1460.0,
+    "diff": 431443990.0431445,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.7200000000000001,
+    "total_confidence": 0.44999999999999996,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.72, total_confidence=0.45"
+    ],
+    "warnings": [],
+    "line_count": 5
+  },
+  "timestamp": "2026-01-17T18:06:23.484362"
+}

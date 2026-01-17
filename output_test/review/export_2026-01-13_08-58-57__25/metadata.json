@@ -1,0 +1,171 @@
+{
+  "invoice_header": {
+    "invoice_number": "26310",
+    "invoice_number_confidence": 0.92,
+    "total_amount": 672.0,
+    "total_confidence": 0.25,
+    "supplier_name": "SmartaStädiVästAB",
+    "invoice_date": "2025-11-09",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "26310",
+      "confidence": 0.92,
+      "evidence": {
+        "page_number": 25,
+        "bbox": [
+          70.58260000000001,
+          111.55160000000001,
+          31.75,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "26310 Box 99",
+        "tokens": [
+          {
+            "text": "26310",
+            "bbox": [
+              70.58260000000001,
+              111.55160000000001,
+              31.75,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "672.0",
+      "confidence": 0.25,
+      "evidence": {
+        "page_number": 25,
+        "bbox": [
+          9.740000000000435,
+          615.87,
+          560.8353,
+          18.0
+        ],
+        "row_index": 2,
+        "text_excerpt": "LOPPEP 12 M9 Toabal-standard 4 EA 440,00 -88,00 1 672,00",
+        "tokens": [
+          {
+            "text": "LOPPEP",
+            "bbox": [
+              9.740000000000435,
+              615.87,
+              5.000000000000002,
+              18.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "12",
+            "bbox": [
+              68.77940000000035,
+              619.9939999999997,
+              8.889999999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "M9",
+            "bbox": [
+              102.55890000000035,
+              619.9939999999997,
+              10.339000000000013,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "Toabal-standard",
+            "bbox": [
+              171.33840000000035,
+              619.9939999999997,
+              61.522699999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "4",
+            "bbox": [
+              356.04590000000036,
+              619.9939999999997,
+              4.444999999999993,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "EA",
+            "bbox": [
+              368.8975000000004,
+              619.9939999999997,
+              9.204999999999984,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "440,00",
+            "bbox": [
+              433.25830000000036,
+              619.9939999999997,
+              24.76600000000002,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "-88,00",
+            "bbox": [
+              483.3078000000004,
+              619.9939999999997,
+              23.500999999999976,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "1",
+            "bbox": [
+              538.9073000000004,
+              619.9939999999997,
+              4.44500000000005,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "672,00",
+            "bbox": [
+              545.8093000000005,
+              619.9939999999997,
+              24.765999999999963,
+              7.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 3590.0,
+    "diff": -2918.0,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.92,
+    "total_confidence": 0.25,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.92, total_confidence=0.25"
+    ],
+    "warnings": [],
+    "line_count": 8
+  },
+  "timestamp": "2026-01-17T17:57:16.947898"
+}

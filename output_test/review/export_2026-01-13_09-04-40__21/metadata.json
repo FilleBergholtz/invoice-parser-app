@@ -1,0 +1,121 @@
+{
+  "invoice_header": {
+    "invoice_number": "10250018168",
+    "invoice_number_confidence": 0.7200000000000001,
+    "total_amount": 837.0,
+    "total_confidence": 0.5,
+    "supplier_name": "KranpunkteniBåstadAB",
+    "invoice_date": "2025-07-30",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "10250018168",
+      "confidence": 0.7200000000000001,
+      "evidence": {
+        "page_number": 21,
+        "bbox": [
+          70.58260000000001,
+          111.55160000000001,
+          69.85,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "10250018168 BRA Bygg TBA BOX 99",
+        "tokens": [
+          {
+            "text": "10250018168",
+            "bbox": [
+              70.58260000000001,
+              111.55160000000001,
+              69.85,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "837.0",
+      "confidence": 0.5,
+      "evidence": {
+        "page_number": 21,
+        "bbox": [
+          322.2993,
+          653.7316999999998,
+          244.29489999999998,
+          10.0
+        ],
+        "row_index": 4,
+        "text_excerpt": "Att betala 5 837,00 SEK",
+        "tokens": [
+          {
+            "text": "Att",
+            "bbox": [
+              322.2993,
+              653.7316999999998,
+              16.860000000000014,
+              10.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "betala",
+            "bbox": [
+              342.5926,
+              653.7316999999998,
+              34.93000000000001,
+              10.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "5",
+            "bbox": [
+              497.7142,
+              653.7316999999998,
+              6.350000000000023,
+              10.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "837,00",
+            "bbox": [
+              507.5742,
+              653.7316999999998,
+              35.379999999999995,
+              10.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "SEK",
+            "bbox": [
+              546.5242000000001,
+              653.7316999999998,
+              20.069999999999936,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 2036.8,
+    "diff": -1199.8,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.7200000000000001,
+    "total_confidence": 0.5,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.72, total_confidence=0.50"
+    ],
+    "warnings": [],
+    "line_count": 6
+  },
+  "timestamp": "2026-01-17T18:06:23.335586"
+}

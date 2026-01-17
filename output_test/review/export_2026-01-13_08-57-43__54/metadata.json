@@ -1,0 +1,157 @@
+{
+  "invoice_header": {
+    "invoice_number": "560747",
+    "invoice_number_confidence": 0.92,
+    "total_amount": 446.16,
+    "total_confidence": 0.25,
+    "supplier_name": "WangeskogHyrcenterAB",
+    "invoice_date": "2025-04-14",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "560747",
+      "confidence": 0.92,
+      "evidence": {
+        "page_number": 74,
+        "bbox": [
+          70.5827000000001,
+          111.55160000000001,
+          38.099999999999994,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "560747 AB",
+        "tokens": [
+          {
+            "text": "560747",
+            "bbox": [
+              70.5827000000001,
+              111.55160000000001,
+              38.099999999999994,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "446.16",
+      "confidence": 0.25,
+      "evidence": {
+        "page_number": 74,
+        "bbox": [
+          68.7803000000003,
+          596.2562999999997,
+          501.8038000000001,
+          7.0
+        ],
+        "row_index": 0,
+        "text_excerpt": "24 56023 STICKSÅGBATTERI22V 13 EA 66,00 -411,84 446,16",
+        "tokens": [
+          {
+            "text": "24",
+            "bbox": [
+              68.7803000000003,
+              596.2562999999997,
+              8.889999999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "56023",
+            "bbox": [
+              102.5598000000003,
+              596.2562999999997,
+              22.22500000000001,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "STICKSÅGBATTERI22V",
+            "bbox": [
+              171.3393000000003,
+              596.2562999999997,
+              85.17429999999999,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "13",
+            "bbox": [
+              351.5967000000003,
+              596.2562999999997,
+              8.889999999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "EA",
+            "bbox": [
+              368.8983000000003,
+              596.2562999999997,
+              9.204999999999984,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "66,00",
+            "bbox": [
+              437.70910000000026,
+              596.2562999999997,
+              20.32099999999997,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "-411,84",
+            "bbox": [
+              478.85860000000025,
+              596.2562999999997,
+              27.946000000000026,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "446,16",
+            "bbox": [
+              545.8181000000003,
+              596.2562999999997,
+              24.766000000000076,
+              7.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 1722.8,
+    "diff": -1276.6399999999999,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.92,
+    "total_confidence": 0.25,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.92, total_confidence=0.25"
+    ],
+    "warnings": [
+      "Rad 1: Antal × A-pris (63.00) ≠ Summa (93.60), avvikelse: 30.60 SEK",
+      "Rad 2: Antal × A-pris (85.50) ≠ Summa (118.60), avvikelse: 33.10 SEK",
+      "Rad 3: Antal × A-pris (44.65) ≠ Summa (894.60), avvikelse: 849.95 SEK",
+      "Rad 4: Antal × A-pris (177.00) ≠ Summa (128.80), avvikelse: 48.20 SEK",
+      "Rad 5: Antal × A-pris (21.00) ≠ Summa (487.20), avvikelse: 466.20 SEK"
+    ],
+    "line_count": 5
+  },
+  "timestamp": "2026-01-17T19:41:16.572289"
+}

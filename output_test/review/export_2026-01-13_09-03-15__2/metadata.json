@@ -1,0 +1,111 @@
+{
+  "invoice_header": {
+    "invoice_number": "1148635509",
+    "invoice_number_confidence": 0.7200000000000001,
+    "total_amount": 60.0,
+    "total_confidence": 0.25,
+    "supplier_name": "PREVEXAB",
+    "invoice_date": "2025-01-18",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "1148635509",
+      "confidence": 0.7200000000000001,
+      "evidence": {
+        "page_number": 2,
+        "bbox": [
+          70.5827000000001,
+          111.55160000000001,
+          63.5,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "1148635509 212006 Postbox 284",
+        "tokens": [
+          {
+            "text": "1148635509",
+            "bbox": [
+              70.5827000000001,
+              111.55160000000001,
+              63.5,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "60.0",
+      "confidence": 0.25,
+      "evidence": {
+        "page_number": 2,
+        "bbox": [
+          67.18099999999998,
+          609.4396999999999,
+          426.9571,
+          8.0
+        ],
+        "row_index": 0,
+        "text_excerpt": "Avgift HALVPALLAVTRÄ 60,00SEK 25%",
+        "tokens": [
+          {
+            "text": "Avgift",
+            "bbox": [
+              67.18099999999998,
+              609.4396999999999,
+              23.328000000000003,
+              8.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "HALVPALLAVTRÄ",
+            "bbox": [
+              135.21249999999998,
+              609.4396999999999,
+              72.2654,
+              8.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "60,00SEK",
+            "bbox": [
+              271.2756,
+              609.4396999999999,
+              42.125999999999976,
+              8.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "25%",
+            "bbox": [
+              475.3701,
+              609.4396999999999,
+              18.76800000000003,
+              8.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 2354.69,
+    "diff": -2294.69,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.7200000000000001,
+    "total_confidence": 0.25,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.72, total_confidence=0.25"
+    ],
+    "warnings": [],
+    "line_count": 4
+  },
+  "timestamp": "2026-01-17T18:06:05.961466"
+}

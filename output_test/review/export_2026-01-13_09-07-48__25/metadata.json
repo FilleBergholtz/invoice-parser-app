@@ -1,0 +1,151 @@
+{
+  "invoice_header": {
+    "invoice_number": "22464",
+    "invoice_number_confidence": 0.8999999999999999,
+    "total_amount": 820.0,
+    "total_confidence": 0.25,
+    "supplier_name": "Nr: 22464",
+    "invoice_date": null,
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "22464",
+      "confidence": 0.8999999999999999,
+      "evidence": {
+        "page_number": 25,
+        "bbox": [
+          526.8539999999999,
+          51.65999999999997,
+          25.65000000000009,
+          9.0
+        ],
+        "row_index": 1,
+        "text_excerpt": "Nr: 22464",
+        "tokens": [
+          {
+            "text": "22464",
+            "bbox": [
+              526.8539999999999,
+              51.65999999999997,
+              25.65000000000009,
+              9.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "820.0",
+      "confidence": 0.25,
+      "evidence": {
+        "page_number": 25,
+        "bbox": [
+          42.5,
+          617.66,
+          509.99700000000007,
+          9.0
+        ],
+        "row_index": 2,
+        "text_excerpt": "2025-12-22, Lätt Lastbil 2 st 820,00 1 640,00",
+        "tokens": [
+          {
+            "text": "2025-12-22,",
+            "bbox": [
+              42.5,
+              617.66,
+              48.744000000000014,
+              9.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "Lätt",
+            "bbox": [
+              93.57500000000002,
+              617.66,
+              15.39,
+              9.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "Lastbil",
+            "bbox": [
+              111.29600000000002,
+              617.66,
+              25.99199999999999,
+              9.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "2",
+            "bbox": [
+              359.35,
+              617.66,
+              5.1299999999999955,
+              9.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "st",
+            "bbox": [
+              366.81100000000004,
+              617.66,
+              7.191000000000031,
+              9.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "820,00",
+            "bbox": [
+              422.92,
+              617.66,
+              27.576000000000022,
+              9.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "1",
+            "bbox": [
+              517.46,
+              617.66,
+              5.1299999999999955,
+              9.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "640,00",
+            "bbox": [
+              524.921,
+              617.66,
+              27.576000000000022,
+              9.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 14740.0,
+    "diff": -13920.0,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.8999999999999999,
+    "total_confidence": 0.25,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.90, total_confidence=0.25"
+    ],
+    "warnings": [],
+    "line_count": 24
+  },
+  "timestamp": "2026-01-17T18:07:09.070814"
+}

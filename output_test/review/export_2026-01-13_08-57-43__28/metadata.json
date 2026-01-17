@@ -1,0 +1,148 @@
+{
+  "invoice_header": {
+    "invoice_number": "549429",
+    "invoice_number_confidence": 0.92,
+    "total_amount": 560.0,
+    "total_confidence": 0.25,
+    "supplier_name": "WangeskogHyrcenterAB",
+    "invoice_date": "2025-01-02",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "549429",
+      "confidence": 0.92,
+      "evidence": {
+        "page_number": 39,
+        "bbox": [
+          70.58260000000001,
+          111.55160000000001,
+          38.099999999999994,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "549429 AB",
+        "tokens": [
+          {
+            "text": "549429",
+            "bbox": [
+              70.58260000000001,
+              111.55160000000001,
+              38.099999999999994,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "560.0",
+      "confidence": 0.25,
+      "evidence": {
+        "page_number": 39,
+        "bbox": [
+          68.78060000000005,
+          654.8695999999997,
+          501.8039000000001,
+          7.0
+        ],
+        "row_index": 7,
+        "text_excerpt": "13 9315 ÖVERGÅNGSSKYLTMSTOLPE 16 EA 35,00 560,00",
+        "tokens": [
+          {
+            "text": "13",
+            "bbox": [
+              68.78060000000005,
+              654.8695999999997,
+              8.889999999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "9315",
+            "bbox": [
+              102.56010000000005,
+              654.8695999999997,
+              17.779999999999987,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "ÖVERGÅNGSSKYLTMSTOLPE",
+            "bbox": [
+              171.33960000000005,
+              654.8695999999997,
+              107.24559999999994,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "16",
+            "bbox": [
+              351.59700000000004,
+              654.8695999999997,
+              8.889999999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "EA",
+            "bbox": [
+              368.89860000000004,
+              654.8695999999997,
+              9.204999999999984,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "35,00",
+            "bbox": [
+              437.7094000000001,
+              654.8695999999997,
+              20.32099999999997,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "560,00",
+            "bbox": [
+              545.8185000000001,
+              654.8695999999997,
+              24.766000000000076,
+              7.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 2721.05,
+    "diff": -2161.05,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.92,
+    "total_confidence": 0.25,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.92, total_confidence=0.25"
+    ],
+    "warnings": [
+      "Rad 1: Antal × A-pris (2.00) ≠ Summa (440.00), avvikelse: 438.00 SEK",
+      "Rad 2: Antal × A-pris (1350.00) ≠ Summa (675.00), avvikelse: 675.00 SEK",
+      "Rad 3: Antal × A-pris (4.00) ≠ Summa (92.00), avvikelse: 88.00 SEK",
+      "Rad 4: Antal × A-pris (5.00) ≠ Summa (497.60), avvikelse: 492.60 SEK",
+      "Rad 5: Antal × A-pris (14.10) ≠ Summa (915.25), avvikelse: 901.15 SEK",
+      "Rad 6: Antal × A-pris (88.50) ≠ Summa (101.20), avvikelse: 12.70 SEK"
+    ],
+    "line_count": 6
+  },
+  "timestamp": "2026-01-17T19:41:15.477334"
+}

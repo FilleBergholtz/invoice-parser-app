@@ -1,0 +1,57 @@
+{
+  "invoice_header": {
+    "invoice_number": "545477",
+    "invoice_number_confidence": 0.92,
+    "total_amount": null,
+    "total_confidence": 0.0,
+    "supplier_name": "WangeskogHyrcenterAB",
+    "invoice_date": "2024-11-29",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "545477",
+      "confidence": 0.92,
+      "evidence": {
+        "page_number": 30,
+        "bbox": [
+          70.58269999999999,
+          111.55160000000001,
+          38.099999999999994,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "545477 AB",
+        "tokens": [
+          {
+            "text": "545477",
+            "bbox": [
+              70.58269999999999,
+              111.55160000000001,
+              38.099999999999994,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": null
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 3713.0,
+    "diff": null,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.92,
+    "total_confidence": 0.0,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.92, total_confidence=0.00"
+    ],
+    "warnings": [
+      "Rad 6: Antal × A-pris (0.00) ≠ Summa (675.00), avvikelse: 675.00 SEK",
+      "Rad 7: Antal × A-pris (0.00) ≠ Summa (675.00), avvikelse: 675.00 SEK"
+    ],
+    "line_count": 7
+  },
+  "timestamp": "2026-01-17T19:41:15.180512"
+}

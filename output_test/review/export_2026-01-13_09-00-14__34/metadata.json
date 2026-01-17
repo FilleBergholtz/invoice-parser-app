@@ -1,0 +1,131 @@
+{
+  "invoice_header": {
+    "invoice_number": "3441790",
+    "invoice_number_confidence": 0.7200000000000001,
+    "total_amount": 840.0,
+    "total_confidence": 0.25,
+    "supplier_name": "RentaAB",
+    "invoice_date": "2025-05-15",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "3441790",
+      "confidence": 0.7200000000000001,
+      "evidence": {
+        "page_number": 34,
+        "bbox": [
+          70.5827000000001,
+          111.55160000000001,
+          44.44999999999999,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "3441790 AB",
+        "tokens": [
+          {
+            "text": "3441790",
+            "bbox": [
+              70.5827000000001,
+              111.55160000000001,
+              44.44999999999999,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "840.0",
+      "confidence": 0.25,
+      "evidence": {
+        "page_number": 34,
+        "bbox": [
+          68.77920000000015,
+          620.2708999999996,
+          501.8040000000001,
+          7.0
+        ],
+        "row_index": 2,
+        "text_excerpt": "39 kontorsbodalgeco 7 EA 120,00 840,00",
+        "tokens": [
+          {
+            "text": "39",
+            "bbox": [
+              68.77920000000015,
+              620.2708999999996,
+              8.889999999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "kontorsbodalgeco",
+            "bbox": [
+              171.33830000000015,
+              620.2708999999996,
+              64.34929999999997,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "7",
+            "bbox": [
+              356.0457000000001,
+              620.2708999999996,
+              4.444999999999993,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "EA",
+            "bbox": [
+              368.89730000000014,
+              620.2708999999996,
+              9.204999999999984,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "120,00",
+            "bbox": [
+              433.2581000000001,
+              620.2708999999996,
+              24.76600000000002,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "840,00",
+            "bbox": [
+              545.8172000000002,
+              620.2708999999996,
+              24.766000000000076,
+              7.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 7080.0,
+    "diff": -6240.0,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.7200000000000001,
+    "total_confidence": 0.25,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.72, total_confidence=0.25"
+    ],
+    "warnings": [],
+    "line_count": 9
+  },
+  "timestamp": "2026-01-17T18:05:19.224423"
+}

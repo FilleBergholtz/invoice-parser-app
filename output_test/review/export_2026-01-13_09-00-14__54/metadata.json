@@ -1,0 +1,151 @@
+{
+  "invoice_header": {
+    "invoice_number": "3508980",
+    "invoice_number_confidence": 0.7200000000000001,
+    "total_amount": 48.0,
+    "total_confidence": 0.35,
+    "supplier_name": "RentaAB",
+    "invoice_date": "2025-06-30",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "3508980",
+      "confidence": 0.7200000000000001,
+      "evidence": {
+        "page_number": 54,
+        "bbox": [
+          70.58260000000001,
+          111.55160000000001,
+          44.44999999999999,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "3508980 AB",
+        "tokens": [
+          {
+            "text": "3508980",
+            "bbox": [
+              70.58260000000001,
+              111.55160000000001,
+              44.44999999999999,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "48.0",
+      "confidence": 0.35,
+      "evidence": {
+        "page_number": 54,
+        "bbox": [
+          68.77939999999941,
+          675.7928999999997,
+          501.8039000000001,
+          7.0
+        ],
+        "row_index": 7,
+        "text_excerpt": "88 2406031 Polyetenslang25mmprk 9 MTR 48,00 -86,40 345,60",
+        "tokens": [
+          {
+            "text": "88",
+            "bbox": [
+              68.77939999999941,
+              675.7928999999997,
+              8.889999999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "2406031",
+            "bbox": [
+              102.55889999999941,
+              675.7928999999997,
+              31.114999999999995,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "Polyetenslang25mmprk",
+            "bbox": [
+              171.3383999999994,
+              675.7928999999997,
+              89.76670000000001,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "9",
+            "bbox": [
+              356.0458999999994,
+              675.7928999999997,
+              4.444999999999993,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "MTR",
+            "bbox": [
+              368.8974999999994,
+              675.7928999999997,
+              15.071000000000026,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "48,00",
+            "bbox": [
+              437.70829999999944,
+              675.7928999999997,
+              20.32099999999997,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "-86,40",
+            "bbox": [
+              483.3077999999994,
+              675.7928999999997,
+              23.500999999999976,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "345,60",
+            "bbox": [
+              545.8172999999995,
+              675.7928999999997,
+              24.766000000000076,
+              7.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 2601.7200000000003,
+    "diff": -2553.7200000000003,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.7200000000000001,
+    "total_confidence": 0.35,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.72, total_confidence=0.35"
+    ],
+    "warnings": [],
+    "line_count": 4
+  },
+  "timestamp": "2026-01-17T18:05:27.854866"
+}

@@ -1,0 +1,121 @@
+{
+  "invoice_header": {
+    "invoice_number": "3441790",
+    "invoice_number_confidence": 0.7200000000000001,
+    "total_amount": 630.0,
+    "total_confidence": 0.6,
+    "supplier_name": "RentaAB",
+    "invoice_date": "2025-05-15",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "3441790",
+      "confidence": 0.7200000000000001,
+      "evidence": {
+        "page_number": 36,
+        "bbox": [
+          70.5827000000001,
+          111.55160000000001,
+          44.44999999999999,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "3441790 AB",
+        "tokens": [
+          {
+            "text": "3441790",
+            "bbox": [
+              70.5827000000001,
+              111.55160000000001,
+              44.44999999999999,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "630.0",
+      "confidence": 0.6,
+      "evidence": {
+        "page_number": 36,
+        "bbox": [
+          322.2991999999999,
+          609.7644999999999,
+          244.29499999999996,
+          10.0
+        ],
+        "row_index": 0,
+        "text_excerpt": "Att betala 64 630,00 SEK",
+        "tokens": [
+          {
+            "text": "Att",
+            "bbox": [
+              322.2991999999999,
+              609.7644999999999,
+              16.860000000000014,
+              10.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "betala",
+            "bbox": [
+              342.5924999999999,
+              609.7644999999999,
+              34.93000000000001,
+              10.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "64",
+            "bbox": [
+              491.3574999999999,
+              609.7644999999999,
+              12.700000000000045,
+              10.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "630,00",
+            "bbox": [
+              507.5674999999999,
+              609.7644999999999,
+              35.379999999999995,
+              10.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "SEK",
+            "bbox": [
+              546.5242,
+              609.7644999999999,
+              20.069999999999936,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 4571.32,
+    "diff": -3941.3199999999997,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.7200000000000001,
+    "total_confidence": 0.6,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.72, total_confidence=0.60"
+    ],
+    "warnings": [],
+    "line_count": 8
+  },
+  "timestamp": "2026-01-17T18:05:20.053303"
+}

@@ -1,0 +1,148 @@
+{
+  "invoice_header": {
+    "invoice_number": "582621",
+    "invoice_number_confidence": 0.92,
+    "total_amount": 454.48,
+    "total_confidence": 0.25,
+    "supplier_name": "WangeskogHyrcenterAB",
+    "invoice_date": "2025-10-15",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "582621",
+      "confidence": 0.92,
+      "evidence": {
+        "page_number": 159,
+        "bbox": [
+          70.58260000000001,
+          111.55160000000001,
+          38.099999999999994,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "582621 AB",
+        "tokens": [
+          {
+            "text": "582621",
+            "bbox": [
+              70.58260000000001,
+              111.55160000000001,
+              38.099999999999994,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "454.48",
+      "confidence": 0.25,
+      "evidence": {
+        "page_number": 159,
+        "bbox": [
+          68.78089999999992,
+          659.3000999999996,
+          501.8038000000001,
+          7.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "93 01762016 -HJULTILLSTAKET 190 EA 4,60 -419,52 454,48",
+        "tokens": [
+          {
+            "text": "93",
+            "bbox": [
+              68.78089999999992,
+              659.3000999999996,
+              8.889999999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "01762016",
+            "bbox": [
+              102.56039999999992,
+              659.3000999999996,
+              35.55999999999999,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "-HJULTILLSTAKET",
+            "bbox": [
+              171.33989999999991,
+              659.3000999999996,
+              70.53060000000002,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "190",
+            "bbox": [
+              347.1472999999999,
+              659.3000999999996,
+              13.33499999999998,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "EA",
+            "bbox": [
+              368.8988999999999,
+              659.3000999999996,
+              9.204999999999984,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "4,60",
+            "bbox": [
+              442.15969999999993,
+              659.3000999999996,
+              15.875999999999976,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "-419,52",
+            "bbox": [
+              478.85919999999993,
+              659.3000999999996,
+              27.946000000000026,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "454,48",
+            "bbox": [
+              545.8186999999999,
+              659.3000999999996,
+              24.766000000000076,
+              7.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 1215.35,
+    "diff": -760.8699999999999,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.92,
+    "total_confidence": 0.25,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.92, total_confidence=0.25"
+    ],
+    "warnings": [
+      "Rad 1: Antal × A-pris (168.00) ≠ Summa (594.55), avvikelse: 426.5

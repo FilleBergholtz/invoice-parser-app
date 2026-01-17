@@ -1,0 +1,152 @@
+{
+  "invoice_header": {
+    "invoice_number": "577559",
+    "invoice_number_confidence": 0.92,
+    "total_amount": 90.0,
+    "total_confidence": 0.25,
+    "supplier_name": "WangeskogHyrcenterAB",
+    "invoice_date": "2025-08-29",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "577559",
+      "confidence": 0.92,
+      "evidence": {
+        "page_number": 135,
+        "bbox": [
+          70.5827000000001,
+          111.55160000000001,
+          38.099999999999994,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "577559 AB",
+        "tokens": [
+          {
+            "text": "577559",
+            "bbox": [
+              70.5827000000001,
+              111.55160000000001,
+              38.099999999999994,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "90.0",
+      "confidence": 0.25,
+      "evidence": {
+        "page_number": 135,
+        "bbox": [
+          68.78060000000005,
+          646.3622999999997,
+          501.8090000000001,
+          7.0
+        ],
+        "row_index": 5,
+        "text_excerpt": "13 7615 COMBISAFESTÅLBALKSTVING 24 EA 3,75 90,00",
+        "tokens": [
+          {
+            "text": "13",
+            "bbox": [
+              68.78060000000005,
+              646.3622999999997,
+              8.889999999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "7615",
+            "bbox": [
+              102.56010000000005,
+              646.3622999999997,
+              17.779999999999987,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "COMBISAFESTÅLBALKSTVING",
+            "bbox": [
+              171.33960000000005,
+              646.3622999999997,
+              108.00969999999998,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "24",
+            "bbox": [
+              351.59710000000007,
+              646.3622999999997,
+              8.889999999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "EA",
+            "bbox": [
+              368.8987000000001,
+              646.3622999999997,
+              9.204999999999984,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "3,75",
+            "bbox": [
+              442.1595000000001,
+              646.3622999999997,
+              15.875999999999976,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "90,00",
+            "bbox": [
+              550.2686000000001,
+              646.3622999999997,
+              20.321000000000026,
+              7.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 2309.12,
+    "diff": -2219.12,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.92,
+    "total_confidence": 0.25,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.92, total_confidence=0.25"
+    ],
+    "warnings": [
+      "Rad 1: Antal × A-pris (1.00) ≠ Summa (320.00), avvikelse: 319.00 SEK",
+      "Rad 2: Antal × A-pris (6.00) ≠ Summa (540.00), avvikelse: 534.00 SEK",
+      "Rad 3: Antal × A-pris (8.00) ≠ Summa (540.00), avvikelse: 532.00 SEK",
+      "Rad 4: Antal × A-pris (10.00) ≠ Summa (540.00), avvikelse: 530.00 SEK",
+      "Rad 5: Antal × A-pris (33.60) ≠ Summa (52.38), avvikelse: 18.78 SEK",
+      "Rad 6: Antal × A-pris (7.14) ≠ Summa (19.09), avvikelse: 11.95 SEK",
+      "Rad 7: Antal × A-pris (43.20) ≠ Summa (14.04), avvikelse: 29.16 SEK",
+      "Rad 8: Antal × A-pris (48.60) ≠ Summa (154.44), avvikelse: 105.84 SEK",
+      "Rad 9: Antal × A-pris (54.00) ≠ Summa (89.84), avvikelse: 35.84 SEK",
+      "Rad 10: Antal × A-pris (13.42) ≠ Summa (39.33), avvikelse: 25.91 SEK"
+    ],
+    "line_count": 10
+  },
+  "timestamp": "2026-01-17T19:41:19.123220"
+}

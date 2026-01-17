@@ -1,0 +1,54 @@
+{
+  "invoice_header": {
+    "invoice_number": "30204378",
+    "invoice_number_confidence": 0.7200000000000001,
+    "total_amount": null,
+    "total_confidence": 0.0,
+    "supplier_name": "ConsatDataAB",
+    "invoice_date": "2025-07-27",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "30204378",
+      "confidence": 0.7200000000000001,
+      "evidence": {
+        "page_number": 7,
+        "bbox": [
+          70.58260000000001,
+          111.55160000000001,
+          50.8,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "30204378 BRA Bygg AB Postbox 284",
+        "tokens": [
+          {
+            "text": "30204378",
+            "bbox": [
+              70.58260000000001,
+              111.55160000000001,
+              50.8,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": null
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 2325.0,
+    "diff": null,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.7200000000000001,
+    "total_confidence": 0.0,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.72, total_confidence=0.00"
+    ],
+    "warnings": [],
+    "line_count": 4
+  },
+  "timestamp": "2026-01-17T18:07:28.045478"
+}

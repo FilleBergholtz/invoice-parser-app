@@ -1,0 +1,131 @@
+{
+  "invoice_header": {
+    "invoice_number": "43122",
+    "invoice_number_confidence": 0.65,
+    "total_amount": 743.47,
+    "total_confidence": 0.44999999999999996,
+    "supplier_name": "Ramirent AB",
+    "invoice_date": "2025-08-31",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "43122",
+      "confidence": 0.65,
+      "evidence": {
+        "page_number": 1,
+        "bbox": [
+          342.98899996999995,
+          158.65450037000005,
+          20.850000000000023,
+          7.5
+        ],
+        "row_index": 7,
+        "text_excerpt": "3533436 8.00 43122 MÖLNDAL",
+        "tokens": [
+          {
+            "text": "43122",
+            "bbox": [
+              342.98899996999995,
+              158.65450037000005,
+              20.850000000000023,
+              7.5
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "743.47",
+      "confidence": 0.44999999999999996,
+      "evidence": {
+        "page_number": 1,
+        "bbox": [
+          9.740000000000435,
+          747.869,
+          543.0120006099995,
+          54.0
+        ],
+        "row_index": 5,
+        "text_excerpt": ":devirrA|790704991 4061547206 2025-09-30 2.973,88 743,47 3.717,35",
+        "tokens": [
+          {
+            "text": ":devirrA|790704991",
+            "bbox": [
+              9.740000000000435,
+              747.869,
+              5.000000000000002,
+              54.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "4061547206",
+            "bbox": [
+              42.519,
+              748.1309999,
+              33.35999999999999,
+              6.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "2025-09-30",
+            "bbox": [
+              164.40700026,
+              748.1309999,
+              30.684000000000026,
+              6.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "2.973,88",
+            "bbox": [
+              330.97600061,
+              748.1309999,
+              23.352000000000032,
+              6.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "743,47",
+            "bbox": [
+              435.19199841,
+              748.1309999,
+              18.348000000000013,
+              6.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "3.717,35",
+            "bbox": [
+              529.40000061,
+              748.1309999,
+              23.351999999999975,
+              6.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 1838.27,
+    "diff": -1094.8,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.65,
+    "total_confidence": 0.44999999999999996,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.65, total_confidence=0.45"
+    ],
+    "warnings": [],
+    "line_count": 3
+  },
+  "timestamp": "2026-01-17T18:05:59.543509"
+}

@@ -1,0 +1,180 @@
+{
+  "invoice_header": {
+    "invoice_number": "567805",
+    "invoice_number_confidence": 0.92,
+    "total_amount": 954.8,
+    "total_confidence": 0.25,
+    "supplier_name": "WangeskogHyrcenterAB",
+    "invoice_date": "2025-06-14",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "567805",
+      "confidence": 0.92,
+      "evidence": {
+        "page_number": 98,
+        "bbox": [
+          70.58260000000001,
+          111.55160000000001,
+          38.099999999999994,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "567805 AB",
+        "tokens": [
+          {
+            "text": "567805",
+            "bbox": [
+              70.58260000000001,
+              111.55160000000001,
+              38.099999999999994,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "954.8",
+      "confidence": 0.25,
+      "evidence": {
+        "page_number": 98,
+        "bbox": [
+          9.740000000000435,
+          671.8841999999996,
+          560.8445999999999,
+          39.98580000000038
+        ],
+        "row_index": 7,
+        "text_excerpt": ":ecruoS|43:90 13 761102 COMBISAFESTOLPE 1 800 EA 1,02 -881,20 954,80",
+        "tokens": [
+          {
+            "text": ":ecruoS|43:90",
+            "bbox": [
+              9.740000000000435,
+              672.87,
+              5.000000000000002,
+              39.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "13",
+            "bbox": [
+              68.78070000000028,
+              671.8841999999996,
+              8.889999999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "761102",
+            "bbox": [
+              102.56020000000028,
+              671.8841999999996,
+              26.67,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "COMBISAFESTOLPE",
+            "bbox": [
+              171.33970000000028,
+              671.8841999999996,
+              71.59570000000002,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "1",
+            "bbox": [
+              340.23720000000026,
+              671.8841999999996,
+              4.444999999999993,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "800",
+            "bbox": [
+              347.13920000000024,
+              671.8841999999996,
+              13.335000000000036,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "EA",
+            "bbox": [
+              368.8988000000003,
+              671.8841999999996,
+              9.204999999999984,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "1,02",
+            "bbox": [
+              442.1596000000003,
+              671.8841999999996,
+              15.875999999999976,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "-881,20",
+            "bbox": [
+              478.8591000000003,
+              671.8841999999996,
+              27.946000000000026,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "954,80",
+            "bbox": [
+              545.8186000000003,
+              671.8841999999996,
+              24.766000000000076,
+              7.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 1816.82,
+    "diff": -862.02,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.92,
+    "total_confidence": 0.25,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.92, total_confidence=0.25"
+    ],
+    "warnings": [
+      "Rad 2: Antal × A-pris (183.60) ≠ Summa (334.18), avvikelse: 150.58 SEK",
+      "Rad 3: Antal × A-pris (39.00) ≠ Summa (260.00), avvikelse: 221.00 SEK",
+      "Rad 4: Antal × A-pris (16.00) ≠ Summa (35.20), avvikelse: 19.20 SEK",
+      "Rad 5: Antal × A-pris (21.00) ≠ Summa (87.36), avvikelse: 66.36 SEK",
+      "Rad 6: Antal × A-pris (41.30) ≠ Summa (73.68), avvikelse: 32.38 SEK",
+      "Rad 7: Antal × A-pris (71.20) ≠ Summa (55.56), avvikelse: 15.64 SEK",
+      "Rad 8: Antal × A-pris (41.40) ≠ Summa (114.84), avvikelse: 73.44 SEK",
+      "Rad 9: Antal × A-pris (58.00) ≠ Summa (181.00), avvikelse: 123.00 SEK"
+    ],
+    "line_count": 9
+  },
+  "timestamp": "2026-01-17T19:41:17.594400"
+}

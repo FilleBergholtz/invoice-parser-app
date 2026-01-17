@@ -1,0 +1,183 @@
+{
+  "invoice_header": {
+    "invoice_number": "564073",
+    "invoice_number_confidence": 0.92,
+    "total_amount": 284.15,
+    "total_confidence": 0.25,
+    "supplier_name": "WangeskogHyrcenterAB",
+    "invoice_date": "2025-05-15",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "564073",
+      "confidence": 0.92,
+      "evidence": {
+        "page_number": 90,
+        "bbox": [
+          70.58260000000001,
+          111.55160000000001,
+          38.099999999999994,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "564073 AB",
+        "tokens": [
+          {
+            "text": "564073",
+            "bbox": [
+              70.58260000000001,
+              111.55160000000001,
+              38.099999999999994,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "284.15",
+      "confidence": 0.25,
+      "evidence": {
+        "page_number": 90,
+        "bbox": [
+          68.77980000000002,
+          614.2708999999996,
+          501.79589999999996,
+          7.0
+        ],
+        "row_index": 2,
+        "text_excerpt": "25 731216 COMBISAFERÄCKESNÄTSTÅL2,60 441 EA 5,60 -1 185,45 1 284,15",
+        "tokens": [
+          {
+            "text": "25",
+            "bbox": [
+              68.77980000000002,
+              614.2708999999996,
+              8.889999999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "731216",
+            "bbox": [
+              102.55930000000002,
+              614.2708999999996,
+              26.67,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "COMBISAFERÄCKESNÄTSTÅL2,60",
+            "bbox": [
+              171.33880000000002,
+              614.2708999999996,
+              125.97599999999991,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "441",
+            "bbox": [
+              347.14629999999994,
+              614.2708999999996,
+              13.33499999999998,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "EA",
+            "bbox": [
+              368.89789999999994,
+              614.2708999999996,
+              9.204999999999984,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "5,60",
+            "bbox": [
+              442.15869999999995,
+              614.2708999999996,
+              15.875999999999976,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "-1",
+            "bbox": [
+              471.94819999999993,
+              614.2708999999996,
+              7.625,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "185,45",
+            "bbox": [
+              482.0301999999999,
+              614.2708999999996,
+              24.76600000000002,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "1",
+            "bbox": [
+              538.9077,
+              614.2708999999996,
+              4.44500000000005,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "284,15",
+            "bbox": [
+              545.8097,
+              614.2708999999996,
+              24.765999999999963,
+              7.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 3560.33,
+    "diff": -3276.18,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.92,
+    "total_confidence": 0.25,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.92, total_confidence=0.25"
+    ],
+    "warnings": [
+      "Rad 1: Antal × A-pris (176.40) ≠ Summa (137.55), avvikelse: 38.85 SEK",
+      "Rad 2: Antal × A-pris (189.00) ≠ Summa (137.55), avvikelse: 51.45 SEK",
+      "Rad 3: Antal × A-pris (201.60) ≠ Summa (137.55), avvikelse: 64.05 SEK",
+      "Rad 4: Antal × A-pris (219.30) ≠ Summa (275.11), avvikelse: 55.81 SEK",
+      "Rad 5: Antal × A-pris (102.60) ≠ Summa (62.16), avvikelse: 40.44 SEK",
+      "Rad 6: Antal × A-pris (38.00) ≠ Summa (358.72), avvikelse: 320.72 SEK",
+      "Rad 7: Antal × A-pris (80.00) ≠ Summa (894.26), avvikelse: 814.26 SEK",
+      "Rad 8: Antal × A-pris (21.00) ≠ Summa (238.37), avvikelse: 217.37 SEK",
+      "Rad 9: Antal × A-pris (118.80) ≠ Summa (294.84), avvikelse: 176.04 SEK",
+      "Rad 10: Antal × A-pris (124.20) ≠ Summa (943.53), avvikelse: 819.33 SEK",
+      "Rad 11: Antal × A-pris (48.00) ≠ Summa (80.69), avvikelse: 32.69 SEK"
+    ],
+    "line_count": 11
+  },
+  "timestamp": "2026-01-17T19:41:17.294894"
+}

@@ -1,0 +1,151 @@
+{
+  "invoice_header": {
+    "invoice_number": "4578138002",
+    "invoice_number_confidence": 0.7200000000000001,
+    "total_amount": 72.6,
+    "total_confidence": 0.25,
+    "supplier_name": "11798STOCKHOLM 2024-08-22 7 517,00 SEK",
+    "invoice_date": "2024-08-22",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "4578138002",
+      "confidence": 0.7200000000000001,
+      "evidence": {
+        "page_number": 1,
+        "bbox": [
+          70.58260000000001,
+          111.55160000000001,
+          63.5,
+          10.0
+        ],
+        "row_index": 5,
+        "text_excerpt": "4578138002 Raine 0767-615433 ALFAGATAN7",
+        "tokens": [
+          {
+            "text": "4578138002",
+            "bbox": [
+              70.58260000000001,
+              111.55160000000001,
+              63.5,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "72.6",
+      "confidence": 0.25,
+      "evidence": {
+        "page_number": 1,
+        "bbox": [
+          68.77940000000001,
+          625.0228999999998,
+          501.7962,
+          7.000100000000089
+        ],
+        "row_index": 3,
+        "text_excerpt": "6 266065 MÅTTSTOCKHULTAFORSTRÄ59-2M10 20 EA 53,63 1 072,60",
+        "tokens": [
+          {
+            "text": "6",
+            "bbox": [
+              68.77940000000001,
+              625.0229999999999,
+              4.444999999999993,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "266065",
+            "bbox": [
+              102.55890000000001,
+              625.0229999999999,
+              26.67,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "MÅTTSTOCKHULTAFORSTRÄ59-2M10",
+            "bbox": [
+              171.3384,
+              625.0229999999999,
+              139.91339999999994,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "20",
+            "bbox": [
+              351.5961,
+              625.0228999999998,
+              8.889999999999986,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "EA",
+            "bbox": [
+              368.8977,
+              625.0228999999998,
+              9.204999999999984,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "53,63",
+            "bbox": [
+              437.70849999999996,
+              625.0228999999998,
+              20.32099999999997,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "1",
+            "bbox": [
+              538.9076,
+              625.0228999999998,
+              4.44500000000005,
+              7.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "072,60",
+            "bbox": [
+              545.8096,
+              625.0228999999998,
+              24.765999999999963,
+              7.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 3370.085,
+    "diff": -3297.485,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.7200000000000001,
+    "total_confidence": 0.25,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.72, total_confidence=0.25"
+    ],
+    "warnings": [],
+    "line_count": 7
+  },
+  "timestamp": "2026-01-17T18:07:33.519887"
+}

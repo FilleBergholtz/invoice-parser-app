@@ -1,0 +1,131 @@
+{
+  "invoice_header": {
+    "invoice_number": "18526",
+    "invoice_number_confidence": 0.8999999999999999,
+    "total_amount": 960.0,
+    "total_confidence": 0.44999999999999996,
+    "supplier_name": "Nr: 18526",
+    "invoice_date": null,
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "18526",
+      "confidence": 0.8999999999999999,
+      "evidence": {
+        "page_number": 15,
+        "bbox": [
+          526.8539999999999,
+          51.65999999999997,
+          25.65000000000009,
+          9.0
+        ],
+        "row_index": 1,
+        "text_excerpt": "Nr: 18526",
+        "tokens": [
+          {
+            "text": "18526",
+            "bbox": [
+              526.8539999999999,
+              51.65999999999997,
+              25.65000000000009,
+              9.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": {
+      "field": "total",
+      "value": "960.0",
+      "confidence": 0.44999999999999996,
+      "evidence": {
+        "page_number": 15,
+        "bbox": [
+          42.5,
+          720.47,
+          510.00300000000004,
+          11.0
+        ],
+        "row_index": 1,
+        "text_excerpt": "19 840,00 4 960,00 24 800,00",
+        "tokens": [
+          {
+            "text": "19",
+            "bbox": [
+              42.5,
+              721.99,
+              10.260000000000005,
+              9.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "840,00",
+            "bbox": [
+              55.091,
+              721.99,
+              27.576,
+              9.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "4",
+            "bbox": [
+              170.0,
+              721.99,
+              5.1299999999999955,
+              9.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "960,00",
+            "bbox": [
+              177.461,
+              721.99,
+              27.575999999999993,
+              9.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "24",
+            "bbox": [
+              503.41,
+              720.47,
+              12.54000000000002,
+              11.0
+            ],
+            "conf": 1.0
+          },
+          {
+            "text": "800,00",
+            "bbox": [
+              518.799,
+              720.47,
+              33.704000000000065,
+              11.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 1840.0,
+    "diff": -880.0,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.8999999999999999,
+    "total_confidence": 0.44999999999999996,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.90, total_confidence=0.45"
+    ],
+    "warnings": [],
+    "line_count": 2
+  },
+  "timestamp": "2026-01-17T18:07:06.294414"
+}

@@ -1,0 +1,64 @@
+{
+  "invoice_header": {
+    "invoice_number": "580729",
+    "invoice_number_confidence": 0.92,
+    "total_amount": null,
+    "total_confidence": 0.0,
+    "supplier_name": "WangeskogHyrcenterAB",
+    "invoice_date": "2025-09-29",
+    "invoice_number_traceability": {
+      "field": "invoice_no",
+      "value": "580729",
+      "confidence": 0.92,
+      "evidence": {
+        "page_number": 150,
+        "bbox": [
+          70.5827000000001,
+          111.55160000000001,
+          38.099999999999994,
+          10.0
+        ],
+        "row_index": 6,
+        "text_excerpt": "580729 AB",
+        "tokens": [
+          {
+            "text": "580729",
+            "bbox": [
+              70.5827000000001,
+              111.55160000000001,
+              38.099999999999994,
+              10.0
+            ],
+            "conf": 1.0
+          }
+        ]
+      }
+    },
+    "total_traceability": null
+  },
+  "validation": {
+    "status": "REVIEW",
+    "lines_sum": 4907.360000000001,
+    "diff": null,
+    "tolerance": 1.0,
+    "hard_gate_passed": false,
+    "invoice_number_confidence": 0.92,
+    "total_confidence": 0.0,
+    "errors": [
+      "Hard gate failed: invoice_number_confidence=0.92, total_confidence=0.00"
+    ],
+    "warnings": [
+      "Rad 2: Antal × A-pris (6.00) ≠ Summa (175.00), avvikelse: 169.00 SEK",
+      "Rad 3: Antal × A-pris (9.00) ≠ Summa (175.00), avvikelse: 166.00 SEK",
+      "Rad 4: Antal × A-pris (15.00) ≠ Summa (54.60), avvikelse: 39.60 SEK",
+      "Rad 5: Antal × A-pris (5.00) ≠ Summa (750.32), avvikelse: 745.32 SEK",
+      "Rad 6: Antal × A-pris (14.40) ≠ Summa (62.40), avvikelse: 48.00 SEK",
+      "Rad 8: Antal × A-pris (16.00) ≠ Summa (223.08), avvikelse: 207.08 SEK",
+      "Rad 10: Antal × A-pris (4040.00) ≠ Summa (867.32), avvikelse: 3172.68 SEK",
+      "Rad 11: Antal × A-pris (28322.00) ≠ Summa (25.00), avvikelse: 28297.00 SEK",
+      "Rad 12: Antal × A-pris (64.00) ≠ Summa (892.32), avvikelse: 828.32 SEK"
+    ],
+    "line_count": 12
+  },
+  "timestamp": "2026-01-17T19:41:19.718451"
+}
