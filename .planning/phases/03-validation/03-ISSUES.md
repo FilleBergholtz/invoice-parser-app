@@ -164,7 +164,7 @@ Denna heuristik kan misslyckas för komplexa layouts eller när kolumner är i a
 
 **Problem:** Beskrivningen innehåller ofta artikelnummer och radnummer i början, men dessa extraheras inte separat.
 
-**Root Cause:** I `src/pipeline/invoice_line_parser.py` rad 120-121 extraheras beskrivning som allt text före amount-kolumnen, utan att separera artikelnummer/radnummer.
+**Root Cause:** I `src/pipeline/invoice_line_parser.py` rad 222-223 extraheras beskrivning som allt text före amount-kolumnen, utan att separera artikelnummer/radnummer.
 
 **Exempel från fakturor:**
 - "26 011407 EntrebodTB3entre" - artikelnummer "26 011407"
@@ -172,14 +172,68 @@ Denna heuristik kan misslyckas för komplexa layouts eller när kolumner är i a
 - "15365 Konferensbod K11 öppen långsida" - artikelnummer "15365"
 - "11 M9 Toabal-standard" - radnummer "11"
 
+**Investigation Results:**
+
+1. **Requirements Analysis:**
+   - ❌ INGET krav på artikelnummer i `REQUIREMENTS.md`
+   - ❌ INGET krav på artikelnummer i `specs/invoice_pipeline_v1.md`
+   - ✅ Radnummer hanteras redan via `InvoiceLine.line_number` (inte samma som artikelnummer)
+
+2. **Current Implementation:**
+   - `InvoiceLine` modellen har INGET `article_number` fält
+   - Excel-exporten har INGEN artikelnummer-kolumn
+   - Beskrivning extraheras som allt text före amount-kolumnen (rad 222-223 i `invoice_line_parser.py`)
+   - Artikelnummer finns i beskrivningen men används inte separat någonstans
+
+3. **Excel Export Columns:**
+   - Nuvarande kolumner: Fakturanummer, Referenser, Företag, Fakturadatum, Beskrivning, Antal, Enhet, Á-pris, Rabatt, Summa, Hela summan, Faktura-ID, Status, Radsumma, Avvikelse, Fakturanummer-konfidens, Totalsumma-konfidens
+   - INGEN artikelnummer-kolumn finns eller planeras
+
+4. **Use Case Analysis:**
+   - Artikelnummer används INTE i validering
+   - Artikelnummer används INTE i Excel-export
+   - Artikelnummer finns i beskrivningen och kan sökas/filtreras där om behövs
+
 **Options:**
-1. **Extract article number from description start** - Identifiera artikelnummer i början av beskrivning (6-8 siffror, eventuellt med mellanslag)
-2. **Extract line number from description start** - Identifiera radnummer i början (2-3 siffror)
-3. **Add article_number and invoice_line_number fields** - Lägg till separata fält i InvoiceLine modellen
+1. **Keep in description** - Behåll artikelnummer i beskrivningen (nuvarande lösning)
+2. **Extract as optional field** - Extrahera artikelnummer som valfritt fält i `InvoiceLine` för framtida användning (inte i Excel ännu)
+3. **Extract and add Excel column** - Extrahera artikelnummer och lägg till kolumn i Excel-export
 
-**Recommendation:** Option 1 - Identifiera artikelnummer i början av beskrivning och extrahera som separat fält. Radnummer hanteras redan via `line_number` i InvoiceLine.
+**Recommendation:** Option 1 - **Behåll artikelnummer i beskrivningen**
 
-**Status:** ⚠️ Needs investigation - Lägg till artikelnummer-fält om det behövs, annars behåll i beskrivning.
+**Rationale:**
+- Artikelnummer är INTE ett krav enligt REQUIREMENTS.md
+- Excel-exporten behöver INTE artikelnummer-kolumn enligt nuvarande specifikation
+- Beskrivningen innehåller redan artikelnummer och kan användas för sökning/filtrering
+- Radnummer hanteras redan via `InvoiceLine.line_number` (separat från artikelnummer)
+- Att lägga till artikelnummer-fält skulle kräva:
+  - Uppdatering av `InvoiceLine` modellen
+  - Uppdatering av parser-logik
+  - Uppdatering av Excel-export (om kolumn ska läggas till)
+  - Uppdatering av alla tester
+  - Men ger INGEN omedelbar värde eftersom det inte används någonstans
+
+**Future Consideration:**
+Om artikelnummer behövs i framtiden (t.ex. för produktkatalog-matchning, rapportering, eller Excel-kolumn), kan detta implementeras som en separat förbättring med tydligt användningsfall.
+
+**Status:** ✅ **Investigation Complete - No action needed** - Artikelnummer behålls i beskrivningen enligt nuvarande krav
+
+---
+
+### 8. Konfidensprocent visar fel värde (9200% istället av 92%) ✅ FIXED
+
+**Problem:** Konfidensvärden i Excel visar "9200,00 %" istället av "92,00 %".
+
+**Root Cause:** I `src/export/excel_export.py` rad 91-92 och 139-140 multiplicerades konfidensvärden med 100 för att konvertera till procent. Excel-formaten `FORMAT_PERCENTAGE_00` multiplicerar automatiskt med 100 och lägger till %-tecknet, vilket gav dubbelmultiplikation (0.92 * 100 * 100 = 9200%).
+
+**Fix:** Implementerat i `src/export/excel_export.py`:
+- ✅ Tog bort `* 100` från konfidensvärdena - Excel-formaten hanterar procenten automatiskt från värden mellan 0 och 1
+- ✅ Uppdaterade formateringslogiken för att hantera både batch mode (med Faktura-ID) och legacy mode (utan Faktura-ID)
+- ✅ Uppdaterade tester för att förvänta sig värden mellan 0 och 1 istället av multiplicerade värden
+
+**Result:** Konfidensvärden visas nu korrekt som procent i Excel (t.ex. 92,00% istället av 9200,00%).
+
+**Status:** ✅ Fixed
 
 ---
 
@@ -193,7 +247,8 @@ Denna heuristik kan misslyckas för komplexa layouts eller när kolumner är i a
 | Quantity extraction errors | Medium | ✅ Fixed | None |
 | Tusendelsavgränsning | High | ✅ Fixed | None |
 | Rabatter extraheras inte | Medium | ✅ Fixed | None |
-| Artikelnummer i beskrivning | Low | ⚠️ Needs investigation | Extract article number if needed |
+| Artikelnummer i beskrivning | Low | ✅ Investigation complete | No action needed - keep in description |
+| Konfidensprocent visar fel värde | High | ✅ Fixed | None |
 
 ---
 
@@ -205,9 +260,12 @@ Denna heuristik kan misslyckas för komplexa layouts eller när kolumner är i a
 4. ✅ **Fixed:** Quantity extraction errors - validering flaggar nu mismatches så användaren kan se problemet
 5. ✅ **Fixed:** Tusendelsavgränsning - implementerat `_extract_amount_from_row_text()` som extraherar belopp från row.text med stöd för tusendelsavgränsare
 6. ✅ **Fixed:** Rabatter - implementerat identifiering av negativa belopp som rabatt-kolumn innan total_amount i `_extract_amount_from_row_text()`
-7. **Investigation needed:** Artikelnummer - avgöra om separata fält behövs eller om beskrivning räcker
+7. ✅ **Investigation complete:** Artikelnummer - undersökning visar att artikelnummer INTE är ett krav, behålls i beskrivningen enligt nuvarande specifikation
+8. ✅ **Fixed:** Konfidensprocent - tog bort dubbelmultiplikation, Excel-formaten hanterar procenten automatiskt
 
 ---
 
 *Issues documented: 2026-01-17*  
-*Updated: 2026-01-17 - Added issues #5, #6, #7*
+*Updated: 2026-01-17 - Added issues #5, #6, #7*  
+*Updated: 2026-01-17 - Completed investigation of issue #7 (artikelnummer)*  
+*Updated: 2026-01-17 - Fixed issue #8 (konfidensprocent dubbelmultiplikation)*

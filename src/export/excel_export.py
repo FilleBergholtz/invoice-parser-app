@@ -88,8 +88,8 @@ def export_to_excel(
                     "Status": status,
                     "Radsumma": lines_sum,
                     "Avvikelse": diff,
-                    "Fakturanummer-konfidens": invoice_number_confidence * 100,  # Convert to percentage
-                    "Totalsumma-konfidens": total_confidence * 100,  # Convert to percentage
+                    "Fakturanummer-konfidens": invoice_number_confidence,  # Excel format will convert to percentage
+                    "Totalsumma-konfidens": total_confidence,  # Excel format will convert to percentage
                 }
                 all_rows.append(row)
         
@@ -136,8 +136,8 @@ def export_to_excel(
                 "Status": status,
                 "Radsumma": lines_sum,
                 "Avvikelse": diff,
-                "Fakturanummer-konfidens": invoice_number_confidence * 100,  # Convert to percentage
-                "Totalsumma-konfidens": total_confidence * 100,  # Convert to percentage
+                "Fakturanummer-konfidens": invoice_number_confidence,  # Excel format will convert to percentage
+                "Totalsumma-konfidens": total_confidence,  # Excel format will convert to percentage
             }
             rows.append(row)
     
@@ -179,27 +179,42 @@ def export_to_excel(
                     pass
         
         # Format control columns
-        # Column order: Fakturanummer(0), Referenser(1), Företag(2), Fakturadatum(3), 
-        # Beskrivning(4), Antal(5), Enhet(6), Á-pris(7), Rabatt(8), Summa(9), 
-        # Hela summan(10), Faktura-ID(11), Status(12), Radsumma(13), Avvikelse(14),
-        # Fakturanummer-konfidens(15), Totalsumma-konfidens(16)
+        # Determine column indices based on whether Faktura-ID exists
+        # Batch mode: Fakturanummer(0)...Hela summan(10), Faktura-ID(11), Status(12), Radsumma(13), Avvikelse(14), Fakturanummer-konfidens(15), Totalsumma-konfidens(16)
+        # Legacy mode: Fakturanummer(0)...Hela summan(10), Status(11), Radsumma(12), Avvikelse(13), Fakturanummer-konfidens(14), Totalsumma-konfidens(15)
+        num_columns = len(df.columns)
+        has_faktura_id = "Faktura-ID" in df.columns
+        
+        if has_faktura_id:
+            # Batch mode: Faktura-ID exists
+            radsumma_idx = 13
+            avvikelse_idx = 14
+            fakturanummer_konfidens_idx = 15
+            totalsumma_konfidens_idx = 16
+        else:
+            # Legacy mode: No Faktura-ID
+            radsumma_idx = 12
+            avvikelse_idx = 13
+            fakturanummer_konfidens_idx = 14
+            totalsumma_konfidens_idx = 15
+        
         for row in worksheet.iter_rows(min_row=2, max_row=worksheet.max_row):
-            # Radsumma column (index 13, after Faktura-ID and Status)
-            radsumma_cell = row[13]
+            # Radsumma column
+            radsumma_cell = row[radsumma_idx]
             radsumma_cell.number_format = FORMAT_NUMBER_00
             
-            # Avvikelse column (index 14)
-            avvikelse_cell = row[14]
+            # Avvikelse column
+            avvikelse_cell = row[avvikelse_idx]
             # Only format if numeric (not "N/A" or None)
             if isinstance(avvikelse_cell.value, (int, float)) and avvikelse_cell.value != "N/A":
                 avvikelse_cell.number_format = FORMAT_NUMBER_00
             
-            # Fakturanummer-konfidens column (index 15)
-            fakturanummer_konfidens_cell = row[15]
+            # Fakturanummer-konfidens column
+            fakturanummer_konfidens_cell = row[fakturanummer_konfidens_idx]
             fakturanummer_konfidens_cell.number_format = FORMAT_PERCENTAGE_00
             
-            # Totalsumma-konfidens column (index 16)
-            totalsumma_konfidens_cell = row[16]
+            # Totalsumma-konfidens column
+            totalsumma_konfidens_cell = row[totalsumma_konfidens_idx]
             totalsumma_konfidens_cell.number_format = FORMAT_PERCENTAGE_00
     
     return str(output_path)

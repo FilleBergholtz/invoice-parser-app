@@ -113,8 +113,8 @@ def test_control_column_values(sample_invoice_lines, tmp_path):
     assert row_data[11] == "OK"  # Status (Column L)
     assert row_data[12] == 100.0  # Radsumma (Column M)
     assert row_data[13] == 0.0  # Avvikelse (Column N)
-    assert row_data[14] == 96.0  # Fakturanummer-konfidens (Column O, 0.96 * 100)
-    assert row_data[15] == 97.0  # Totalsumma-konfidens (Column P, 0.97 * 100)
+    assert row_data[14] == 0.96  # Fakturanummer-konfidens (Column O, Excel format converts to percentage)
+    assert row_data[15] == 0.97  # Totalsumma-konfidens (Column P, Excel format converts to percentage)
 
 
 def test_control_columns_formatting(sample_invoice_lines, tmp_path):
@@ -142,19 +142,19 @@ def test_control_columns_formatting(sample_invoice_lines, tmp_path):
         row = ws[row_idx]
         
         # Radsumma should have currency format (FORMAT_NUMBER_00 in openpyxl is "0.00")
-        radsumma_cell = row[11]  # Column L (0-indexed)
+        radsumma_cell = row[12]  # Column M (0-indexed, after Status)
         assert radsumma_cell.number_format == "0.00"
         
         # Avvikelse should have currency format (when numeric, but may be 0.0)
-        avvikelse_cell = row[12]  # Column M
+        avvikelse_cell = row[13]  # Column N
         if isinstance(avvikelse_cell.value, (int, float)):
             assert avvikelse_cell.number_format == "0.00"
         
         # Confidence columns should have percentage format
-        fakturanummer_konfidens_cell = row[13]  # Column N
+        fakturanummer_konfidens_cell = row[14]  # Column O
         assert fakturanummer_konfidens_cell.number_format == "0.00%"
         
-        totalsumma_konfidens_cell = row[14]  # Column O
+        totalsumma_konfidens_cell = row[15]  # Column P
         assert totalsumma_konfidens_cell.number_format == "0.00%"
 
 
@@ -243,5 +243,5 @@ def test_control_columns_repeat_per_invoice(sample_invoice_lines, tmp_path):
         assert row_data[11] == "OK"  # Status
         assert row_data[12] == 100.0  # Radsumma
         assert row_data[13] == 0.0  # Avvikelse
-        assert row_data[14] == 96.0  # Fakturanummer-konfidens
-        assert row_data[15] == 97.0  # Totalsumma-konfidens
+        assert row_data[14] == 0.96  # Fakturanummer-konfidens (Excel format converts to percentage)
+        assert row_data[15] == 0.97  # Totalsumma-konfidens (Excel format converts to percentage)
