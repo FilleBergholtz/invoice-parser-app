@@ -10,9 +10,9 @@ This roadmap delivers a Swedish invoice parsing system that transforms PDF invoi
 - Integer phases (1, 2, 3): Planned milestone work
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
-- [ ] **Phase 1: Document Normalization** - Establish stable PDF representation with spatial traceability
-- [ ] **Phase 2: Header + Wrap** - Extract critical fields (invoice number, total) with confidence scoring and handle multi-line items
-- [ ] **Phase 3: Validation** - Mathematical validation, hard gates, and Excel export with status columns
+- [x] **Phase 1: Document Normalization** - Establish stable PDF representation with spatial traceability
+- [x] **Phase 2: Header + Wrap** - Extract critical fields (invoice number, total) with confidence scoring and handle multi-line items
+- [x] **Phase 3: Validation** - Mathematical validation, hard gates, and Excel export with status columns
 
 ## Phase Details
 
