@@ -397,6 +397,7 @@ Projektet använder GSD (Guided Software Development) system:
 
 ## 📚 Ytterligare Dokumentation
 
+- **Deployment Guide**: `DEPLOYMENT.md` - Komplett guide för deployment
 - **Projektplanering**: `.planning/`
 - **Kravspecifikation**: `.planning/REQUIREMENTS.md`
 - **Roadmap**: `.planning/ROADMAP.md`
