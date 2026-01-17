@@ -4,6 +4,7 @@ phase: 03-validation
 source: [03-01-SUMMARY.md, 03-02-SUMMARY.md, 03-03-SUMMARY.md, 03-04-SUMMARY.md]
 started: 2026-01-17
 updated: 2026-01-17
+verification_date: 2026-01-17
 ---
 
 ## Current Test
@@ -111,6 +112,40 @@ passed: 0
 issues: 0
 pending: 0
 skipped: 10
+
+## Unit Test Verification
+
+**Date:** 2026-01-17
+
+### Validation Tests
+- ✅ `tests/test_validation.py`: 16/16 tests passed
+  - ValidationResult model tests (5 tests)
+  - calculate_validation_values() tests (4 tests)
+  - validate_invoice() status assignment tests (7 tests)
+
+### Excel Export Tests
+- ✅ `tests/test_excel_export.py`: 6/6 tests passed
+  - Control columns presence and order
+  - Control column values
+  - Excel formatting (percentage, currency)
+  - "N/A" handling for diff
+  - Backward compatibility
+  - Control columns repeat per invoice
+
+### Review Report Tests
+- ✅ `tests/test_review_report.py`: 8/8 tests passed (after bug fix)
+  - Folder creation
+  - PDF copying
+  - Metadata JSON structure
+  - Date serialization
+  - Traceability serialization
+  - Error handling
+
+### Bug Fix
+**Issue found during verification:**
+- `src/export/review_report.py` line 50: `NameError: name 'pdf_filename' is not defined`
+- **Fixed:** Added `pdf_filename = Path(pdf_path).name` before use
+- **Status:** Fixed and verified (all tests now pass)
 
 ## Gaps
 

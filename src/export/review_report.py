@@ -46,8 +46,9 @@ def create_review_report(
     review_folder = output_dir / "review" / folder_name
     review_folder.mkdir(parents=True, exist_ok=True)
     
-    # Copy PDF
-    review_pdf_path = review_folder / f"{pdf_filename}.pdf"
+    # Copy PDF (use original PDF filename)
+    pdf_filename = Path(pdf_path).name
+    review_pdf_path = review_folder / pdf_filename
     try:
         shutil.copy2(pdf_path, review_pdf_path)
     except Exception as e:
