@@ -1,0 +1,89 @@
+# Roadmap: Invoice Parser App
+
+## Overview
+
+This roadmap delivers a Swedish invoice parsing system that transforms PDF invoices into structured Excel tables with 100% accuracy on critical fields (invoice number and total) or explicit REVIEW status. The journey progresses through three phases: first establishing a stable document representation with full traceability, then extracting critical fields with confidence scoring, and finally validating and exporting with hard gates that guarantee correctness.
+
+## Phases
+
+**Phase Numbering:**
+- Integer phases (1, 2, 3): Planned milestone work
+- Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
+
+- [ ] **Phase 1: Document Normalization** - Establish stable PDF representation with spatial traceability
+- [ ] **Phase 2: Header + Wrap** - Extract critical fields (invoice number, total) with confidence scoring and handle multi-line items
+- [ ] **Phase 3: Validation** - Mathematical validation, hard gates, and Excel export with status columns
+
+## Phase Details
+
+### Phase 1: Document Normalization
+
+**Goal**: System can process PDF invoices (searchable or scanned) and create a stable document representation with full spatial traceability, enabling downstream field extraction.
+
+**Depends on**: Nothing (first phase)
+
+**Requirements**: DOC-01, DOC-02, DOC-03, DOC-04, DOC-05, DOC-06, LAYOUT-01, LAYOUT-02, LAYOUT-03, LINES-01, LINES-03, LINES-04, EXPORT-01, EXPORT-02, CLI-01, CLI-02, CLI-03
+
+**Success Criteria** (what must be TRUE):
+1. System can take a PDF invoice (searchable or scanned) as input and detect which type it is, routing to appropriate extraction path
+2. System extracts all text as tokens with bounding boxes (x, y, width, height) preserving spatial information, whether from pdfplumber (searchable) or OCR (scanned)
+3. System groups tokens into rows based on Y-position alignment, maintaining reading order
+4. System identifies document segments (header, items/body, footer) based on position and content
+5. System extracts line items using layout-driven approach (tokens→rows→segments) and produces basic Excel output (one row per line item) with invoice metadata repeated per row
+6. System provides CLI interface that accepts input directory or file list, processes invoices in batch, and outputs status per invoice
+
+**Plans**: TBD (to be determined during planning)
+
+Plans:
+- [ ] 01-01: [To be planned]
+
+### Phase 2: Header + Wrap
+
+**Goal**: System can extract invoice number and total amount with high confidence scoring, extract vendor and date, handle multi-line items, and store traceability for critical fields.
+
+**Depends on**: Phase 1
+
+**Requirements**: LAYOUT-04, EXTRACT-01, EXTRACT-02, EXTRACT-03, EXTRACT-04, EXTRACT-05, LINES-02, VALID-03
+
+**Success Criteria** (what must be TRUE):
+1. System extracts invoice number with confidence scoring (evaluates multiple candidates, scores based on position in header, proximity to "Faktura" keywords, uniqueness), stores exact value or marks as uncertain
+2. System extracts total amount with confidence scoring (identifies "Att betala / Total / Summa att betala / Totalt", validates against sum excl + VAT + rounding), stores exact value or marks as uncertain
+3. System extracts vendor name and invoice date from header
+4. System handles multi-line items (wrapped text) by grouping continuation lines to the same line item
+5. System stores traceability (page number + bbox + evidence/source text) for invoice number and total, enabling verification and trust
+
+**Plans**: TBD (to be determined during planning)
+
+Plans:
+- [ ] 02-01: [To be planned]
+
+### Phase 3: Validation
+
+**Goal**: System validates extracted data mathematically, assigns status (OK/PARTIAL/REVIEW) based on hard gates, and exports final Excel with control columns and review reports.
+
+**Depends on**: Phase 2
+
+**Requirements**: VALID-01, VALID-02, VALID-04, VALID-05, EXPORT-03, EXPORT-04
+
+**Success Criteria** (what must be TRUE):
+1. System performs mathematical validation: calculates lines_sum = SUM(all line item totals), compares with extracted total, calculates diff = total - lines_sum, applies ±1 SEK tolerance for rounding
+2. System implements hard gates: assigns OK status ONLY when both invoice number AND total are certain (high confidence ≥0.95). Otherwise assigns REVIEW (no silent guessing)
+3. System assigns appropriate status: OK (high confidence + validation pass), PARTIAL (sum mismatch but header OK), or REVIEW (low confidence or validation failure)
+4. System exports Excel with control columns: Status, LinesSum, Diff, InvoiceNoConfidence, TotalConfidence, enabling batch review of invoice quality
+5. System creates review reports (review folder with PDF + metadata/annotations and JSON/CSV report with page + bbox + text excerpt) for invoices requiring manual verification
+
+**Plans**: TBD (to be determined during planning)
+
+Plans:
+- [ ] 03-01: [To be planned]
+
+## Progress
+
+**Execution Order:**
+Phases execute in numeric order: 1 → 2 → 3
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 1. Document Normalization | 0/TBD | Not started | - |
+| 2. Header + Wrap | 0/TBD | Not started | - |
+| 3. Validation | 0/TBD | Not started | - |
