@@ -6,6 +6,7 @@ from typing import List, Optional
 from ..models.invoice_line import InvoiceLine
 from ..models.row import Row
 from ..models.segment import Segment
+from ..pipeline.wrap_detection import detect_wrapped_rows, consolidate_wrapped_description
 
 
 def extract_invoice_lines(items_segment: Segment) -> List[InvoiceLine]:
@@ -30,12 +31,34 @@ def extract_invoice_lines(items_segment: Segment) -> List[InvoiceLine]:
     
     invoice_lines = []
     line_number = 1
+    processed_row_indices = set()  # Track rows already processed as wraps
     
-    for row in items_segment.rows:
+    for row_index, row in enumerate(items_segment.rows):
+        # Skip rows already processed as wraps
+        if row_index in processed_row_indices:
+            continue
+        
         # Try to extract line item from row
         invoice_line = _extract_line_from_row(row, items_segment, line_number)
         
         if invoice_line:
+            # Detect wrapped rows
+            following_rows = items_segment.rows[row_index + 1:]
+            wrapped_rows = detect_wrapped_rows(row, following_rows, items_segment.page)
+            
+            # Mark wrapped rows as processed
+            for wrapped_row in wrapped_rows:
+                wrapped_index = items_segment.rows.index(wrapped_row)
+                processed_row_indices.add(wrapped_index)
+            
+            # Update InvoiceLine with wrapped rows
+            if wrapped_rows:
+                # Add wrapped rows to InvoiceLine.rows (KÄLLSANING for traceability)
+                invoice_line.rows.extend(wrapped_rows)
+                
+                # Consolidate description
+                invoice_line.description = consolidate_wrapped_description(row, wrapped_rows)
+            
             invoice_lines.append(invoice_line)
             line_number += 1
     
