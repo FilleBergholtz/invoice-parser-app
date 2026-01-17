@@ -179,6 +179,10 @@ def main():
     # Initialize session state
     if "results" not in st.session_state:
         st.session_state.results = []
+    if "selected_invoice_idx" not in st.session_state:
+        st.session_state.selected_invoice_idx = None
+    if "pdf_files" not in st.session_state:
+        st.session_state.pdf_files = {}
     
     # File upload section
     st.header("1. Ladda upp fakturor")
