@@ -258,11 +258,18 @@ Om artikelnummer behövs i framtiden (t.ex. för produktkatalog-matchning, rappo
 - ✅ Ny funktion `_is_footer_row()` identifierar footer-rader baserat på innehåll (inte bara position)
 - ✅ Footer-nyckelord: summa, total, att betala, moms, exkl, inkl, etc. (svenska + engelska)
 - ✅ Footer-rader filtreras bort från line item extraction innan `_extract_line_from_row()` anropas
-- ✅ Test verifierat: 744 footer-rader filtrerades bort från test-fakturor
 
-**Result:** Footer-rader identifieras och filtreras bort, inga dubbel summor längre.
+**Verifiering med riktiga fakturor:**
+- ✅ 652 footer-rader filtrerade bort (87% av 744 footer-rader)
+- ✅ Footer-rader med nyckelord: 744 → 92 (88% reduktion)
+- ⚠️ 9 edge cases kvar: Fakturor där Summa (rad) == Hela summan exakt, men innehåller INTE footer-nyckelord
+  - Dessa är troligen fakturor med bara en produktrad, eller fakturor där den enda produktraden är totalsumman
+  - Exempel: "4040 Maskiner enl Lista 5 401,04", "1 Hyraställningenl.bifogadspec.- 1 EA 19 200,00"
+  - Dessa kräver mer sofistikerad logik (t.ex. jämförelse med totalsumma, men totalsumma extraheras senare i pipeline)
 
-**Status:** ✅ Fixed
+**Result:** Footer-rader identifieras och filtreras bort i 87% av fallen. Kvarvarande edge cases kan hanteras i framtida förbättringar.
+
+**Status:** ✅ Fixed (87% reduktion, edge cases kvar)
 
 ---
 
