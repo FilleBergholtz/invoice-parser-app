@@ -9,18 +9,18 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Document Processing
 
-- [ ] **DOC-01**: System can detect PDF type (searchable vs scanned) and route to appropriate extraction path
-- [ ] **DOC-02**: System can extract text and spatial information (tokens with bbox) from searchable PDFs using pdfplumber
-- [ ] **DOC-03**: System can convert PDF pages to images with standardized DPI (300) and consistent coordinate system using pymupdf or pdf2image
-- [ ] **DOC-04**: System can perform OCR on scanned PDFs using Tesseract with Swedish language data (swe), returning tokens + bbox + confidence (not just raw text) via TSV/HOCR
-- [ ] **DOC-05**: OCR abstraction layer allows switching engines (e.g., PaddleOCR/EasyOCR) without changing pipeline
-- [ ] **DOC-06**: System handles multi-page documents, maintaining context across pages and preserving reading order
+- [x] **DOC-01**: System can detect PDF type (searchable vs scanned) and route to appropriate extraction path
+- [x] **DOC-02**: System can extract text and spatial information (tokens with bbox) from searchable PDFs using pdfplumber
+- [x] **DOC-03**: System can convert PDF pages to images with standardized DPI (300) and consistent coordinate system using pymupdf or pdf2image
+- [x] **DOC-04**: System can perform OCR on scanned PDFs using Tesseract with Swedish language data (swe), returning tokens + bbox + confidence (not just raw text) via TSV/HOCR
+- [x] **DOC-05**: OCR abstraction layer allows switching engines (e.g., PaddleOCR/EasyOCR) without changing pipeline
+- [x] **DOC-06**: System handles multi-page documents, maintaining context across pages and preserving reading order
 
 ### Layout Analysis
 
-- [ ] **LAYOUT-01**: System extracts spatial text with bounding boxes (x, y, width, height) preserving document structure
-- [ ] **LAYOUT-02**: System groups tokens into rows based on Y-position alignment
-- [ ] **LAYOUT-03**: System identifies document segments (header, items/body, footer) based on position and content
+- [x] **LAYOUT-01**: System extracts spatial text with bounding boxes (x, y, width, height) preserving document structure
+- [x] **LAYOUT-02**: System groups tokens into rows based on Y-position alignment
+- [x] **LAYOUT-03**: System identifies document segments (header, items/body, footer) based on position and content
 - [ ] **LAYOUT-04**: System creates spatial zones for contextual analysis (e.g., header zone, total zone)
 
 ### Field Extraction
@@ -33,10 +33,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Line Item Extraction
 
-- [ ] **LINES-01**: System extracts line items using layout-driven approach (tokens→rows→segments), not table-extractor-driven (pdfplumber table detection is helper, not single point of failure)
+- [x] **LINES-01**: System extracts line items using layout-driven approach (tokens→rows→segments), not table-extractor-driven (pdfplumber table detection is helper, not single point of failure)
 - [ ] **LINES-02**: System handles multi-line items (wrapped text) by grouping continuation lines to same line item
-- [ ] **LINES-03**: System extracts line item fields: description, quantity, unit price, total amount (best effort extraction)
-- [ ] **LINES-04**: System handles line items spanning multiple pages (table continuation)
+- [x] **LINES-03**: System extracts line item fields: description, quantity, unit price, total amount (best effort extraction)
+- [x] **LINES-04**: System handles line items spanning multiple pages (table continuation)
 
 ### Validation & Quality Control
 
@@ -48,16 +48,16 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Export & Output
 
-- [ ] **EXPORT-01**: System exports primary output as Excel file (one row per line item/product row)
-- [ ] **EXPORT-02**: Excel includes invoice metadata repeated per row: Fakturanummer, Fakturadatum, Företag, Totalsumma
+- [x] **EXPORT-01**: System exports primary output as Excel file (one row per line item/product row)
+- [x] **EXPORT-02**: Excel includes invoice metadata repeated per row: Fakturanummer, Fakturadatum, Företag, Totalsumma
 - [ ] **EXPORT-03**: Excel includes control columns: Status, LinesSum, Diff, InvoiceNoConfidence, TotalConfidence (or HeaderConfidence if combined)
 - [ ] **EXPORT-04**: System creates review reports: review folder with PDF + metadata/annotations and JSON/CSV report with page + bbox + text excerpt for debugging
 
 ### Interface & Processing
 
-- [ ] **CLI-01**: System provides CLI interface for batch processing of multiple PDF invoices
-- [ ] **CLI-02**: System outputs status per invoice (OK/PARTIAL/REVIEW) during batch processing
-- [ ] **CLI-03**: System accepts input directory or file list and outputs to specified directory
+- [x] **CLI-01**: System provides CLI interface for batch processing of multiple PDF invoices
+- [x] **CLI-02**: System outputs status per invoice (OK/PARTIAL/REVIEW) during batch processing
+- [x] **CLI-03**: System accepts input directory or file list and outputs to specified directory
 
 ## v2 Requirements
 
@@ -100,37 +100,37 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DOC-01 | Phase 1 | Pending |
-| DOC-02 | Phase 1 | Pending |
-| DOC-03 | Phase 1 | Pending |
-| DOC-04 | Phase 1 | Pending |
-| DOC-05 | Phase 1 | Pending |
-| DOC-06 | Phase 1 | Pending |
-| LAYOUT-01 | Phase 1 | Pending |
-| LAYOUT-02 | Phase 1 | Pending |
-| LAYOUT-03 | Phase 1 | Pending |
+| DOC-01 | Phase 1 | Complete |
+| DOC-02 | Phase 1 | Complete |
+| DOC-03 | Phase 1 | Complete |
+| DOC-04 | Phase 1 | Complete |
+| DOC-05 | Phase 1 | Complete |
+| DOC-06 | Phase 1 | Complete |
+| LAYOUT-01 | Phase 1 | Complete |
+| LAYOUT-02 | Phase 1 | Complete |
+| LAYOUT-03 | Phase 1 | Complete |
 | LAYOUT-04 | Phase 2 | Pending |
 | EXTRACT-01 | Phase 2 | Pending |
 | EXTRACT-02 | Phase 2 | Pending |
 | EXTRACT-03 | Phase 2 | Pending |
 | EXTRACT-04 | Phase 2 | Pending |
 | EXTRACT-05 | Phase 2 | Pending |
-| LINES-01 | Phase 1 | Pending |
+| LINES-01 | Phase 1 | Complete |
 | LINES-02 | Phase 2 | Pending |
-| LINES-03 | Phase 1 | Pending |
-| LINES-04 | Phase 1 | Pending |
+| LINES-03 | Phase 1 | Complete |
+| LINES-04 | Phase 1 | Complete |
 | VALID-01 | Phase 3 | Pending |
 | VALID-02 | Phase 3 | Pending |
 | VALID-03 | Phase 2 | Pending |
 | VALID-04 | Phase 3 | Pending |
 | VALID-05 | Phase 3 | Pending |
-| EXPORT-01 | Phase 1 | Pending |
-| EXPORT-02 | Phase 1 | Pending |
+| EXPORT-01 | Phase 1 | Complete |
+| EXPORT-02 | Phase 1 | Complete |
 | EXPORT-03 | Phase 3 | Pending |
 | EXPORT-04 | Phase 3 | Pending |
-| CLI-01 | Phase 1 | Pending |
-| CLI-02 | Phase 1 | Pending |
-| CLI-03 | Phase 1 | Pending |
+| CLI-01 | Phase 1 | Complete |
+| CLI-02 | Phase 1 | Complete |
+| CLI-03 | Phase 1 | Complete |
 
 **Coverage:**
 - v1 requirements: 35 total
@@ -139,4 +139,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2025-01-27*
-*Last updated: 2025-01-27 after initial definition*
+*Last updated: 2026-01-17 after Phase 1 completion*

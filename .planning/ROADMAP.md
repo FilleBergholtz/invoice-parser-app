@@ -32,14 +32,14 @@ This roadmap delivers a Swedish invoice parsing system that transforms PDF invoi
 5. System extracts line items using layout-driven approach (tokens→rows→segments) and produces basic Excel output (one row per line item) with invoice metadata repeated per row
 6. System provides CLI interface that accepts input directory or file list, processes invoices in batch, and outputs status per invoice
 
-**Plans**: 5 plans
+**Plans**: 5 plans (all complete)
 
 Plans:
-- [ ] 01-01: PDF Reading & Type Detection (Document/Page models, PDF reader, type detection)
-- [ ] 01-02: Token Extraction (Token model, pdfplumber tokenizer, OCR abstraction)
-- [ ] 01-03: Layout Analysis (Row/Segment models, row grouping, segment identification)
-- [ ] 01-04: Line Item Extraction (InvoiceLine model, layout-driven parser)
-- [ ] 01-05: Excel Export & CLI (Excel exporter, CLI interface, batch processing)
+- [x] 01-01: PDF Reading & Type Detection (Document/Page models, PDF reader, type detection)
+- [x] 01-02: Token Extraction (Token model, pdfplumber tokenizer, OCR abstraction)
+- [x] 01-03: Layout Analysis (Row/Segment models, row grouping, segment identification)
+- [x] 01-04: Line Item Extraction (InvoiceLine model, layout-driven parser)
+- [x] 01-05: Excel Export & CLI (Excel exporter, CLI interface, batch processing)
 
 ### Phase 2: Header + Wrap
 
@@ -88,6 +88,6 @@ Phases execute in numeric order: 1 → 2 → 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Document Normalization | 0/TBD | Not started | - |
+| 1. Document Normalization | 5/5 | Complete | 2026-01-17 |
 | 2. Header + Wrap | 0/TBD | Not started | - |
 | 3. Validation | 0/TBD | Not started | - |
