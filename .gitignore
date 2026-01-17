@@ -54,6 +54,12 @@ output_verification_footer_fix/
 output_test_edge_cases/
 output_test_edge_cases_v2/
 output_test_fixes/
+output_test_unit_fix/
+output_test_unit_fix_v2/
+output_test_unit_fix_v3/
+output_test_unit_fix_v3/
+output_test_quantity_fix/
+output_test_quantity_fix_v2/
 
 # OS
 .DS_Store

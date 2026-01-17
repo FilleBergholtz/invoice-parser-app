@@ -27,6 +27,9 @@ def validate_line_items(
     """
     warnings = []
     
+    # Edge case units that may have complex extraction issues
+    edge_case_units = ['ea', 'ltr', 'månad', 'day', 'xpa']
+    
     for line in line_items:
         # Only validate if both quantity and unit_price are present
         if line.quantity is not None and line.unit_price is not None:
@@ -35,11 +38,26 @@ def validate_line_items(
             
             # Flag if difference exceeds tolerance (rounding/rabatt allowed)
             if difference > tolerance:
-                warnings.append(
-                    f"Rad {line.line_number}: "
-                    f"Antal × A-pris ({calculated_total:.2f}) ≠ Summa ({line.total_amount:.2f}), "
-                    f"avvikelse: {difference:.2f} SEK"
-                )
+                # Check if this is an edge case unit that may require manual review
+                is_edge_case = line.unit and line.unit.lower() in edge_case_units
+                
+                # Check if difference is significant (likely extraction error, not just rounding)
+                is_significant_error = difference > 1.0
+                
+                if is_edge_case and is_significant_error:
+                    # Large difference with edge case unit - likely requires manual review
+                    warnings.append(
+                        f"Rad {line.line_number}: "
+                        f"Antal × A-pris ({calculated_total:.2f}) ≠ Summa ({line.total_amount:.2f}), "
+                        f"avvikelse: {difference:.2f} SEK. "
+                        f"⚠️ Kräver manuell granskning (edge case med enhet {line.unit.upper()})"
+                    )
+                else:
+                    warnings.append(
+                        f"Rad {line.line_number}: "
+                        f"Antal × A-pris ({calculated_total:.2f}) ≠ Summa ({line.total_amount:.2f}), "
+                        f"avvikelse: {difference:.2f} SEK"
+                    )
     
     return warnings
 

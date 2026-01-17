@@ -344,19 +344,32 @@ def _extract_line_from_row(
     
     # Extract quantity and unit_price: look for numeric columns before amount
     # Typically: description | quantity | unit | unit_price | total_amount
-    # IMPORTANT: Skip article numbers (long numbers at start of description)
+    # IMPORTANT: For rows with units like EA, LTR, månad, DAY, XPA, use unit position as anchor
     quantity = None
     unit = None
     unit_price = None
     
-    # First, identify potential article numbers in description
-    # Article numbers are typically: long numbers (6+ digits) at the start of description
-    # or numbers with spaces (e.g., "26 011407", "39 93178", "2120212009")
-    # Pattern: numbers with 6+ digits, or numbers with spaces that form 6+ digits total
+    # Extended unit list including DAY, dagar, EA, LTR, Liter, månad, XPA
+    unit_keywords = [
+        'st', 'kg', 'h', 'm²', 'm2', 'tim', 'timmar', 'pcs', 'pkt',
+        'day', 'days', 'dagar', 'ea', 'ltr', 'liter', 'liters', 'månad', 'månader',
+        'xpa', 'pkt', 'paket', 'box', 'burk', 'flaska', 'flaskor'
+    ]
+    
+    # First, try to find unit token - use it as anchor for quantity/unit_price extraction
+    unit_token_idx = None
+    for i, token in enumerate(row.tokens):
+        if i >= amount_token_idx:
+            break
+        token_text = token.text.strip().lower()
+        if token_text in unit_keywords:
+            unit = token_text
+            unit_token_idx = i
+            break
+    
+    # Identify potential article numbers in description
     article_number_pattern = re.compile(r'^(\d{1,2}\s+\d{5,8}|\d{6,12})\s+')
     has_article_number = bool(article_number_pattern.match(description))
-    
-    # Extract first number from description to check if it's an article number
     first_number_match = re.match(r'^(\d+(?:\s+\d+)*)', description)
     first_number_str = first_number_match.group(1) if first_number_match else ""
     first_number_cleaned = first_number_str.replace(' ', '')
@@ -367,79 +380,194 @@ def _extract_line_from_row(
         except ValueError:
             pass
     
-    # Look for numeric tokens before amount (potential quantity or unit_price)
-    numeric_tokens_before_amount = []
-    for i, token in enumerate(row.tokens):
-        if i >= amount_token_idx:
-            break
+    # Strategy 1: If unit found, use it as anchor
+    # Format: ... quantity unit unit_price ... total_amount
+    # Example: "2 5220 ELMÄTARE63A 3 EA 13,00" → quantity=3, unit=EA, unit_price=13.00
+    # Example: "27 7615 COMBISAFESTÖLBALKSTVING 2 108 EA 1,95" → quantity=2108, unit=EA, unit_price=1.95
+    if unit_token_idx is not None:
+        # First, try to extract quantity from text (handles thousand separators across tokens)
+        # Get text before unit token
+        before_unit_tokens = row.tokens[:unit_token_idx]
+        before_unit_text = " ".join(t.text for t in before_unit_tokens)
         
-        token_text = token.text.strip()
-        # Check if token looks like a number
-        if re.match(r'^\d+([.,]\d+)?$', token_text.replace(' ', '')):
-            # Convert to float
-            cleaned = token_text.replace(',', '.').replace(' ', '')
-            try:
-                numeric_value = float(cleaned)
-                
-                # Skip if this looks like an article number
-                # Article numbers are typically:
-                # - 6+ digits and at the beginning (first 2 tokens)
-                # - Match the first number in description
-                is_article_number = False
-                if i < 2:  # First tokens
-                    if numeric_value >= 100000:  # 6+ digits
-                        is_article_number = True
-                    elif first_number_value and abs(numeric_value - first_number_value) < 0.01:
-                        # Matches first number in description (likely article number)
-                        is_article_number = True
-                    elif len(str(int(numeric_value))) >= 6:  # 6+ digits
-                        is_article_number = True
-                
-                if is_article_number:
-                    continue  # Skip article number
+        # Pattern for quantity with thousand separators: "2 108", "1 260", "4 708", "1 085"
+        # Look for pattern: 1-3 digits, then space, then 3 digits (thousand separator format)
+        # This pattern should be right before the unit
+        # Try to find the last occurrence of this pattern before unit
+        thousand_sep_pattern = re.compile(r'\b(\d{1,3}(?:\s+\d{3})+)\b')
+        matches = list(thousand_sep_pattern.finditer(before_unit_text))
+        
+        if matches:
+            # Take the last match (closest to unit) that's not an article number
+            # Prioritize matches closer to the unit (higher position in text)
+            for match in reversed(matches):
+                quantity_text = match.group(1)
+                cleaned = quantity_text.replace(' ', '')
+                try:
+                    numeric_value = float(cleaned)
+                    match_start = match.start()
+                    match_end = match.end()
                     
-                numeric_tokens_before_amount.append((i, numeric_value, token))
-            except ValueError:
-                pass
+                    # Calculate distance from unit (higher = closer to unit)
+                    distance_from_unit = len(before_unit_text) - match_end
+                    
+                    # Check if this looks like an article number
+                    # Article numbers are typically at the start (first 30% of text)
+                    # and are often part of larger numbers like "27 7615" (277615)
+                    is_likely_article_number = False
+                    if match_start < len(before_unit_text) * 0.3:
+                        # At start - could be article number
+                        # If it's part of a larger number pattern (like "27 7615"), skip it
+                        # Check if there are more digits right after this match
+                        if match_end < len(before_unit_text):
+                            next_char = before_unit_text[match_end:match_end+1]
+                            if next_char.isdigit():
+                                # More digits after, likely part of article number
+                                is_likely_article_number = True
+                        # Also skip if numeric value is very large (likely article number)
+                        if numeric_value >= 100000:
+                            is_likely_article_number = True
+                    
+                    if not is_likely_article_number:
+                        # This looks like quantity
+                        # Prefer matches closer to unit (within last 50% of text)
+                        if distance_from_unit < len(before_unit_text) * 0.5 or numeric_value < 10000:
+                            if 1 <= numeric_value <= 100000:  # Reasonable range for quantity
+                                quantity = numeric_value
+                                break
+                except ValueError:
+                    pass
+        
+        # If no thousand-separator quantity found, look for single numeric token
+        if quantity is None:
+            for i in range(unit_token_idx - 1, -1, -1):  # Go backwards from unit
+                if i >= amount_token_idx:
+                    break
+                token = row.tokens[i]
+                token_text = token.text.strip()
+                
+                # Check if token is a pure number
+                if re.match(r'^\d+([.,]\d+)?$', token_text.replace(' ', '')):
+                    cleaned = token_text.replace(',', '.').replace(' ', '')
+                    try:
+                        numeric_value = float(cleaned)
+                        
+                        # Skip if it looks like article number or line number
+                        is_article_or_line_number = False
+                        if i < 3:  # First few tokens
+                            if first_number_value and abs(numeric_value - first_number_value) < 0.01:
+                                is_article_or_line_number = True
+                            elif numeric_value >= 10000 or len(str(int(numeric_value))) >= 5:
+                                is_article_or_line_number = True
+                            elif i == 0 and numeric_value < 100 and numeric_value == int(numeric_value):
+                                if len(row.tokens) > 1 and i + 1 < len(row.tokens):
+                                    next_token = row.tokens[i + 1].text.strip()
+                                    if re.match(r'^\d+', next_token):
+                                        is_article_or_line_number = True
+                        
+                        if not is_article_or_line_number:
+                            # This is likely quantity (should be small number, < 1000 typically)
+                            if numeric_value < 1000 and numeric_value == int(numeric_value):
+                                quantity = numeric_value
+                                break
+                    except ValueError:
+                        pass
+        
+        # Look for numeric token AFTER unit but BEFORE amount (this is unit_price)
+        # Handle amounts with thousand separators (e.g., "1 034,00")
+        # Extract text between unit and amount, then find amount pattern
+        if unit_token_idx + 1 < amount_token_idx:
+            # Get text between unit and amount
+            unit_to_amount_tokens = row.tokens[unit_token_idx + 1:amount_token_idx]
+            unit_to_amount_text = " ".join(t.text for t in unit_to_amount_tokens)
+            
+            # Pattern for amounts with thousand separators (spaces)
+            # Matches: "123,45", "1 234,56", "1 034,00", etc.
+            amount_pattern = re.compile(r'\d{1,3}(?:\s+\d{3})*(?:[.,]\d{2})|\d+(?:[.,]\d{2})')
+            match = amount_pattern.search(unit_to_amount_text)
+            
+            if match:
+                amount_text = match.group(0)
+                cleaned = amount_text.replace(' ', '').replace(',', '.')
+                try:
+                    numeric_value = float(cleaned)
+                    # Unit price should be reasonable (not too small, not too large)
+                    if 0.01 <= numeric_value <= 1000000:  # Reasonable range
+                        unit_price = numeric_value
+                except ValueError:
+                    pass
+            else:
+                # Fallback: look for single numeric token
+                for i in range(unit_token_idx + 1, amount_token_idx):
+                    token = row.tokens[i]
+                    token_text = token.text.strip()
+                    if re.match(r'^\d+([.,]\d+)?$', token_text.replace(' ', '')):
+                        cleaned = token_text.replace(',', '.').replace(' ', '')
+                        try:
+                            numeric_value = float(cleaned)
+                            if 0.01 <= numeric_value <= 1000000:
+                                unit_price = numeric_value
+                                break
+                        except ValueError:
+                            pass
     
-    # Heuristic: rightmost numeric before amount is likely unit_price
-    # Leftmost numeric (after article number) is likely quantity
-    if len(numeric_tokens_before_amount) >= 2:
-        # Multiple numerics: assume quantity is first (after article number), unit_price is last
-        # Skip first if it looks like article number
-        start_idx = 0
-        if has_article_number and len(numeric_tokens_before_amount) > 2:
-            start_idx = 1  # Skip article number
-        _, quantity, _ = numeric_tokens_before_amount[start_idx]
-        _, unit_price, _ = numeric_tokens_before_amount[-1]
-    elif len(numeric_tokens_before_amount) == 1:
-        # Single numeric: could be quantity or unit_price
-        # Prefer quantity if it's a small integer, otherwise unit_price
-        idx, value, token = numeric_tokens_before_amount[0]
-        # Skip if it looks like article number
-        if has_article_number and idx < 2 and value >= 100000:
-            # This is likely article number, not quantity
-            pass
-        elif value < 100 and value == int(value):
-            quantity = value
-        else:
-            unit_price = value
-    
-    # Extract unit: look for common unit strings near quantity
-    # Extended unit list including DAY, dagar, EA, LTR, Liter, månad, XPA
-    unit_keywords = [
-        'st', 'kg', 'h', 'm²', 'm2', 'tim', 'timmar', 'pcs', 'pkt',
-        'day', 'days', 'dagar', 'ea', 'ltr', 'liter', 'liters', 'månad', 'månader',
-        'xpa', 'pkt', 'paket', 'box', 'burk', 'flaska', 'flaskor'
-    ]
-    
-    if quantity is not None:
-        # Look for unit tokens after quantity token
-        for token in row.tokens:
-            token_text = token.text.strip().lower()
-            if token_text in unit_keywords:
-                unit = token_text
+    # Strategy 2: If no unit found, use old heuristic (fallback)
+    if unit_token_idx is None:
+        # Look for numeric tokens before amount (potential quantity or unit_price)
+        numeric_tokens_before_amount = []
+        for i, token in enumerate(row.tokens):
+            if i >= amount_token_idx:
                 break
+            
+            token_text = token.text.strip()
+            # Check if token looks like a number
+            if re.match(r'^\d+([.,]\d+)?$', token_text.replace(' ', '')):
+                # Convert to float
+                cleaned = token_text.replace(',', '.').replace(' ', '')
+                try:
+                    numeric_value = float(cleaned)
+                    
+                    # Skip if this looks like an article number
+                    is_article_number = False
+                    if i < 2:  # First tokens
+                        if numeric_value >= 100000:  # 6+ digits
+                            is_article_number = True
+                        elif first_number_value and abs(numeric_value - first_number_value) < 0.01:
+                            is_article_number = True
+                        elif len(str(int(numeric_value))) >= 6:  # 6+ digits
+                            is_article_number = True
+                    
+                    if is_article_number:
+                        continue  # Skip article number
+                        
+                    numeric_tokens_before_amount.append((i, numeric_value, token))
+                except ValueError:
+                    pass
+        
+        # Heuristic: rightmost numeric before amount is likely unit_price
+        # Leftmost numeric (after article number) is likely quantity
+        if len(numeric_tokens_before_amount) >= 2:
+            start_idx = 0
+            if has_article_number and len(numeric_tokens_before_amount) > 2:
+                start_idx = 1  # Skip article number
+            _, quantity, _ = numeric_tokens_before_amount[start_idx]
+            _, unit_price, _ = numeric_tokens_before_amount[-1]
+        elif len(numeric_tokens_before_amount) == 1:
+            idx, value, token = numeric_tokens_before_amount[0]
+            if has_article_number and idx < 2 and value >= 100000:
+                pass  # Skip article number
+            elif value < 100 and value == int(value):
+                quantity = value
+            else:
+                unit_price = value
+        
+        # Look for unit tokens after quantity token (fallback)
+        if quantity is not None:
+            for token in row.tokens:
+                token_text = token.text.strip().lower()
+                if token_text in unit_keywords:
+                    unit = token_text
+                    break
     
     # Create InvoiceLine
     return InvoiceLine(
