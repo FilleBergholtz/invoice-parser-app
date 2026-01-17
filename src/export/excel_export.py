@@ -179,23 +179,27 @@ def export_to_excel(
                     pass
         
         # Format control columns
+        # Column order: Fakturanummer(0), Referenser(1), Företag(2), Fakturadatum(3), 
+        # Beskrivning(4), Antal(5), Enhet(6), Á-pris(7), Rabatt(8), Summa(9), 
+        # Hela summan(10), Faktura-ID(11), Status(12), Radsumma(13), Avvikelse(14),
+        # Fakturanummer-konfidens(15), Totalsumma-konfidens(16)
         for row in worksheet.iter_rows(min_row=2, max_row=worksheet.max_row):
-            # Radsumma column (index L = 12, 0-indexed = 11)
-            radsumma_cell = row[11]
+            # Radsumma column (index 13, after Faktura-ID and Status)
+            radsumma_cell = row[13]
             radsumma_cell.number_format = FORMAT_NUMBER_00
             
-            # Avvikelse column (index M = 13, 0-indexed = 12)
-            avvikelse_cell = row[12]
+            # Avvikelse column (index 14)
+            avvikelse_cell = row[14]
             # Only format if numeric (not "N/A" or None)
             if isinstance(avvikelse_cell.value, (int, float)) and avvikelse_cell.value != "N/A":
                 avvikelse_cell.number_format = FORMAT_NUMBER_00
             
-            # Fakturanummer-konfidens column (index N = 14, 0-indexed = 13)
-            fakturanummer_konfidens_cell = row[13]
+            # Fakturanummer-konfidens column (index 15)
+            fakturanummer_konfidens_cell = row[15]
             fakturanummer_konfidens_cell.number_format = FORMAT_PERCENTAGE_00
             
-            # Totalsumma-konfidens column (index O = 15, 0-indexed = 14)
-            totalsumma_konfidens_cell = row[14]
+            # Totalsumma-konfidens column (index 16)
+            totalsumma_konfidens_cell = row[16]
             totalsumma_konfidens_cell.number_format = FORMAT_PERCENTAGE_00
     
     return str(output_path)
