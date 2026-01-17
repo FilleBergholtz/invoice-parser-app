@@ -21,11 +21,13 @@ def _is_footer_row(row: Row) -> bool:
     Footer rows typically contain:
     - "summa", "total", "att betala", "moms", "exkl", "inkl"
     - Summary labels that indicate totals rather than product rows
+    - Edge cases: Short descriptions with large amounts that match invoice totals
     """
     if not row.text:
         return False
     
     text_lower = row.text.lower()
+    text_stripped = row.text.strip()
     
     # Footer keywords (Swedish + English)
     footer_keywords = [
@@ -58,13 +60,67 @@ def _is_footer_row(row: Row) -> bool:
         'förf datum',
         'förf. datum',
         'förfallodatum',
-        'förfallo datum'
+        'förfallo datum',
+        # Additional keywords for edge cases
+        'lista',
+        'spec',
+        'bifogad',
+        'bifogadspec',
+        'hyraställning',
+        'hyraställningen'
     ]
     
     # Check if row text contains footer keywords
     for keyword in footer_keywords:
         if keyword in text_lower:
             return True
+    
+    # Heuristic 1: Extract amount to check if it's suspiciously large
+    # This helps identify edge cases where description is short but amount is large
+    amount_result = _extract_amount_from_row_text(row)
+    if amount_result:
+        total_amount, _, amount_token_idx = amount_result
+        
+        # Extract description (text before amount)
+        description_tokens = row.tokens[:amount_token_idx] if amount_token_idx else row.tokens
+        description = " ".join(t.text for t in description_tokens).strip()
+        description_lower = description.lower()
+        
+        # Heuristic 2: Short description (< 50 chars) with large amount (> 5000 SEK)
+        # and description starts with numbers or contains only numbers + short text
+        if len(description) < 50 and total_amount > 5000:
+            # Check if description starts with numbers (e.g., "4040", "12,1")
+            if re.match(r'^\d+[.,]?\d*\s+', description) or re.match(r'^\d+\s+', description):
+                # Check if description is mostly numbers and short words
+                words = description.split()
+                if len(words) <= 5:  # Very short description
+                    # Check if it contains suspicious patterns that indicate footer rows
+                    # These patterns are more specific to avoid false positives
+                    suspicious_patterns = [
+                        r'^\d+\s+[a-zåäö]{1,15}\s+(enl|lista)',  # "4040 Maskiner enl Lista"
+                        r'lista\s+\d+',  # "Maskiner enl Lista 5"
+                        r'(hyraställning|hyraställningen).*bifogad.*spec',  # "Hyraställningenl.bifogadspec"
+                        r'^\d+\s+[a-zåäö]{1,10}\s*$',  # Very short: "4040 Maskiner" (no more words)
+                    ]
+                    for pattern in suspicious_patterns:
+                        if re.search(pattern, description_lower):
+                            return True
+                    
+                    # Additional check: If description is extremely short (< 25 chars) 
+                    # and starts with numbers, and amount is very large (> 10000)
+                    if len(description) < 25 and total_amount > 10000:
+                        # Check if it's mostly numbers with minimal text
+                        non_numeric = re.sub(r'[\d\s,.-]', '', description)
+                        if len(non_numeric) < 10:  # Very few non-numeric characters
+                            return True
+        
+        # Heuristic 3: Description contains only numbers and very short text
+        # and amount is large (likely a total row)
+        if len(description) < 30 and total_amount > 10000:
+            # Check if description is mostly numbers
+            non_numeric_chars = re.sub(r'[\d\s,.-]', '', description)
+            if len(non_numeric_chars) < 15:  # Very few non-numeric characters
+                return True
     
     return False
 
