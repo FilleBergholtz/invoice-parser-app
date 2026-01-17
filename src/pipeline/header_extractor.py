@@ -15,18 +15,19 @@ def extract_invoice_number(
     header_segment: Optional[Segment],
     invoice_header: InvoiceHeader
 ) -> None:
-    """Extract invoice number from header segment using keyword proximity, regex, and confidence scoring.
+    """Extract invoice number from header segment using extended labels, normalization, and improved search logic.
     
     Args:
         header_segment: Header segment (or None if not found)
         invoice_header: InvoiceHeader to update with extracted invoice number
         
     Algorithm:
-    1. Extract all candidates from header segment rows using regex and keywords
-    2. Score each candidate using multi-factor scoring
-    3. Select final value (highest score, handle tie-breaking: top-2 within 0.03 → REVIEW)
-    4. Create traceability evidence
-    5. Update InvoiceHeader with invoice_number, invoice_number_confidence, invoice_number_traceability
+    1. Normalize text and search for invoice number labels (Swedish + English variants)
+    2. Extract candidates: same row (highest priority) or 1-2 rows below label
+    3. Fallback: header scan for numeric sequences (5-12 digits) in top 25% of page
+    4. Score all candidates using multi-factor scoring
+    5. Always store best candidate (even if confidence < 0.95) - status will be REVIEW
+    6. Create traceability evidence
     """
     if header_segment is None or not header_segment.rows:
         # No header segment → REVIEW
@@ -35,45 +36,116 @@ def extract_invoice_number(
         invoice_header.invoice_number_traceability = None
         return
     
-    # Step 1: Extract all candidates from header rows
+    all_rows = header_segment.rows
+    page = header_segment.page
     candidates = []
     
-    # Regex pattern for invoice number after keywords (Heuristik 5)
-    invoice_pattern = re.compile(
-        r'(?:fakturanummer|invoice\s*number|no\.|nr|number)[\s:]*([A-Z0-9\-]+)',
+    # Step 1: Extended label patterns (Swedish + English)
+    # Normalized patterns (will be applied to normalized text)
+    label_patterns = [
+        # Swedish variants
+        r'fakturanummer',
+        r'faktura\s*nr',
+        r'faktura\s*-\s*nr',
+        r'fakt\.\s*nr',
+        r'fakt\.nr',
+        r'faktnr',
+        r'fakt\s*nr',
+        r'fakt\s*-\s*nr',
+        r'fakt\s*nr\.',
+        r'fakt\.nr\.',
+        # English variants
+        r'invoice\s*number',
+        r'invoice\s*no',
+        r'invoice\s*no\.',
+        r'inv\s*no',
+        r'inv\s*no\.',
+        r'inv#',
+    ]
+    
+    # Combined pattern for label matching
+    label_pattern = re.compile(
+        r'(?:' + '|'.join(label_patterns) + r')',
         re.IGNORECASE
     )
     
-    # Also search for standalone alphanumeric patterns in header zone (fallback)
-    alphanumeric_pattern = re.compile(r'([A-Z0-9\-]{3,25})', re.IGNORECASE)
+    # Primary regex for invoice number: 6-10 digits
+    primary_number_pattern = re.compile(r'\b(\d{6,10})\b')
+    # Fallback regex: 5-12 digits
+    fallback_number_pattern = re.compile(r'\b(\d{5,12})\b')
     
-    all_rows = header_segment.rows
-    
+    # Step 2: Search for labels and extract numbers
     for row_index, row in enumerate(all_rows):
-        row_text = row.text
+        # Normalize row text
+        normalized_text = _normalize_text(row.text)
         
-        # Search for invoice number after keywords
-        matches = invoice_pattern.findall(row_text)
-        for match in matches:
-            if match:
+        # Check if row contains label
+        label_match = label_pattern.search(normalized_text)
+        
+        if label_match:
+            # Label found - search for number on same row (to the right of label)
+            label_pos = label_match.end()
+            text_after_label = normalized_text[label_pos:]
+            
+            # Try primary pattern first
+            number_match = primary_number_pattern.search(text_after_label)
+            if not number_match:
+                # Fallback to broader pattern
+                number_match = fallback_number_pattern.search(text_after_label)
+            
+            if number_match:
+                candidate = number_match.group(1)
                 candidates.append({
-                    'candidate': match.strip(),
+                    'candidate': candidate,
                     'row': row,
                     'row_index': row_index,
-                    'source': 'keyword'
+                    'source': 'label_same_row',
+                    'priority': 1  # Highest priority
                 })
+            
+            # Also check 1-2 rows below label
+            for offset in [1, 2]:
+                if row_index + offset < len(all_rows):
+                    below_row = all_rows[row_index + offset]
+                    below_normalized = _normalize_text(below_row.text)
+                    
+                    # Try primary pattern
+                    number_match = primary_number_pattern.search(below_normalized)
+                    if not number_match:
+                        number_match = fallback_number_pattern.search(below_normalized)
+                    
+                    if number_match:
+                        candidate = number_match.group(1)
+                        candidates.append({
+                            'candidate': candidate,
+                            'row': below_row,
+                            'row_index': row_index + offset,
+                            'source': f'label_below_{offset}',
+                            'priority': 2 + offset  # Lower priority than same row
+                        })
+    
+    # Step 3: Fallback - header scan (if no label found)
+    if not candidates:
+        # Limit to top 25% of page
+        page_top_threshold = page.height * 0.25
+        header_rows = [r for r in all_rows if r.y < page_top_threshold]
         
-        # Fallback: standalone alphanumeric patterns (less confident)
-        if not matches:
-            alphanumeric_matches = alphanumeric_pattern.findall(row_text)
-            for match in alphanumeric_matches:
-                # Skip if looks like date, amount, or org number
-                if _validate_invoice_number_format(match):
+        for row_index, row in enumerate(header_rows):
+            normalized_text = _normalize_text(row.text)
+            
+            # Extract all numeric sequences
+            number_matches = fallback_number_pattern.findall(normalized_text)
+            
+            for match in number_matches:
+                candidate = match
+                # Filter out dates, years, amounts, postal codes
+                if _is_valid_invoice_number_candidate(candidate, row, all_rows):
                     candidates.append({
-                        'candidate': match.strip(),
+                        'candidate': candidate,
                         'row': row,
                         'row_index': row_index,
-                        'source': 'fallback'
+                        'source': 'header_scan',
+                        'priority': 10  # Lowest priority
                     })
     
     if not candidates:
@@ -83,24 +155,33 @@ def extract_invoice_number(
         invoice_header.invoice_number_traceability = None
         return
     
-    # Step 2: Score each candidate (limit to top 10 for performance)
+    # Step 4: Score each candidate (limit to top 20 for performance)
     scored_candidates = []
-    for candidate in candidates[:10]:  # Limit to top 10
+    for candidate in candidates[:20]:  # Limit to top 20
         score = score_invoice_number_candidate(
             candidate['candidate'],
             candidate['row'],
-            header_segment.page,
+            page,
             all_rows
         )
+        # Boost score based on source priority
+        priority_boost = {
+            1: 0.1,  # label_same_row
+            2: 0.05,  # label_below_1
+            3: 0.02,  # label_below_2
+            10: 0.0   # header_scan
+        }
+        score = min(score + priority_boost.get(candidate.get('priority', 10), 0.0), 1.0)
+        
         scored_candidates.append({
             **candidate,
             'score': score
         })
     
-    # Sort by score descending
-    scored_candidates.sort(key=lambda c: c['score'], reverse=True)
+    # Sort by score descending, then by priority
+    scored_candidates.sort(key=lambda c: (c['score'], -c.get('priority', 10)), reverse=True)
     
-    # Step 3: Select final value with tie-breaking logic
+    # Step 5: Select final value - ALWAYS store best candidate (even if confidence < 0.95)
     if not scored_candidates:
         invoice_header.invoice_number_confidence = 0.0
         invoice_header.invoice_number = None
@@ -108,34 +189,15 @@ def extract_invoice_number(
         return
     
     top_candidate = scored_candidates[0]
-    
-    # Tie-breaking: If top-2 candidates are within 0.03 score difference and have different values → REVIEW
-    if len(scored_candidates) > 1:
-        top_score = top_candidate['score']
-        second_score = scored_candidates[1]['score']
-        top_value = top_candidate['candidate']
-        second_value = scored_candidates[1]['candidate']
-        
-        if (abs(top_score - second_score) <= 0.03 and top_value != second_value):
-            # Tie → REVIEW (don't store value)
-            invoice_header.invoice_number_confidence = max(top_score, second_score)
-            invoice_header.invoice_number = None  # Don't store uncertain value
-            invoice_header.invoice_number_traceability = None
-            return
-    
     final_number = top_candidate['candidate']
     final_score = top_candidate['score']
     final_row = top_candidate['row']
     
-    # Only store if confidence ≥ 0.95 (hard gate)
-    if final_score < 0.95:
-        invoice_header.invoice_number_confidence = final_score
-        invoice_header.invoice_number = None  # REVIEW
-        invoice_header.invoice_number_traceability = None
-        return
+    # Note: We no longer have hard gate - always store the best candidate
+    # Status will be REVIEW if confidence < 0.95 (handled in validation)
     
-    # Step 4: Create traceability evidence
-    page_number = header_segment.page.page_number
+    # Step 6: Create traceability evidence
+    page_number = page.page_number
     
     # Calculate bbox (union of all tokens matching invoice number)
     matching_tokens = [t for t in final_row.tokens if final_number in t.text]
@@ -182,10 +244,80 @@ def extract_invoice_number(
         evidence=evidence
     )
     
-    # Step 5: Update InvoiceHeader
+    # Step 7: Update InvoiceHeader - ALWAYS store value (even if confidence < 0.95)
     invoice_header.invoice_number = final_number
     invoice_header.invoice_number_confidence = final_score
     invoice_header.invoice_number_traceability = traceability
+
+
+def _normalize_text(text: str) -> str:
+    """Normalize text for matching: lowercase, remove : and #, collapse spaces, keep dots.
+    
+    Args:
+        text: Input text
+        
+    Returns:
+        Normalized text
+    """
+    # Lowercase
+    normalized = text.lower()
+    
+    # Remove : and #
+    normalized = normalized.replace(':', ' ').replace('#', ' ')
+    
+    # Collapse multiple spaces
+    normalized = re.sub(r'\s+', ' ', normalized)
+    
+    # Keep dots (for fakt.nr)
+    # Already handled by space collapse
+    
+    return normalized.strip()
+
+
+def _is_valid_invoice_number_candidate(candidate: str, row: Row, all_rows: List[Row]) -> bool:
+    """Check if candidate is valid invoice number (not date, year, amount, postal code).
+    
+    Args:
+        candidate: Numeric candidate string
+        row: Row containing candidate
+        all_rows: All rows for context
+        
+    Returns:
+        True if candidate looks like invoice number
+    """
+    if not candidate or not candidate.isdigit():
+        return False
+    
+    num = int(candidate)
+    length = len(candidate)
+    
+    # Filter out dates (YYYYMMDD = 8 digits, DDMMYYYY = 8 digits)
+    if length == 8:
+        # Check if could be date
+        year = num // 10000
+        if 1900 <= year <= 2100:
+            return False
+    
+    # Filter out years (4 digits, 1900-2100)
+    if length == 4 and 1900 <= num <= 2100:
+        return False
+    
+    # Filter out amounts (check if row contains currency symbols or decimal patterns)
+    row_text = row.text.lower()
+    if any(symbol in row_text for symbol in ['kr', 'sek', ':-', '€', '$']):
+        # Check if candidate is near decimal pattern
+        if re.search(r'\d+[.,]\d{2}', row_text):
+            return False
+    
+    # Filter out postal codes (5 digits, typically 10000-99999 in Sweden)
+    if length == 5 and 10000 <= num <= 99999:
+        # Check if row contains address keywords
+        address_keywords = ['väg', 'gata', 'street', 'road', 'box', 'post', 'postnummer']
+        if any(keyword in row_text for keyword in address_keywords):
+            return False
+    
+    # Valid invoice number: 5-12 digits, not filtered out above
+    return 5 <= length <= 12
 
 
 def _validate_invoice_number_format(candidate: str) -> bool:
