@@ -371,7 +371,7 @@ Om artikelnummer behövs i framtiden (t.ex. för produktkatalog-matchning, rappo
 - ✅ Förbättrad från 14 fakturor (11.6%) till 13 fakturor (10.7%) med TBD
 - ⚠️ 13 fakturor kvar med TBD - kan bero på att datumet inte finns i header-segmentet eller använder ovanliga format som inte matchar mönstren
 
-**Status:** ⚠️ In Progress - Förbättrad, men några fakturor kvar
+**Status:** ⚠️ Accepterat som edge case - 13 fakturor (10.7%) kvar med TBD, flaggas med REVIEW-status för manuell granskning
 
 ---
 
