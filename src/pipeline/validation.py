@@ -8,6 +8,42 @@ from ..models.validation_result import ValidationResult
 from ..pipeline.confidence_scoring import validate_total_against_line_items
 
 
+def validate_line_items(
+    line_items: List[InvoiceLine],
+    tolerance: float = 0.01
+) -> List[str]:
+    """Validate each line item: quantity × unit_price ≈ total_amount.
+    
+    Args:
+        line_items: List of InvoiceLine objects to validate
+        tolerance: Validation tolerance in SEK (default 0.01 for rounding)
+        
+    Returns:
+        List of warning messages for lines where quantity × unit_price ≠ total_amount
+        
+    Note:
+        Uses PDF total_amount as primary (source of truth), but validates against
+        calculated value to flag extraction errors.
+    """
+    warnings = []
+    
+    for line in line_items:
+        # Only validate if both quantity and unit_price are present
+        if line.quantity is not None and line.unit_price is not None:
+            calculated_total = line.quantity * line.unit_price
+            difference = abs(calculated_total - line.total_amount)
+            
+            # Flag if difference exceeds tolerance (rounding/rabatt allowed)
+            if difference > tolerance:
+                warnings.append(
+                    f"Rad {line.line_number}: "
+                    f"Antal × A-pris ({calculated_total:.2f}) ≠ Summa ({line.total_amount:.2f}), "
+                    f"avvikelse: {difference:.2f} SEK"
+                )
+    
+    return warnings
+
+
 def calculate_validation_values(
     total_amount: Optional[float],
     line_items: List[InvoiceLine],
@@ -73,6 +109,10 @@ def validate_invoice(
     # Step 3: Assign status
     errors = []
     warnings = []
+    
+    # Step 3a: Validate individual line items (quantity × unit_price ≈ total_amount)
+    line_item_warnings = validate_line_items(line_items, tolerance=0.01)
+    warnings.extend(line_item_warnings)
     
     if not hard_gate_passed:
         status = "REVIEW"

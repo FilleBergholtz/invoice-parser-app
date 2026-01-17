@@ -7,7 +7,11 @@ from src.models.invoice_line import InvoiceLine
 from src.models.row import Row
 from src.models.segment import Segment
 from src.models.validation_result import ValidationResult
-from src.pipeline.validation import calculate_validation_values, validate_invoice
+from src.pipeline.validation import (
+    calculate_validation_values,
+    validate_invoice,
+    validate_line_items
+)
 
 
 @pytest.fixture
@@ -315,3 +319,177 @@ class TestValidateInvoice:
         
         assert result.status == "REVIEW"
         assert result.hard_gate_passed is False
+
+
+class TestValidateLineItems:
+    """Tests for validate_line_items function."""
+    
+    def test_no_warnings_when_quantity_price_matches_total(self, invoice_lines_valid):
+        """Test that no warnings when quantity × unit_price = total_amount."""
+        # Add quantity and unit_price to first line (60.0 total, e.g., 5 × 12.0 = 60.0)
+        from src.models.page import Page
+        from src.models.document import Document
+        
+        doc = Document(filename="test.pdf", filepath="test.pdf", page_count=0, pages=[])
+        page = Page(page_number=1, width=612, height=792, document=doc)
+        doc.pages.append(page)
+        doc.page_count = 1
+        from src.models.token import Token
+        token1 = Token(text="Product", x=0, y=100, width=60, height=12, page=page)
+        row1 = Row(tokens=[token1], text="Product 1", x_min=0, x_max=200, y=100, page=page)
+        segment = Segment(segment_type="items", rows=[row1], page=page, y_min=237.6, y_max=554.4)
+        
+        line = InvoiceLine(
+            rows=[row1],
+            description="Product 1",
+            quantity=5.0,
+            unit_price=12.0,
+            total_amount=60.0,
+            line_number=1,
+            segment=segment
+        )
+        
+        warnings = validate_line_items([line], tolerance=0.01)
+        assert len(warnings) == 0
+    
+    def test_warning_when_quantity_price_mismatch(self, invoice_lines_valid):
+        """Test that warning is generated when quantity × unit_price ≠ total_amount."""
+        from src.models.page import Page
+        from src.models.document import Document
+        
+        doc = Document(filename="test.pdf", filepath="test.pdf", page_count=0, pages=[])
+        page = Page(page_number=1, width=612, height=792, document=doc)
+        doc.pages.append(page)
+        doc.page_count = 1
+        from src.models.token import Token
+        token1 = Token(text="Product", x=0, y=100, width=60, height=12, page=page)
+        row1 = Row(tokens=[token1], text="Product 1", x_min=0, x_max=200, y=100, page=page)
+        segment = Segment(segment_type="items", rows=[row1], page=page, y_min=237.6, y_max=554.4)
+        
+        # 5 × 12.0 = 60.0, but total_amount is 50.0 (difference: 10.0)
+        line = InvoiceLine(
+            rows=[row1],
+            description="Product 1",
+            quantity=5.0,
+            unit_price=12.0,
+            total_amount=50.0,
+            line_number=1,
+            segment=segment
+        )
+        
+        warnings = validate_line_items([line], tolerance=0.01)
+        assert len(warnings) == 1
+        assert "Rad 1" in warnings[0]
+        assert "60.00" in warnings[0]  # calculated (5 × 12.0)
+        assert "50.00" in warnings[0]  # total_amount
+        assert "10.00" in warnings[0]  # difference
+    
+    def test_no_warning_within_tolerance(self, invoice_lines_valid):
+        """Test that no warning when difference is within tolerance."""
+        from src.models.page import Page
+        from src.models.document import Document
+        
+        doc = Document(filename="test.pdf", filepath="test.pdf", page_count=0, pages=[])
+        page = Page(page_number=1, width=612, height=792, document=doc)
+        doc.pages.append(page)
+        doc.page_count = 1
+        from src.models.token import Token
+        token1 = Token(text="Product", x=0, y=100, width=60, height=12, page=page)
+        row1 = Row(tokens=[token1], text="Product 1", x_min=0, x_max=200, y=100, page=page)
+        segment = Segment(segment_type="items", rows=[row1], page=page, y_min=237.6, y_max=554.4)
+        
+        # 5 × 12.0 = 60.0, total_amount is 60.005 (difference: 0.005, within 0.01 tolerance)
+        line = InvoiceLine(
+            rows=[row1],
+            description="Product 1",
+            quantity=5.0,
+            unit_price=12.0,
+            total_amount=60.005,
+            line_number=1,
+            segment=segment
+        )
+        
+        warnings = validate_line_items([line], tolerance=0.01)
+        assert len(warnings) == 0
+    
+    def test_no_validation_when_missing_quantity_or_price(self, invoice_lines_valid):
+        """Test that no validation when quantity or unit_price is missing."""
+        from src.models.page import Page
+        from src.models.document import Document
+        
+        doc = Document(filename="test.pdf", filepath="test.pdf", page_count=0, pages=[])
+        page = Page(page_number=1, width=612, height=792, document=doc)
+        doc.pages.append(page)
+        doc.page_count = 1
+        from src.models.token import Token
+        token1 = Token(text="Product", x=0, y=100, width=60, height=12, page=page)
+        row1 = Row(tokens=[token1], text="Product 1", x_min=0, x_max=200, y=100, page=page)
+        segment = Segment(segment_type="items", rows=[row1], page=page, y_min=237.6, y_max=554.4)
+        
+        # Missing quantity
+        line1 = InvoiceLine(
+            rows=[row1],
+            description="Product 1",
+            quantity=None,
+            unit_price=12.0,
+            total_amount=60.0,
+            line_number=1,
+            segment=segment
+        )
+        
+        # Missing unit_price
+        line2 = InvoiceLine(
+            rows=[row1],
+            description="Product 1",
+            quantity=5.0,
+            unit_price=None,
+            total_amount=60.0,
+            line_number=2,
+            segment=segment
+        )
+        
+        warnings = validate_line_items([line1, line2], tolerance=0.01)
+        assert len(warnings) == 0
+    
+    def test_multiple_warnings_for_multiple_lines(self, invoice_lines_valid):
+        """Test that warnings are generated for all lines with mismatches."""
+        from src.models.page import Page
+        from src.models.document import Document
+        
+        doc = Document(filename="test.pdf", filepath="test.pdf", page_count=0, pages=[])
+        page = Page(page_number=1, width=612, height=792, document=doc)
+        doc.pages.append(page)
+        doc.page_count = 1
+        from src.models.token import Token
+        token1 = Token(text="Product", x=0, y=100, width=60, height=12, page=page)
+        token2 = Token(text="Product", x=0, y=120, width=60, height=12, page=page)
+        row1 = Row(tokens=[token1], text="Product 1", x_min=0, x_max=200, y=100, page=page)
+        row2 = Row(tokens=[token2], text="Product 2", x_min=0, x_max=200, y=120, page=page)
+        segment = Segment(segment_type="items", rows=[row1, row2], page=page, y_min=237.6, y_max=554.4)
+        
+        # Line 1: 5 × 12.0 = 60.0, but total is 50.0
+        line1 = InvoiceLine(
+            rows=[row1],
+            description="Product 1",
+            quantity=5.0,
+            unit_price=12.0,
+            total_amount=50.0,
+            line_number=1,
+            segment=segment
+        )
+        
+        # Line 2: 3 × 10.0 = 30.0, but total is 25.0
+        line2 = InvoiceLine(
+            rows=[row2],
+            description="Product 2",
+            quantity=3.0,
+            unit_price=10.0,
+            total_amount=25.0,
+            line_number=2,
+            segment=segment
+        )
+        
+        warnings = validate_line_items([line1, line2], tolerance=0.01)
+        assert len(warnings) == 2
+        assert "Rad 1" in warnings[0]
+        assert "Rad 2" in warnings[1]

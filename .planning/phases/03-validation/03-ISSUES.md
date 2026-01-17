@@ -64,7 +64,14 @@
 
 **Recommendation:** Option 3 - Använd PDF-värdet som primär (det är vad som faktiskt står på fakturan), men validera mot beräknat värde och flagga avvikelser i validation warnings.
 
-**Status:** ⚠️ Needs implementation
+**Fix:** Implementerat validering i `src/pipeline/validation.py`:
+- ✅ Ny funktion `validate_line_items()` validerar quantity × unit_price ≈ total_amount för varje line item
+- ✅ Validering integrerad i `validate_invoice()` och lägger till varningar i ValidationResult.warnings
+- ✅ Tolerans 0.01 SEK för avrundning
+- ✅ Varningar formaterade: "Rad X: Antal × A-pris (X.XX) ≠ Summa (X.XX), avvikelse: X.XX SEK"
+- ✅ Unit tests tillagda (5 tester, alla passerar)
+
+**Status:** ✅ Fixed
 
 ---
 
@@ -86,7 +93,9 @@ Denna heuristik kan misslyckas för komplexa layouts eller när kolumner är i a
 
 **Recommendation:** Option 2 - Lägg till validering som flaggar när quantity × unit_price ≠ total_amount, så att användaren kan se problemet.
 
-**Status:** ⚠️ Needs implementation
+**Fix:** Implementerat validering som flaggar mismatches (se Issue #3 ovan). Valideringen identifierar när quantity × unit_price ≠ total_amount och lägger till varningar i ValidationResult.warnings, så att användaren kan se problemet direkt i valideringsresultatet.
+
+**Status:** ✅ Fixed
 
 ---
 
@@ -96,8 +105,8 @@ Denna heuristik kan misslyckas för komplexa layouts eller när kolumner är i a
 |-------|----------|--------|-----------------|
 | Excel column index | Critical | ✅ Fixed | None |
 | Invoice number "TBD" | High | ✅ Fixed | None |
-| Quantity × Price ≠ Summa | High | ⚠️ Needs implementation | Add validation logic |
-| Quantity extraction errors | Medium | ⚠️ Needs implementation | Improve heuristics or validation |
+| Quantity × Price ≠ Summa | High | ✅ Fixed | None |
+| Quantity extraction errors | Medium | ✅ Fixed | None |
 
 ---
 
@@ -105,8 +114,8 @@ Denna heuristik kan misslyckas för komplexa layouts eller när kolumner är i a
 
 1. ✅ **Fixed:** Excel column index
 2. ✅ **Fixed:** Invoice number extraction - utökade labels, normalisering, söklogik, borttagen hard gate
-3. **Implementation needed:** Validera quantity × unit_price mot total_amount
-4. **Implementation needed:** Förbättra quantity/price extraction heuristics
+3. ✅ **Fixed:** Validera quantity × unit_price mot total_amount - implementerat validate_line_items() och integrerat i validate_invoice()
+4. ✅ **Fixed:** Quantity extraction errors - validering flaggar nu mismatches så användaren kan se problemet
 
 ---
 
