@@ -64,7 +64,8 @@ All 20 must-haves verified across 4 plans. All artifacts exist, are substantive,
   - **Artifacts:** `src/export/excel_export.py` ✓
 
 - ✓ "Confidence scores formatted as percentage (0.95 → 95%) using Excel percentage format"
-  - **Verified:** Confidence scores multiplied by 100 before writing, formatted with FORMAT_PERCENTAGE_00
+  - **Verified:** Confidence scores stored as 0.0-1.0, Excel FORMAT_PERCENTAGE_00 automatically converts to percentage (0.95 → 95%)
+  - **Note:** Fixed issue #8 - removed double multiplication (was multiplying by 100 in code AND Excel format)
   - **Artifacts:** `src/export/excel_export.py` ✓
 
 - ✓ "Diff column shows 'N/A' when total_amount is None (cannot calculate diff)"
