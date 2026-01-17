@@ -254,28 +254,160 @@ invoice_header.status = assign_status(invoice_header, line_items)
 
 ---
 
-## Summary of Decisions Needed
+## Decisions Made
 
-1. **Status terminology:** PARTIAL vs WARNING? → Use PARTIAL
-2. **Status assignment logic:** Exact rules for OK/PARTIAL/REVIEW with all edge cases
-3. **Mathematical validation:** Where it happens, what values to store
-4. **Excel control columns:** Order, names (Swedish), formatting (percentage for confidence)
-5. **Review reports:** Which invoices (REVIEW only?), folder structure, metadata content, JSON vs CSV
-6. **Validation module structure:** Where status logic lives, what it returns
-7. **Excel export integration:** How to pass validation data, batch handling
+### 1. Status System: PARTIAL vs WARNING
+
+**Decision:** Use **OK / PARTIAL / REVIEW** (matches ROADMAP.md and requirements).
+
+**Rationale:** PARTIAL = "header data is confident but line items don't sum correctly" (actionable: review line items). WARNING suggests less severity than PARTIAL.
 
 ---
 
-## Recommended Defaults (if user confirms)
+### 2. Status Assignment Logic
 
-- **Status system:** OK / PARTIAL / REVIEW (matches ROADMAP)
-- **Status logic:** Hard gate + sum_diff <= ±1 SEK = OK; Hard gate pass + sum_diff > ±1 SEK = PARTIAL; Hard gate fail = REVIEW
-- **Control columns:** After existing columns, Swedish names, percentage for confidence
-- **Review reports:** REVIEW status only, folder per invoice, JSON metadata with Traceability, copy PDF
-- **Validation module:** New `validation.py` with `ValidationResult` object
-- **Excel export:** Extend `invoice_metadata` dict with validation fields, one consolidated file
+**Decision:** Status assignment logic (with edge cases):
+
+```
+1. Check hard gate: invoice_number_confidence >= 0.95 AND total_confidence >= 0.95
+
+2. IF hard_gate_passes:
+   a. Calculate lines_sum = SUM(all InvoiceLine.total_amount)
+   b. IF total_amount is None (not extracted):
+      → Status = REVIEW (hard gate might pass but total not extracted - edge case)
+   c. ELSE:
+      - Calculate diff = total_amount - lines_sum (signed difference)
+      - IF abs(diff) <= 1.0 SEK (tolerance):
+         → Status = OK
+      - ELSE:
+         → Status = PARTIAL (header confident, but sum mismatch)
+
+3. ELSE (hard_gate_fails):
+   → Status = REVIEW (low confidence on invoice_number or total)
+
+Edge cases:
+- invoice_number_confidence >= 0.95 but total_confidence < 0.95 → REVIEW
+- total_confidence >= 0.95 but invoice_number_confidence < 0.95 → REVIEW
+- no invoice_lines extracted but header OK → REVIEW (no lines = cannot validate)
+- invoice_lines exist but total_amount is None → REVIEW (cannot validate without total)
+```
+
+**Rationale:** Hard gate must pass for OK/PARTIAL. Mathematical validation required for OK. PARTIAL means header is confident but line items don't sum (actionable).
+
+---
+
+### 3. Mathematical Validation Integration
+
+**Decision:**
+- **Where:** Both Phase 2 (for confidence scoring) and Phase 3 (for status assignment and reporting). Reuse `validate_total_against_line_items()` from Phase 2.
+- **Values to store for Excel:**
+  - `lines_sum`: SUM of all InvoiceLine.total_amount (always calculate, even if total_amount is None)
+  - `diff`: `total_amount - lines_sum` (signed difference, not absolute)
+  - `total_amount`: From InvoiceHeader.total_amount (extracted from footer, can be None)
+- **If total_amount is None:**
+  - Calculate `lines_sum` anyway (shows what we have)
+  - Set `diff = "N/A"` in Excel (not None, Excel-friendly)
+  - Status = REVIEW regardless (hard gate failed or cannot validate)
+
+**Rationale:** Validation used both for confidence (Phase 2) and status (Phase 3). Store all values for Excel control columns.
+
+---
+
+### 4. Excel Control Columns Format
+
+**Decision:**
+- **Column order:** **After** existing columns (keeps existing columns first, control columns at end)
+- **Column names (Swedish):**
+  - Status → "Status"
+  - LinesSum → "Radsumma"
+  - Diff → "Avvikelse"
+  - InvoiceNoConfidence → "Fakturanummer-konfidens"
+  - TotalConfidence → "Totalsumma-konfidens"
+- **Excel formatting:**
+  - Status: Text (OK/PARTIAL/REVIEW)
+  - Radsumma: Number with 2 decimals (currency format)
+  - Avvikelse: Number with 2 decimals (signed, can be negative) or "N/A" if total_amount is None
+  - Fakturanummer-konfidens: Percentage format (0.95 → 95%)
+  - Totalsumma-konfidens: Percentage format (0.95 → 95%)
+
+**Rationale:** Swedish for consistency with existing columns. Percentage for confidence (more intuitive: 95% vs 0.95).
+
+---
+
+### 5. Review Reports Structure
+
+**Decision:**
+- **Which invoices:** **Only REVIEW status** (saves space, focuses on issues that need manual verification)
+- **Folder structure:** **Folder per invoice** (organized, scales better):
+  ```
+  output_dir/
+    ├── invoices_2026-01-17.xlsx
+    ├── errors/                    (corrupt PDFs - already exists)
+    └── review/                    (NEW)
+        ├── invoice_12345/
+        │   ├── invoice_12345.pdf  (copy of original PDF)
+        │   └── metadata.json      (InvoiceHeader + Traceability + Validation)
+        └── invoice_67890/
+            ├── invoice_67890.pdf
+            └── metadata.json
+  ```
+- **Metadata content:**
+  - InvoiceHeader data (invoice_number, total_amount, confidence scores, supplier_name, invoice_date, etc.)
+  - Traceability evidence for invoice_number and total (JSON structure from Traceability objects)
+  - Validation results (status, lines_sum, diff, line_count)
+- **Format:** **JSON only** (structured, preserves nested Traceability evidence, easier to parse programmatically). CSV can be generated later if needed.
+- **PDF handling:** **Copy PDF** to review folder (self-contained, safe to move/archive review folder)
+
+**Rationale:** REVIEW only = focused on issues. Folder per invoice = organized. JSON = preserves structure. Copy PDF = self-contained.
+
+---
+
+### 6. Validation Module Structure
+
+**Decision:**
+- **Location:** New module `src/pipeline/validation.py` (separation of concerns, reusable)
+- **Return type:** **ValidationResult object** (carries all validation data for Excel export):
+  ```python
+  @dataclass
+  class ValidationResult:
+      status: str  # "OK" | "PARTIAL" | "REVIEW"
+      lines_sum: float  # SUM of all InvoiceLine.total_amount
+      diff: Optional[float]  # total_amount - lines_sum (signed), None if total_amount is None
+      tolerance: float  # 1.0 SEK (for reference)
+      hard_gate_passed: bool  # True if both confidences >= 0.95
+      invoice_number_confidence: float
+      total_confidence: float
+      errors: List[str]  # List of validation error messages (if any)
+      warnings: List[str]  # List of validation warnings (if any)
+  ```
+
+**Rationale:** Separation of concerns. ValidationResult carries all data needed for Excel export and reporting.
+
+---
+
+### 7. Excel Export Integration
+
+**Decision:**
+- **Pass validation data:** **Extend `invoice_metadata` dict** with validation fields:
+  - Add: `status`, `lines_sum`, `diff`, `invoice_number_confidence`, `total_confidence`
+- **Batch handling:** **One consolidated Excel file** with Status column (user can filter/sort by Status). All invoices go to same Excel file regardless of status.
+- **Control columns per-line-item:** Status/Diff/confidence repeat same value for all rows of same invoice (current design: one row per line item).
+
+**Rationale:** Extending metadata dict is minimal change to existing API. One consolidated file with filterable Status column is most flexible for users.
+
+---
+
+## Summary of Decisions
+
+✅ **1. Status system:** OK / PARTIAL / REVIEW  
+✅ **2. Status logic:** Hard gate + sum_diff <= ±1 SEK = OK; Hard gate pass + sum_diff > ±1 SEK = PARTIAL; Hard gate fail = REVIEW  
+✅ **3. Mathematical validation:** Reuse Phase 2 function, store lines_sum, diff, total_amount for Excel  
+✅ **4. Control columns:** After existing columns, Swedish names ("Status", "Radsumma", "Avvikelse", "Fakturanummer-konfidens", "Totalsumma-konfidens"), percentage for confidence  
+✅ **5. Review reports:** REVIEW status only, folder per invoice, JSON metadata with Traceability, copy PDF  
+✅ **6. Validation module:** New `validation.py` with `ValidationResult` object  
+✅ **7. Excel export:** Extend `invoice_metadata` dict with validation fields, one consolidated file  
 
 ---
 
 *Context document created: 2026-01-17*  
-*Awaiting user decisions on gray areas*
+*Decisions confirmed: 2026-01-17*
