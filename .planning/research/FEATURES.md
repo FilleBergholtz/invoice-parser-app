@@ -14,12 +14,12 @@ Features users assume exist. Missing these = product feels incomplete.
 |---------|--------------|------------|-------|
 | High-accuracy OCR/text extraction | Invoices contain critical financial data; errors are costly | MEDIUM | Must handle both searchable PDFs (fast path) and scanned (OCR path) |
 | Field-level extraction (invoice number, date, vendor, totals) | Core requirement for any invoice parser | MEDIUM | Requires layout analysis + semantic understanding |
-| Line item extraction | Users need detailed product/service breakdowns, not just totals | HIGH | Complex due to table variations, multi-line items, wrapped text |
+| Line item extraction | Users need detailed product/service breakdowns, not just totals | HIGH | **Layout-driven approach:** tokens→rows→segments (not "table extractor"-driven). pdfplumber table detection is helper, not single point of failure. Complex due to table variations, multi-line items, wrapped text |
 | Multi-page document support | Real invoices span multiple pages | MEDIUM | Must maintain context across pages, handle page breaks in tables |
 | Mathematical validation (totals check) | Detects extraction errors, builds user trust | LOW | Critical for 100% accuracy requirement on totals |
 | Confidence scoring & exception handling | Users need to know when extraction is uncertain | MEDIUM | Enables hard gates - REVIEW status for low confidence |
-| Export to structured formats (Excel, CSV) | Data must integrate with accounting/ERP systems | LOW | pandas + openpyxl handles this well |
-| Spatial traceability (link back to PDF) | Users must verify extracted values against source | MEDIUM | Store bbox/page references for critical fields (invoice number, total) |
+| **Primary output: Excel (one row per line item)** | Core requirement - structured tabular format | LOW | pandas + openpyxl. One row = one product/service line. Invoice metadata (number, date, vendor, total) repeated per row. **Critical:** Must include control columns: Status, LinesSum, Diff |
+| Spatial traceability (link back to PDF) | Users must verify extracted values against source | MEDIUM | **Absolute requirement for hard gates:** Store page + bbox + evidence (source text) for invoice number and total. Enables verification and trust |
 
 ### Differentiators (Competitive Advantage)
 
@@ -27,7 +27,7 @@ Features that set the product apart. Not required, but valuable.
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| Hard gates on critical fields (100% or REVIEW) | Guarantees no false positives - critical for trust | LOW | Status system: OK/PARTIAL/REVIEW based on confidence |
+| Hard gates on critical fields (100% or REVIEW) | Guarantees no false positives - critical for trust | LOW | **Definition:** OK status ONLY when invoice number + total are both certain (high confidence). Otherwise REVIEW (no silent guessing). This is the definition of "100% correct" - 100% accurate for all OK exports. Requires traceability (page+bbox+evidence) for both critical fields |
 | Template-free parsing | Adapts to vendor layout changes without maintenance | HIGH | Requires robust layout analysis + semantic understanding |
 | Batch processing with status tracking | Handles volume efficiently, clear visibility into issues | MEDIUM | CLI + status output per invoice |
 | Review workflow with clickable PDF links | Fast human verification of flagged invoices | MEDIUM | PDF viewer integration or metadata for navigation |
@@ -101,7 +101,7 @@ Minimum viable product — what's needed to validate the concept.
 - [x] Line item extraction (best effort) — Needed for validation
 - [x] Mathematical validation (sum of line items vs total) — Core quality check
 - [x] Status assignment (OK/PARTIAL/REVIEW) — Required for hard gates
-- [x] Excel export with status and traceability columns — Required output format
+- [x] Excel export (primary output: one row per line item) with control columns (Status, LinesSum, Diff) — Required output format
 - [x] CLI interface for batch processing — Required user interface for v1
 
 ### Add After Validation (v1.x)
