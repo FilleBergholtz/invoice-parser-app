@@ -47,6 +47,10 @@ htmlcov/
 temp/
 tmp/
 output_test/
+output_verification/
+output_test_footer_fix/
+output_test_footer_fix_full/
+output_verification_footer_fix/
 
 # OS
 .DS_Store
