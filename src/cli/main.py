@@ -55,6 +55,7 @@ def process_invoice(
         
         # Step 3: Extract tokens from all pages
         all_invoice_lines = []
+        all_segments = []  # Collect segments from all pages
         line_number_global = 1
         
         for page in doc.pages:
@@ -79,6 +80,7 @@ def process_invoice(
             
             # Step 5: Identify segments
             segments = identify_segments(rows, page)
+            all_segments.extend(segments)  # Collect for footer extraction
             
             # Step 6: Extract line items from items segment
             items_segment = next((s for s in segments if s.segment_type == "items"), None)
@@ -93,10 +95,33 @@ def process_invoice(
                 
                 all_invoice_lines.extend(invoice_lines)
         
+        # Step 7: Extract header fields and total amount
+        # Find header segment (from first page)
+        header_segment = None
+        if doc.pages:
+            first_page_segments = [s for s in all_segments if s.page == doc.pages[0]]
+            header_segment = next((s for s in first_page_segments if s.segment_type == "header"), None)
+        
+        # Find footer segment (from last page, or all pages)
+        footer_segment = None
+        if doc.pages:
+            last_page_segments = [s for s in all_segments if s.page == doc.pages[-1]]
+            footer_segment = next((s for s in last_page_segments if s.segment_type == "footer"), None)
+        
+        # Create InvoiceHeader
+        invoice_header = None
+        if header_segment:
+            invoice_header = InvoiceHeader(segment=header_segment)
+        
+        # Extract total amount from footer
+        if footer_segment and invoice_header:
+            extract_total_amount(footer_segment, all_invoice_lines, invoice_header)
+        
         return {
             "status": "OK" if all_invoice_lines else "PARTIAL",
             "line_count": len(all_invoice_lines),
             "invoice_lines": all_invoice_lines,
+            "invoice_header": invoice_header,
             "error": None
         }
         
