@@ -172,3 +172,52 @@ def test_missing_fields_optional(sample_items_segment):
         # Should still have description and total_amount
         assert line_without_qty.description
         assert line_without_qty.total_amount > 0
+
+
+def test_footer_rows_filtered(sample_page):
+    """Test that footer rows (summa/total/att betala) are filtered out."""
+    from src.pipeline.invoice_line_parser import extract_invoice_lines
+    
+    # Product row
+    product_tokens = [
+        Token(text="Product", x=10, y=300, width=60, height=12, page=sample_page),
+        Token(text="100.00", x=300, y=300, width=60, height=12, page=sample_page),
+    ]
+    product_row = Row(
+        tokens=product_tokens,
+        y=300,
+        x_min=10,
+        x_max=360,
+        text="Product 100.00",
+        page=sample_page
+    )
+    
+    # Footer row (should be filtered out)
+    footer_tokens = [
+        Token(text="Att", x=10, y=400, width=30, height=12, page=sample_page),
+        Token(text="betala", x=50, y=400, width=50, height=12, page=sample_page),
+        Token(text="1000.00", x=300, y=400, width=60, height=12, page=sample_page),
+    ]
+    footer_row = Row(
+        tokens=footer_tokens,
+        y=400,
+        x_min=10,
+        x_max=360,
+        text="Att betala 1000.00",
+        page=sample_page
+    )
+    
+    segment = Segment(
+        segment_type="items",
+        rows=[product_row, footer_row],
+        y_min=300,
+        y_max=400,
+        page=sample_page
+    )
+    
+    lines = extract_invoice_lines(segment)
+    
+    # Should only extract product row, footer row should be filtered out
+    assert len(lines) == 1
+    assert lines[0].description == "Product"
+    assert lines[0].total_amount == 100.00

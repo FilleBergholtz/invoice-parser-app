@@ -9,6 +9,66 @@ from ..models.segment import Segment
 from ..pipeline.wrap_detection import detect_wrapped_rows, consolidate_wrapped_description
 
 
+def _is_footer_row(row: Row) -> bool:
+    """Check if a row is a footer row (summary/total row) based on content.
+    
+    Args:
+        row: Row object to check
+        
+    Returns:
+        True if row appears to be a footer/summary row, False otherwise
+        
+    Footer rows typically contain:
+    - "summa", "total", "att betala", "moms", "exkl", "inkl"
+    - Summary labels that indicate totals rather than product rows
+    """
+    if not row.text:
+        return False
+    
+    text_lower = row.text.lower()
+    
+    # Footer keywords (Swedish + English)
+    footer_keywords = [
+        'summa',
+        'total',
+        'totalt',
+        'att betala',
+        'attbetala',
+        'moms',
+        'momspliktigt',
+        'exkl',
+        'inkl',
+        'exklusive',
+        'inklusive',
+        'exkl. moms',
+        'inkl. moms',
+        'totaltexkl',
+        'totaltexkl.',
+        'total inkl',
+        'total inkl.',
+        'forskott',
+        'forskottsbetalning',
+        'godkänd',
+        'godkänd för',
+        'f-skatt',
+        'fakturafrågor',
+        'fakturafrågor skickas',
+        'att betala sek',
+        'attbetala sek',
+        'förf datum',
+        'förf. datum',
+        'förfallodatum',
+        'förfallo datum'
+    ]
+    
+    # Check if row text contains footer keywords
+    for keyword in footer_keywords:
+        if keyword in text_lower:
+            return True
+    
+    return False
+
+
 def _extract_amount_from_row_text(row: Row) -> Optional[Tuple[float, Optional[float], int]]:
     """Extract total amount and discount from row.text with support for thousand separators.
     
@@ -164,6 +224,10 @@ def extract_invoice_lines(items_segment: Segment) -> List[InvoiceLine]:
     for row_index, row in enumerate(items_segment.rows):
         # Skip rows already processed as wraps
         if row_index in processed_row_indices:
+            continue
+        
+        # Skip footer rows (summary/total rows that shouldn't be product rows)
+        if _is_footer_row(row):
             continue
         
         # Try to extract line item from row

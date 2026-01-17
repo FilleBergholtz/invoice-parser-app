@@ -237,6 +237,35 @@ Om artikelnummer behövs i framtiden (t.ex. för produktkatalog-matchning, rappo
 
 ---
 
+### 9. Footer-rader (summa/total/att betala) hamnar i produktrader ✅ FIXED
+
+**Problem:** Footer-rader som "Totaltexkl. moms", "Att betala", "Summa: X" hamnar i items-segmentet och identifieras som produktrader, vilket skapar dubbel summa för fakturan.
+
+**Root Cause:** Segment-identifieringen är position-baserad (top 30% = header, bottom 30% = footer), men footer-rader kan hamna i items-segmentet om de inte är i den nedre 30% av sidan. Regel "rad med belopp = produktrad" identifierar dessa som produktrader eftersom de innehåller belopp.
+
+**Exempel från fakturor:**
+- "Totaltexkl. moms" med belopp → identifieras som produktrad
+- "Att betala 14970.00 SEK" → identifieras som produktrad
+- "Summa: 1 319,28" → identifieras som produktrad
+- "Momspliktigt belopp (25 %) 9 250,00 Moms 25%" → identifieras som produktrad
+
+**Analys:**
+- 704 rader med "summa/total/betala/moms" i beskrivningen
+- 6 rader där beskrivningen innehåller belopp som matchar "Hela summan" exakt
+- Dessa skapar dubbel summa: en gång som produktrad och en gång som fakturans totalsumma
+
+**Fix:** Implementerat i `src/pipeline/invoice_line_parser.py`:
+- ✅ Ny funktion `_is_footer_row()` identifierar footer-rader baserat på innehåll (inte bara position)
+- ✅ Footer-nyckelord: summa, total, att betala, moms, exkl, inkl, etc. (svenska + engelska)
+- ✅ Footer-rader filtreras bort från line item extraction innan `_extract_line_from_row()` anropas
+- ✅ Test verifierat: 744 footer-rader filtrerades bort från test-fakturor
+
+**Result:** Footer-rader identifieras och filtreras bort, inga dubbel summor längre.
+
+**Status:** ✅ Fixed
+
+---
+
 ## Summary
 
 | Issue | Severity | Status | Action Required |
@@ -249,6 +278,7 @@ Om artikelnummer behövs i framtiden (t.ex. för produktkatalog-matchning, rappo
 | Rabatter extraheras inte | Medium | ✅ Fixed | None |
 | Artikelnummer i beskrivning | Low | ✅ Investigation complete | No action needed - keep in description |
 | Konfidensprocent visar fel värde | High | ✅ Fixed | None |
+| Footer-rader i produktrader | High | ✅ Fixed | None |
 
 ---
 
@@ -262,10 +292,12 @@ Om artikelnummer behövs i framtiden (t.ex. för produktkatalog-matchning, rappo
 6. ✅ **Fixed:** Rabatter - implementerat identifiering av negativa belopp som rabatt-kolumn innan total_amount i `_extract_amount_from_row_text()`
 7. ✅ **Investigation complete:** Artikelnummer - undersökning visar att artikelnummer INTE är ett krav, behålls i beskrivningen enligt nuvarande specifikation
 8. ✅ **Fixed:** Konfidensprocent - tog bort dubbelmultiplikation, Excel-formaten hanterar procenten automatiskt
+9. ✅ **Fixed:** Footer-rader - implementerat `_is_footer_row()` som identifierar och filtrerar bort footer-rader (summa/total/att betala) från produktrader
 
 ---
 
 *Issues documented: 2026-01-17*  
 *Updated: 2026-01-17 - Added issues #5, #6, #7*  
 *Updated: 2026-01-17 - Completed investigation of issue #7 (artikelnummer)*  
-*Updated: 2026-01-17 - Fixed issue #8 (konfidensprocent dubbelmultiplikation)*
+*Updated: 2026-01-17 - Fixed issue #8 (konfidensprocent dubbelmultiplikation)*  
+*Updated: 2026-01-17 - Fixed issue #9 (footer-rader i produktrader)*
