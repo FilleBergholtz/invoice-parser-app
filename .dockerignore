@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Project specific
+.planning/
+tests/
+*.md
+.git/
+.gitignore
+
+# Output directories
+output_*/
+*.xlsx
+*.pdf
+
+# Environment
+.env
+.env.local
