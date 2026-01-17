@@ -80,10 +80,13 @@ Plans:
 4. System exports Excel with control columns: Status, LinesSum, Diff, InvoiceNoConfidence, TotalConfidence, enabling batch review of invoice quality
 5. System creates review reports (review folder with PDF + metadata/annotations and JSON/CSV report with page + bbox + text excerpt) for invoices requiring manual verification
 
-**Plans**: TBD (to be determined during planning)
+**Plans**: 4 plans (all planned)
 
 Plans:
-- [ ] 03-01: [To be planned]
+- [ ] 03-01: ValidationResult Model & Status Assignment (foundation for validation)
+- [ ] 03-02: Excel Control Columns (extend export with validation data)
+- [ ] 03-03: Review Report Generation (JSON + PDF for REVIEW invoices)
+- [ ] 03-04: CLI Integration (connect all components in pipeline)
 
 ## Progress
 
