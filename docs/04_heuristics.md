@@ -4,6 +4,19 @@
 
 Detta dokument definierar heuristiker och regler för parsing-logik i invoice-parser pipeline. Heuristikerna används för att identifiera och extrahera data när exakta mönster inte finns.
 
+## Preconditions
+
+**VIKTIGT**: Alla heuristiker för header/items/footer **förutsätter att tokens→rows är korrekt** och att **page geometry är konsekvent**.
+
+Innan heuristikerna kan tillämpas måste följande vara uppfyllda:
+
+- **Tokens → Rows**: Token-gruppering till rader måste vara korrekt och verifierad
+- **Page geometry**: Page width/height måste vara konsekvent använt genom hela pipelinen
+- **Koordinatsystem**: Ursprung (0,0) i övre vänstra hörnet med X ökar åt höger, Y ökar nedåt
+- **Spårbarhet**: Varje Row måste kunna spåras tillbaka till ursprungliga Tokens med korrekt bbox
+
+Om dessa preconditions inte är uppfyllda kommer heuristikerna att ge felaktiga resultat. Se `docs/checklist.md` Gate 0 för verifiering.
+
 ## Viktiga regler
 
 ### Regel 1: Rad med belopp = produktrad
@@ -139,13 +152,16 @@ def calculate_header_score(segment: Segment, page: Page) -> float:
 **Beskrivning**: Identifiera kolumner baserat på X-position.
 
 **Regler**:
+- **Position > mellanslag/tab**: Använd alltid X-position (bbox) för kolumn-identifiering, INTE mellanslag eller tabulator-tecken i text
 - Analysera X-positioner för alla tokens i items-segment
-- Identifiera kolumner baserat på X-position-kluster
+- Identifiera kolumner baserat på X-position-kluster (tokens som har liknande X-koordinater)
 - Vanliga kolumner (vänster till höger):
   1. Beskrivning (stor bredd)
   2. Kvantitet (smal)
   3. Enhetspris (smal, högerjusterad)
   4. Totalt belopp (smal, högerjusterad)
+
+**Viktigt**: Kolumner identifieras baserat på **spatial position (X-koordinater)**, inte på mellanslag eller tabulator-tecken i texten. Detta säkerställer robust parsing även om PDF:en använder varierande mellanslag.
 
 **Implementation**:
 ```python
@@ -176,10 +192,13 @@ def identify_columns(rows: List[Row]) -> List[float]:
 **Beskrivning**: Identifiera rader som är fortsättningar av produktbeskrivning.
 
 **Regler**:
+- **Position > mellanslag/tab**: Använd X-position (bbox) för att avgöra om en rad är wrap, INTE mellanslag eller indentering i text
 - Rad som INTE innehåller belopp = möjlig wrap
 - Rad som är närmast under produktrad = trolig wrap
-- X-position börjar ungefär samma som beskrivningens start (tolerans)
+- **X-position börjar ungefär samma som beskrivningens start (tolerans)**: Använd token.x för första token i raden för att jämföra med beskrivningens startposition
 - Rad som innehåller endast text (ingen kvantitet/pris) = wrap
+
+**Viktigt**: Wrap-identifiering baseras på **spatial position (X-koordinater)**, inte på mellanslag eller indentering i texten. Jämför `token.x` för första token i varje rad för att avgöra om det är en fortsättningsrad.
 
 **Implementation**:
 ```python

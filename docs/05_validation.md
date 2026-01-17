@@ -4,6 +4,10 @@
 
 Detta dokument definierar valideringsregler för kvalitetskontroll i invoice-parser pipeline. Validering sker i steg 11 (Reconciliation → Validation) och bestämmer status (OK/Warning/Review).
 
+**VIKTIGT**: Validation rules are evaluated before Excel export. Validation failures block Excel generation unless explicitly overridden.
+
+Validering säkerställer att Excel-export innehåller korrekt data innan filen genereras.
+
 ## Status-värden
 
 ### OK
@@ -46,6 +50,7 @@ Detta dokument definierar valideringsregler för kvalitetskontroll i invoice-par
 - Inga produktrader extraherade
 - Produktrader saknar total_amount
 - Stora avvikelser i summor (> 10% av total)
+- **Analysbrister**: Tokens, rows eller segments saknas (se Regel 2.5: Analysvalidering)
 
 **Meddelanden**: Fel listas i `errors`, kritiska fel flaggas.
 
@@ -116,6 +121,48 @@ def validate_required_fields(specification: InvoiceSpecification,
     
     return errors
 ```
+
+---
+
+### Regel 2.5: Analysvalidering
+
+**Beskrivning**: Validera att normalisering/analys-steg (tokens→rows→segments) fungerat korrekt. Detta säkerställer att analysbrister upptäcks innan vi försöker extrahera fält.
+
+**Kritiska analysbrister** (→ Review):
+- Om `page_count > 0` men tokens saknas på alla sidor
+- Om rows saknas (tom lista efter tokens→rows)
+- Om segmentering inte hittar items-segment på någon sida
+
+**Status-bestämning**:
+- Alla analyssteg fungerat korrekt → Fortsätt med andra valideringar
+- Tokens saknas → **Review** (kritiskt - analys misslyckades)
+- Rows saknas → **Review** (kritiskt - rad-gruppering misslyckades)
+- Items-segment saknas → **Review** (kritiskt - segmentering misslyckades, tom export riskerar)
+
+**Implementation**:
+```python
+def validate_analysis(document: Document, pages: List[Page], rows: List[Row], segments: List[Segment]) -> List[str]:
+    errors = []
+    
+    # Kontrollera tokens
+    if document.page_count > 0:
+        total_tokens = sum(len(page.tokens) for page in pages)
+        if total_tokens == 0:
+            errors.append("Kritisk: Ingen tokens extraherade trots att PDF har sidor - analys misslyckades")
+    
+    # Kontrollera rows
+    if not rows:
+        errors.append("Kritisk: Inga rows skapade - rad-gruppering misslyckades")
+    
+    # Kontrollera items-segment
+    items_segments = [s for s in segments if s.segment_type == "items"]
+    if not items_segments:
+        errors.append("Kritisk: Inget items-segment identifierat på någon sida - segmentering misslyckades (risk för tom export)")
+    
+    return errors
+```
+
+**Viktigt**: Dessa kontroller körs **innan** fält-validering för att säkerställa att analyskvaliteten är korrekt. Om analysbrister upptäcks, flaggas Review-status omedelbart för att förhindra "tom export" utan att veta att analyssteget misslyckades.
 
 ---
 
@@ -271,10 +318,14 @@ Validation:
 
 ## Implementation-anvisningar
 
-1. **Prioritering**: Kontrollera kritiska fel först (obligatoriska fält)
-2. **Summa-validering**: Kör alltid summa-validering för att identifiera avvikelser
-3. **Meddelanden**: Generera tydliga meddelanden som förklarar problemet
-4. **Status**: Sätt status baserat på allvarligaste problemet (Review > Warning > OK)
+1. **Prioritering**: Kontrollera analyskvalitet först (Regel 2.5: Analysvalidering), sedan kritiska fel (obligatoriska fält)
+2. **Analysvalidering**: Kör analysvalidering FÖRE fält-validering för att säkerställa att normalisering fungerat
+3. **Summa-validering**: Kör alltid summa-validering för att identifiera avvikelser
+4. **Meddelanden**: Generera tydliga meddelanden som förklarar problemet
+5. **Status**: Sätt status baserat på allvarligaste problemet (Review > Warning > OK)
+6. **Excel-blockering**: Validation failures block Excel generation unless explicitly overridden
+   - Status **OK** eller **Warning**: Tillåt Excel-export
+   - Status **Review**: Blockera Excel-export (eller flagga tydligt i filen om override är tillåtet)
 
 ## Exempel
 
@@ -333,5 +384,26 @@ Status: Review
 Errors: [
   "Kritisk: Fakturanummer saknas (obligatoriskt)",
   "Kritisk: Stor subtotal-avvikelse: 50.00 SEK"
+]
+```
+
+### Exempel 4: Review-validering (Analysbrister)
+
+```
+Input:
+  - document: page_count = 1
+  - pages: [Page med 0 tokens]
+  - rows: [] (tom lista)
+  - segments: [] (tom lista)
+  - invoice_lines: [] (tom lista p.g.a. analysbrister)
+
+Validering:
+  - Analysvalidering: ✗ (tokens saknas, rows saknas, items-segment saknas)
+
+Status: Review
+Errors: [
+  "Kritisk: Ingen tokens extraherade trots att PDF har sidor - analys misslyckades",
+  "Kritisk: Inga rows skapade - rad-gruppering misslyckades",
+  "Kritisk: Inget items-segment identifierat på någon sida - segmentering misslyckades (risk för tom export)"
 ]
 ```

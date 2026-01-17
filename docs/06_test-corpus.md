@@ -18,6 +18,25 @@ Detta dokument beskriver test-korpusen för invoice-parser, inklusive `sample_in
 
 ## Förväntade resultat
 
+**VIKTIGT**: **Analys correctness är första acceptans**. Innan fältextraktion testas måste analyskvaliteten (tokenisering, rad-gruppering, segmentering) vara korrekt och verifierad.
+
+### Analyskvalitet (första acceptans)
+
+För att säkerställa korrekt analys måste följande verifieras:
+
+- [ ] **Debug-representation**: För varje sida, exportera en debug-representation (rows med bbox) och verifiera manuellt på minst 5 fakturor
+- [ ] **Radordning**: Radordning top-to-bottom verifieras korrekt
+- [ ] **Segmentering**: Header/items/footer identifieras korrekt (minst grov segmentering)
+- [ ] **Spårbarhet**: Varje row kan spåras tillbaka till ursprungliga tokens med korrekt bbox
+
+**Debug-format för rows**:
+```
+Page 1:
+  Row 1 (y=50.0, x_min=50.0, x_max=500.0): "Fakturanummer: INV-2024-001"
+  Row 2 (y=80.0, x_min=50.0, x_max=500.0): "Leverantör: Acme AB"
+  ...
+```
+
 ### Förväntad struktur
 
 En typisk test-faktura bör innehålla:
@@ -55,6 +74,7 @@ En typisk test-faktura bör innehålla:
 ### Steg 4: Tokens → Rows
 - [ ] Tokens grupperas i rader baserat på Y-position
 - [ ] Radordning bevaras (top-to-bottom)
+- [ ] **Radordning verifieras på testkorpus** (debug-representation exporteras och manuellt kontrollerad)
 - [ ] Produktrader identifieras (rader med belopp)
 
 ### Steg 5: Rows → Segments
@@ -176,12 +196,37 @@ En typisk test-faktura bör innehålla:
 
 ---
 
+### Edge case 9: Multi-sidig faktura
+**Scenario**: Faktura som spänner över flera sidor (2+ sidor).
+
+**Förväntat resultat**:
+- **Korrekt page_count**: PDF med 2 sidor identifieras som `page_count = 2`
+- **Items på sida 2..n**: Produktrader på sida 2 och framåt identifieras korrekt
+- **Segmentering över sidor**: Varje sida segmenteras korrekt (header/items/footer)
+- **Spårbarhet**: Items på sida 2 kan spåras tillbaka till `page_number = 2` och korrekt token bbox
+- **Radordning**: Radordning bevaras korrekt över sidor (top-to-bottom, sida 1 → sida 2)
+
+**Test-krav**:
+- Multi-sidig faktura ska ha korrekt `page_count`
+- InvoiceLine-objekt från sida 2 ska ha `rows` som spåras tillbaka till `Page(page_number=2)`
+- Debug-representation för varje sida verifieras separat
+
+---
+
 ## Test-utfall
 
 ### Success-kriterier
 
-För att en test ska anses lyckad:
+För att en test ska anses lyckad måste **analyskvalitet** verifieras först:
 
+**Första acceptans: Analyskvalitet**
+1. **Debug-representation verifierad**: Rows med bbox exporterade och manuellt kontrollerade på minst 5 fakturor
+2. **Radordning korrekt**: Top-to-bottom ordning verifierad på testkorpus
+3. **Segmentering korrekt**: Header/items/footer identifieras korrekt (minst grov)
+4. **Spårbarhet verifierad**: Varje row kan spåras tillbaka till Page/Token med korrekt bbox
+5. **Multi-sidiga fakturor**: Korrekt page_count och items på sida 2..n identifieras
+
+**Andra acceptans: Fältextraktion** (efter analyskvalitet är verifierad)
 1. **Alla obligatoriska fält extraherade**: Fakturanummer, datum, minst en produktrad
 2. **Summa-avvikelse ≤ 1.00 SEK**: Tolerans för små avrundningsfel
 3. **Alla produktrader har total_amount**: Kritiskt för korrekt summa-beräkning

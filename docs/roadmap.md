@@ -4,9 +4,28 @@
 
 Roadmapen är indelad i tre faser som bygger på varandra. Varje fas implementeras sekventiellt innan nästa fas påbörjas.
 
-## Fas 1: Vertical Slice
+## Primary Output: Excel (Single Table)
 
-**Mål**: Skapa en komplett pipeline från PDF till CSV med grundläggande funktionalitet.
+**Slutmål**: Projektets primära output är en Excel-fil med strukturerad faktura-data.
+
+**Excel-struktur**:
+- Slutresultatet ska alltid vara en Excel-fil
+- En rad = en produktrad (InvoiceLine)
+- Återkommande fakturafält upprepas per rad (fakturanummer, datum, leverantör)
+- Excel används som verifierbar leverans, även om andra exporter tillkommer senare
+
+**Design-krav**:
+- All upstream design (datamodell, heuristik, validering) ska stödja korrekt Excel-export utan manuell efterbearbetning
+- Validering blockerar Excel-generering om kritiska fel finns
+- Excel-kolumner: Fakturanummer, Referenser, Företag, Fakturadatum, Beskrivning, Antal, Enhet, Á-pris, Rabatt, Summa, Hela summan
+
+---
+
+## Fas 1: Document Normalization
+
+**Mål**: Skapa en stabil representation av PDF-dokumentet med full spårbarhet. Fas 1 fokuserar på **Document normalization** - att transformera PDF till en robust, strukturerad representation innan vi försöker tolka specifika fält.
+
+**Fokus**: Fas 1 är **inte** "snabb parsing", utan **"stabil representation + spårbarhet"**. Vi bygger en solid grund innan vi lägger till komplex tolkning.
 
 **Pipeline-steg**:
 - PDF → Document
@@ -15,19 +34,30 @@ Roadmapen är indelad i tre faser som bygger på varandra. Varje fas implementer
 - Tokens → Rows
 - Rows → Segments
 - Segments → InvoiceLine
-- InvoiceLine → Export (CSV)
+- InvoiceLine → Export (Excel)
+
+**Principer för Fas 1**:
+- **Alltid splitta PDF till sidor**: Varje sida bearbetas separat med tydlig sidnumrering
+- **All text ska bli tokens med position**: Varje text-enhet måste ha exakt spatial information (x, y, width, height)
+- **Row/Segment måste vara robust innan vi försöker tolka fält**: Identifiering av rader och segment måste vara stabil och korrekt innan vi börjar extrahera specifika fält
+- **Målet är korrekt reading-order och spårbarhet**: Varje element (token, row, segment) måste kunna spåras tillbaka till ursprunglig sida och position
 
 **Krav**:
-- Enklaste möjliga implementation som fungerar end-to-end
-- Fokuserar på grundläggande produktrad-identifiering
+- Stabil och robust tokenisering med korrekt positioner
+- Robust rad-gruppering baserat på Y-position
+- Korrekt segment-identifiering (header/items/footer)
+- Full spårbarhet: varje InvoiceLine kan spåras tillbaka till Page/Row/Token
+- Grundläggande produktrad-identifiering (regel: "rad med belopp = produktrad")
 - Ingen header-extraktion ännu (placeholder-data)
 - Ingen validering ännu (direct export)
 - Testa med `sample_invoice_1.pdf`
 
 **Definition of Done**:
 - Alla steg implementerade och testade
-- Kan läsa PDF och producera CSV med produktrader
+- Kan läsa PDF och producera Excel med produktrader
 - Grundläggande parsing fungerar för enkel faktura
+- **Kan återskapa en 'komprimerad representation' per sida (rader top-to-bottom) med bibehållen spårbarhet**
+- Varje InvoiceLine har spårbarhet tillbaka till ursprunglig Page/Row/Token
 
 ---
 
@@ -81,10 +111,11 @@ Roadmapen är indelad i tre faser som bygger på varandra. Varje fas implementer
 
 ## Implementeringsordning
 
-1. **Fas 1: Vertical slice** (PDF → tokens → rows → segments → CSV)
+1. **Fas 1: Document Normalization** (PDF → tokens → rows → segments → CSV)
    - Implementera alla grundläggande steg
-   - Fokus på produktrad-identifiering
-   - Minimal men fungerande implementation
+   - Fokus på stabil representation och spårbarhet
+   - Robust tokenisering, rad-gruppering och segment-identifiering
+   - Korrekt reading-order med full spårbarhet till ursprunglig PDF
 
 2. **Fas 2: Header + wrap** (Zoner, Header scoring, Fortsättningsrader)
    - Lägg till header-extraktion

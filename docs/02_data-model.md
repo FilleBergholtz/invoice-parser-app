@@ -30,11 +30,16 @@ Page:
     - width: float               # Sidbredd i punkter
     - height: float              # Sidhöjd i punkter
     - tokens: List[Token]        # Lista av Token-objekt på sidan
+    - rendered_image_path: Optional[str]  # Sökväg till renderad sida (bild) för layout-visualisering (valfritt)
 ```
+
+**Viktigt**: `rendered_image_path` används för att senare steg kan härleda layout visuellt. Detta hjälper till vid felsökning och layout-analys.
 
 ### Token
 
 Representerar en text-enhet med spatial information (position och dimensioner).
+
+**KÄLLSANING**: Token är grundläggande dataenheten med full spårbarhet. Alla senare steg måste kunna spåras tillbaka till tokens.
 
 ```python
 Token:
@@ -59,13 +64,19 @@ Representerar en logisk rad med tokens grupperade på Y-position.
 
 ```python
 Row:
-    - tokens: List[Token]        # Tokens i raden
+    - tokens: List[Token]        # Tokens i raden (KÄLLSANING - använd denna för spårbarhet)
     - y: float                   # Y-koordinat för raden (median eller första token)
     - x_min: float               # Minsta X-koordinat i raden
     - x_max: float               # Största X-koordinat i raden
-    - text: str                  # Sammanfogad text från alla tokens (för enkelhet)
+    - text: str                  # Sammanfogad text från alla tokens (CONVENIENCE - använd tokens vid behov)
     - page: Page                 # Referens till sidan
 ```
+
+**Viktigt**: 
+- `tokens` är **källsanning** - all spårbarhet och exakt positionering kommer från tokens
+- `text` är endast en **convenience-representation** för enkel textåtkomst
+- **Downstream kod måste använda tokens/bbox** för spårbarhet och exakt positionering
+- Vid behov av exakt text eller positioner, använd `tokens` direkt, inte `text`
 
 ### Segment
 
@@ -141,17 +152,22 @@ Representerar en produktrad på fakturan.
 
 ```python
 InvoiceLine:
-    - rows: List[Row]            # Rader som tillhör denna produktrad (inkl. wraps)
+    - rows: List[Row]            # Rader som tillhör denna produktrad (inkl. wraps) - KÄLLSANING för spårbarhet
     - description: str           # Produktbeskrivning
     - quantity: Optional[float]  # Kvantitet
+    - unit: Optional[str]        # Enhet (t.ex. "st", "kg", "h", "m²")
     - unit_price: Optional[float]  # Enhetspris
+    - discount: Optional[float]  # Rabatt (som decimal, t.ex. 0.10 för 10%, eller som belopp)
     - total_amount: float        # Totalt belopp för raden
     - vat_rate: Optional[float]  # Moms-sats för denna rad
     - line_number: int           # Radnummer (för ordning)
     - segment: Segment           # Referens till items-segmentet
 ```
 
-**Viktigt**: `rows` kan innehålla flera rader om produktbeskrivningen är uppdelad på flera rader (wrapped text).
+**Viktigt**: 
+- `rows` kan innehålla flera rader om produktbeskrivningen är uppdelad på flera rader (wrapped text)
+- `rows` är **källsanning** - använd för spårbarhet tillbaka till Page/Token
+- `unit` och `discount` är valfria fält som extraheras för export (Enhet och Rabatt-kolumner)
 
 ### Reconciliation
 
@@ -194,7 +210,7 @@ Validation:
 
 ### InvoiceExport
 
-Representerar slutlig data för export till CSV/Excel.
+Representerar slutlig data för export till Excel.
 
 ```python
 InvoiceExport:
@@ -205,6 +221,46 @@ InvoiceExport:
     - export_timestamp: datetime.datetime  # När export skapades
 ```
 
+## Export mapping (Excel)
+
+Datamodellen mappas till Excel-kolumner enligt följande. Detta fastlåser tolkningen och säkerställer korrekt Excel-export.
+
+**Excel-kolumnordning** (exakt ordning):
+1. Fakturanummer
+2. Referenser
+3. Företag
+4. Fakturadatum
+5. Beskrivning
+6. Antal
+7. Enhet
+8. Á-pris
+9. Rabatt
+10. Summa
+11. Hela summan
+
+**Mappning**:
+
+| Datamodell | Excel-kolumn | Typ | Noter |
+|------------|--------------|-----|-------|
+| `InvoiceSpecification.invoice_number` | Fakturanummer | Text | |
+| `InvoiceSpecification.customer_reference` eller `InvoiceHeader.customer_reference` | Referenser | Text | Valfritt fält |
+| `InvoiceSpecification.supplier_name` | Företag | Text | |
+| `InvoiceSpecification.invoice_date` | Fakturadatum | Text | Formaterat som datum-sträng (YYYY-MM-DD) |
+| `InvoiceLine.description` | Beskrivning | Text | |
+| `InvoiceLine.quantity` | Antal | Numerisk | Kan vara tom om saknas |
+| `InvoiceLine.unit` | Enhet | Text | T.ex. "st", "kg", "h" |
+| `InvoiceLine.unit_price` | Á-pris | Numerisk | Enhetspris |
+| `InvoiceLine.discount` | Rabatt | Numerisk | Decimal (0.10 = 10%) eller belopp |
+| `InvoiceLine.total_amount` | Summa | Numerisk | Totalt belopp för raden |
+| `Reconciliation.extracted_total` eller `Reconciliation.calculated_total` | Hela summan | Numerisk | Totalt belopp för fakturan |
+
+**Viktigt**:
+- En rad i Excel = en `InvoiceLine`
+- Återkommande fält (Fakturanummer, Referenser, Företag, Fakturadatum) upprepas på varje rad
+- Tomma valfria fält (Rabatt, Referenser) visas som tom cell eller "-"
+- Numeriska fält måste vara numeriska i Excel (inte text)
+- Textfält måste vara text i Excel
+
 ## Fastlåsta fältnamn
 
 Dessa fältnamn **får INTE ändras** utan diskussion:
@@ -213,7 +269,7 @@ Dessa fältnamn **får INTE ändras** utan diskussion:
 - `Row`: `tokens`, `y`, `text`
 - `Segment`: `segment_type`, `rows`
 - `InvoiceHeader`: `invoice_number`, `invoice_date`, `supplier_name`, `customer_name`
-- `InvoiceLine`: `description`, `quantity`, `unit_price`, `total_amount`
+- `InvoiceLine`: `description`, `quantity`, `unit`, `unit_price`, `discount`, `total_amount`
 - `Reconciliation`: `calculated_subtotal`, `extracted_subtotal`, `calculated_total`, `extracted_total`
 - `Validation`: `status`, `messages`
 
@@ -244,8 +300,23 @@ Strukturer kan serialiseras till dict för JSON/CSV-export:
     "line_number": 1,
     "description": "Produkt A",
     "quantity": 2.0,
+    "unit": "st",
     "unit_price": 100.0,
+    "discount": 0.10,  # 10% rabatt
     "total_amount": 200.0,
     "vat_rate": 0.25
 }
 ```
+
+## Spårbarhet och källsanning
+
+**Kritiskt**: Tokens och Rows är **källsanning** med full spårbarhet:
+
+- **Token**: Grundläggande dataenhet med position (x, y, width, height) och text
+- **Row**: Gruppering av tokens med spårbarhet via `tokens`-listan
+- **InvoiceLine**: Kan spåras tillbaka till `rows`, som i sin tur spåras tillbaka till `tokens` och `page`
+
+**Användning**:
+- För exakt positionering eller spårbarhet: Använd `tokens` direkt (inte `Row.text`)
+- `Row.text` är endast en hjälprepresentation för enkel textåtkomst
+- Alla strukturer måste kunna spåras tillbaka till ursprunglig `Page` och `Token`

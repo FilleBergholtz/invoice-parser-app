@@ -4,6 +4,32 @@
 
 Denna checklista används för att spåra framsteg för varje task-implementation. Markera avklarade punkter när du implementerar enligt `docs/tasks.md`.
 
+## Gate 0: Normalisering klar
+
+**VIKTIGT**: Ingen header/line-item parsing får påbörjas innan Gate 0 är uppfylld.
+
+Denna gate säkerställer att dokumentnormalisering är komplett och stabil innan vi går vidare till semantisk tolkning (fältextraktion). T1-T5 måste vara färdiga och verifierade innan T6 och framåt implementeras.
+
+### Normaliserings-krav (måste vara klara innan semantisk parsing):
+
+- [ ] **PDF splittad till sidor**: Document → Page fungerar, alla sidor extraheras
+- [ ] **Sidbilder eller renderad sida finns**: Layout-information tillgänglig för varje sida
+- [ ] **Tokens med bbox finns för varje sida**: Page → Tokens fungerar, alla tokens har position (x, y, width, height)
+- [ ] **Rader är skapade och ordning verifierad**: Tokens → Rows fungerar, radordning top-to-bottom verifierad på testkorpus
+- [ ] **Segment (header/items/footer) finns**: Rows → Segments fungerar, minst grov segmentering implementerad
+- [ ] **Spårbarhet verifierad**: Kan peka ut `page_number` + `token bbox` för valfri text i pipeline
+
+### Verifiering
+
+Innan du går vidare till T6 (Segments → InvoiceLine), verifiera:
+1. Alla kriterier ovan är checkade
+2. Spårbarhet fungerar: Kan spåra en InvoiceLine tillbaka till ursprunglig Page/Row/Token
+3. Normalisering är stabil och robust på testkorpusen
+
+**STOPP**: Om något av kriterierna ovan inte är uppfyllda, fixa det INNAN du börjar med fältextraktion.
+
+---
+
 ## Allmänna krav för varje task
 
 ### Implementation
@@ -132,14 +158,47 @@ Denna checklista används för att spåra framsteg för varje task-implementatio
 - [ ] Unit tests passerar
 - [ ] Testat med olika scenarion
 
-### [T14] Validation → Export (med status)
-- [ ] CSV med metadata fungerar
-- [ ] Header-rad inkluderas
-- [ ] Footer med summor inkluderas
-- [ ] Valideringsstatus inkluderas
+### [T14] Validation → Validation Result
+- [ ] Validation-klass implementerad
+- [ ] Valideringsregler implementerade
+- [ ] Status sätts korrekt (OK/Warning/Review)
+- [ ] Validation failures blockerar Excel-generering (om inte explicit overridden)
+- [ ] Meddelanden genereras
 - [ ] Unit tests passerar
-- [ ] Fullständig pipeline testat
+- [ ] Testat med olika scenarion
+
+### [T15] Build final Excel export
+- [ ] Excel-export fungerar
+- [ ] En rad = en produktrad
+- [ ] Korrekt kolumnordning (Fakturanummer, Referenser, Företag, Fakturadatum, Beskrivning, Antal, Enhet, Á-pris, Rabatt, Summa, Hela summan)
+- [ ] Numeriska fält är numeriska (ej text)
+- [ ] Textfält är text (Fakturanummer, Referenser, Företag, etc.)
+- [ ] Tomma valfria fält hanteras korrekt
+- [ ] Återkommande fält upprepas korrekt per rad
+- [ ] SUM(Summa) ≈ Hela summan (verifiering i Excel)
+- [ ] Unit tests passerar
+- [ ] Minst en faktura manuellt kontrollerad i Excel
 - [ ] **Fas 3 komplett**
+
+## Gate: Excel export verifierad
+
+**VIKTIGT**: Systemet anses inte klart om Excel inte kan genereras.
+
+Innan projektet kan anses komplett måste följande vara uppfyllda:
+
+- [ ] **Excel-fil skapad**: Slutresultat är en Excel-fil (inte CSV)
+- [ ] **En rad = en produktrad**: Varje InvoiceLine motsvarar en rad i Excel
+- [ ] **Återkommande fält upprepas korrekt**: Fakturanummer, datum, leverantör upprepas per rad
+- [ ] **Tomma valfria fält hanteras korrekt**: Rabatt, Referenser etc. visar tom cell eller "-" om saknas
+- [ ] **Minst en faktura manuellt kontrollerad i Excel**: Excel öppnas utan varningar och data är korrekt
+
+**Verifiering**:
+1. Öppna Excel-filen och kontrollera att den öppnas utan varningar
+2. Verifiera att numeriska kolumner är numeriska (ej text)
+3. Kontrollera SUM(Summa) ≈ Hela summan
+4. Verifiera att återkommande fält upprepas korrekt
+
+---
 
 ## Projektkomplett checklista
 
