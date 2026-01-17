@@ -56,14 +56,14 @@ Plans:
 4. System handles multi-line items (wrapped text) by grouping continuation lines to the same line item
 5. System stores traceability (page number + bbox + evidence/source text) for invoice number and total, enabling verification and trust
 
-**Plans**: 5 plans
+**Plans**: 5 plans (all complete)
 
 Plans:
-- [ ] 02-01: InvoiceHeader & Traceability Models (foundation for field extraction)
-- [ ] 02-02: Total Amount Extraction (Priority 1: strongest signal via mathematical validation)
-- [ ] 02-03: Invoice Number Extraction (Priority 2: multi-factor scoring, tie-breaking)
-- [ ] 02-04: Vendor & Date Extraction (no hard gate, ISO date normalization)
-- [ ] 02-05: Wrap Detection (Priority 4: multi-line item handling)
+- [x] 02-01: InvoiceHeader & Traceability Models (foundation for field extraction)
+- [x] 02-02: Total Amount Extraction (Priority 1: strongest signal via mathematical validation)
+- [x] 02-03: Invoice Number Extraction (Priority 2: multi-factor scoring, tie-breaking)
+- [x] 02-04: Vendor & Date Extraction (no hard gate, ISO date normalization)
+- [x] 02-05: Wrap Detection (Priority 4: multi-line item handling)
 
 ### Phase 3: Validation
 
@@ -93,5 +93,5 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Document Normalization | 5/5 | Complete | 2026-01-17 |
-| 2. Header + Wrap | 0/TBD | Not started | - |
+| 2. Header + Wrap | 5/5 | Complete | 2026-01-17 |
 | 3. Validation | 0/TBD | Not started | - |
