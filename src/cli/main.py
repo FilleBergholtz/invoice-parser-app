@@ -102,7 +102,7 @@ def process_invoice(
             first_page_segments = [s for s in all_segments if s.page == doc.pages[0]]
             header_segment = next((s for s in first_page_segments if s.segment_type == "header"), None)
         
-        # Find footer segment (from last page, or all pages)
+        # Find footer segment (from last page)
         footer_segment = None
         if doc.pages:
             last_page_segments = [s for s in all_segments if s.page == doc.pages[-1]]
@@ -112,6 +112,8 @@ def process_invoice(
         invoice_header = None
         if header_segment:
             invoice_header = InvoiceHeader(segment=header_segment)
+            # Extract header fields (invoice number, date, vendor)
+            extract_header_fields(header_segment, invoice_header)
         
         # Extract total amount from footer
         if footer_segment and invoice_header:
