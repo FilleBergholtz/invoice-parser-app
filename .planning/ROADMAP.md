@@ -32,10 +32,14 @@ This roadmap delivers a Swedish invoice parsing system that transforms PDF invoi
 5. System extracts line items using layout-driven approach (tokens→rows→segments) and produces basic Excel output (one row per line item) with invoice metadata repeated per row
 6. System provides CLI interface that accepts input directory or file list, processes invoices in batch, and outputs status per invoice
 
-**Plans**: TBD (to be determined during planning)
+**Plans**: 5 plans
 
 Plans:
-- [ ] 01-01: [To be planned]
+- [ ] 01-01: PDF Reading & Type Detection (Document/Page models, PDF reader, type detection)
+- [ ] 01-02: Token Extraction (Token model, pdfplumber tokenizer, OCR abstraction)
+- [ ] 01-03: Layout Analysis (Row/Segment models, row grouping, segment identification)
+- [ ] 01-04: Line Item Extraction (InvoiceLine model, layout-driven parser)
+- [ ] 01-05: Excel Export & CLI (Excel exporter, CLI interface, batch processing)
 
 ### Phase 2: Header + Wrap
 
