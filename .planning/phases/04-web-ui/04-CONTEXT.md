@@ -100,13 +100,37 @@ Skapa ett webbaserat användargränssnitt för Invoice Parser App som möjliggö
 
 ---
 
+## Rekommenderad Strategi
+
+**MVP först, sedan produktion:**
+
+**Phase 4A: MVP med Streamlit** (Rekommenderat start)
+- Snabb implementation (Python-only)
+- Validera koncept och användarflöde
+- Testa med riktiga användare
+- Identifiera krav och förbättringar
+
+**Phase 4B: Produktion med FastAPI+React** (Om MVP visar behov)
+- Implementera när MVP visar värde
+- Mer flexibel och skalbar
+- Bättre användarupplevelse
+- Professionell stack för långsiktig användning
+
+**Alternativ: Direkt till produktion**
+- Om man redan vet att Streamlit inte räcker
+- Om man har frontend-resurser tillgängliga
+- Om man behöver professionell stack från start
+
+---
+
 ## Nästa steg
 
-1. Diskutera och besluta om UI-ramverk
-2. Skapa plan för Phase 4 med specifika plans
-3. Implementera MVP med valt ramverk
-4. Testa med riktiga fakturor
-5. Iterera baserat på feedback
+1. **Beslut:** MVP först eller direkt till produktion?
+2. Om MVP: Skapa plan för Phase 4A (Streamlit MVP)
+3. Om produktion: Skapa plan för Phase 4 (FastAPI+React)
+4. Implementera valt alternativ
+5. Testa med riktiga fakturor
+6. Iterera baserat på feedback
 
 ---
 
