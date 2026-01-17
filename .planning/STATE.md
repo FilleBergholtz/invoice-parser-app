@@ -11,9 +11,9 @@ See: .planning/PROJECT.md (updated 2025-01-27)
 ## Current Position
 
 Phase: 4 of 4 (Web UI)
-Plan: 1 of 3 in current phase
-Status: **In Progress** - Plan 04-01 complete
-Last activity: 2026-01-17 — Plan 04-01 implemented (Streamlit MVP grundläggande UI)
+Plan: 2 of 3 in current phase
+Status: **In Progress** - Plan 04-02 complete
+Last activity: 2026-01-17 — Plan 04-02 implemented (Detaljvy och Review Workflow)
 
 Progress: ██████████░░ 83% (3/4 phases complete)
 
