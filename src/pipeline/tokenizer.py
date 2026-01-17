@@ -1,14 +1,19 @@
 """Token extraction from pdfplumber (searchable PDFs)."""
 
-from typing import List
+from typing import List, TYPE_CHECKING
 
 import pdfplumber
 
 from ..models.page import Page
 from ..models.token import Token
 
+if TYPE_CHECKING:
+    from pdfplumber.page import Page as PDFPlumberPage
+else:
+    PDFPlumberPage = object  # type: ignore
 
-def extract_tokens_from_page(page: Page, pdfplumber_page: pdfplumber.Page) -> List[Token]:
+
+def extract_tokens_from_page(page: Page, pdfplumber_page: PDFPlumberPage) -> List[Token]:
     """Extract tokens from pdfplumber page object with spatial information.
     
     Args:

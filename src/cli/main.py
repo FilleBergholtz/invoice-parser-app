@@ -8,6 +8,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 
+# Fix encoding for Windows console
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except (AttributeError, ValueError):
+        pass  # Python < 3.7 or already configured
+
 import pdfplumber
 
 from ..models.document import Document
@@ -272,7 +279,7 @@ def process_batch(
             # Note: invoice_lines are collected via invoice_results, not all_invoice_lines
         
         # Status output per invoice
-        status_line = f"[{i}/{total}] {pdf_file.name} → {result['status']}"
+        status_line = f"[{i}/{total}] {pdf_file.name} -> {result['status']}"
         if result.get("validation_result") and result.get("invoice_header"):
             validation = result["validation_result"]
             if validation.status == "REVIEW":
