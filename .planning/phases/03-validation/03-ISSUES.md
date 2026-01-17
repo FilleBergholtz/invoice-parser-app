@@ -25,31 +25,24 @@
 
 ---
 
-### 2. Invoice Number Shows as "TBD" 
+### 2. Invoice Number Shows as "TBD" ✅ FIXED
 
 **Problem:** Många fakturor visar "TBD" istället för fakturanummer.
 
-**Root Cause:** Hard gate i `src/pipeline/header_extractor.py` rad 131:
-```python
-if final_score < 0.95:
-    invoice_header.invoice_number = None  # REVIEW
-```
+**Root Cause:** Hard gate i `src/pipeline/header_extractor.py` satt `invoice_number = None` när konfidens < 0.95.
 
-När konfidensen är < 0.95, sätts `invoice_number` till `None`, vilket gör att Excel-exporten visar "TBD" (rad 538 i `src/cli/main.py`):
-```python
-"fakturanummer": invoice_header.invoice_number or "TBD",
-```
+**Fix:** Implementerat omfattande förbättringar enligt specifikation:
+- ✅ Utökade label-varianter (svenska + engelska): fakturanummer, fakt.nr, invoice number, inv no, etc.
+- ✅ Normalisering före matchning: lowercase, ta bort : och #, slå ihop multipla mellanslag
+- ✅ Söklogik "bredvid eller under": samma rad (högst prioritet) eller 1-2 rader under label
+- ✅ Fallback header-scan: sök i översta 25% av sidan för 5-12 siffror, filtrera bort datum/år/belopp/postnummer
+- ✅ Primär regex: `\b\d{6,10}\b`, fallback: `\b\d{5,12}\b`
+- ✅ Tog bort hard gate: alltid spara bästa kandidat (även om konfidens < 0.95)
+- ✅ Status blir REVIEW om konfidens < 0.95 (hanteras i validation)
 
-**Design Intent:** Hard gate är medveten design för att garantera 100% korrekthet - osäkra värden ska inte exporteras som OK. Men användaren vill förmodligen se det extraherade värdet även om det är osäkert (med REVIEW status).
+**Result:** Fakturanummer visas nu alltid när det finns, även vid lägre konfidens. Osäkra värden markeras för granskning via REVIEW status.
 
-**Options:**
-1. **Store extracted value but mark as uncertain** - Spara det extraherade värdet även om konfidensen är < 0.95, men behåll REVIEW status
-2. **Keep current design** - Hard gate förblir, men förbättra extraktionslogiken för att öka konfidensen
-3. **Show in separate column** - Visa extraherade värde i en separat kolumn med konfidens
-
-**Recommendation:** Option 1 - Spara det extraherade värdet även vid låg konfidens, men behåll REVIEW status. Detta möjliggör manuell granskning utan att förlora information.
-
-**Status:** ⚠️ Needs decision
+**Status:** ✅ Fixed
 
 ---
 
@@ -102,7 +95,7 @@ Denna heuristik kan misslyckas för komplexa layouts eller när kolumner är i a
 | Issue | Severity | Status | Action Required |
 |-------|----------|--------|-----------------|
 | Excel column index | Critical | ✅ Fixed | None |
-| Invoice number "TBD" | High | ⚠️ Needs decision | Design decision needed |
+| Invoice number "TBD" | High | ✅ Fixed | None |
 | Quantity × Price ≠ Summa | High | ⚠️ Needs implementation | Add validation logic |
 | Quantity extraction errors | Medium | ⚠️ Needs implementation | Improve heuristics or validation |
 
@@ -111,7 +104,7 @@ Denna heuristik kan misslyckas för komplexa layouts eller när kolumner är i a
 ## Next Steps
 
 1. ✅ **Fixed:** Excel column index
-2. **Decision needed:** Invoice number hard gate - ska vi visa extraherade värde även vid låg konfidens?
+2. ✅ **Fixed:** Invoice number extraction - utökade labels, normalisering, söklogik, borttagen hard gate
 3. **Implementation needed:** Validera quantity × unit_price mot total_amount
 4. **Implementation needed:** Förbättra quantity/price extraction heuristics
 
