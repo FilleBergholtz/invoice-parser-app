@@ -33,26 +33,23 @@ def read_pdf(filepath: str) -> Document:
         filename = filepath.split('/')[-1].split('\\')[-1]  # Handle both / and \
         page_count = len(pdf.pages)
         
-        # Create Document first (pages will be added)
-        doc = Document(
-            filename=filename,
-            filepath=filepath,
-            page_count=page_count,
-            pages=[],  # Will be populated
-            metadata={}
-        )
-        
-        # Extract all pages
+        # Extract all pages first (before creating Document)
+        # We need to create pages list, then Document, then link them
         pages = []
+        # Create a placeholder doc reference first (we'll update it after)
+        # Use a temporary object pattern to avoid circular dependency
+        from ..models.document import Document as DocClass
+        temp_doc = object()  # Temporary placeholder
+        
         for i, pdfplumber_page in enumerate(pdf.pages, start=1):
             # Get page dimensions (width, height in points)
             width = float(pdfplumber_page.width)
             height = float(pdfplumber_page.height)
             
-            # Create Page object
+            # Create Page object (document will be set after Document creation)
             page = Page(
                 page_number=i,
-                document=doc,
+                document=temp_doc,  # Temporary, will be replaced
                 width=width,
                 height=height,
                 tokens=[],  # Initially empty, populated later
@@ -60,8 +57,18 @@ def read_pdf(filepath: str) -> Document:
             )
             pages.append(page)
         
-        # Update document with pages
-        doc.pages = pages
+        # Create Document with pages already populated
+        doc = Document(
+            filename=filename,
+            filepath=filepath,
+            page_count=page_count,
+            pages=pages,
+            metadata={}
+        )
+        
+        # Set document reference for all pages (using object.__setattr__ to bypass dataclass frozen if needed)
+        for page in pages:
+            object.__setattr__(page, 'document', doc)
         
         pdf.close()
         
