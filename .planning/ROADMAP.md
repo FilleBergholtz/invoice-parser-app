@@ -13,6 +13,7 @@ This roadmap delivers a Swedish invoice parsing system that transforms PDF invoi
 - [x] **Phase 1: Document Normalization** - Establish stable PDF representation with spatial traceability
 - [x] **Phase 2: Header + Wrap** - Extract critical fields (invoice number, total) with confidence scoring and handle multi-line items
 - [x] **Phase 3: Validation** - Mathematical validation, hard gates, and Excel export with status columns
+- [ ] **Phase 4: Web UI** - Web-based interface for invoice processing, review workflow, and API integration
 
 ## Phase Details
 
@@ -88,6 +89,26 @@ Plans:
 - [x] 03-03: Review Report Generation (JSON + PDF for REVIEW invoices)
 - [x] 03-04: CLI Integration (connect all components in pipeline)
 
+### Phase 4: Web UI
+
+**Goal**: System provides web-based interface for invoice processing, review workflow with clickable PDF links, and API for external system integration.
+
+**Depends on**: Phase 3
+
+**Requirements**: UI-01, UI-02, UI-03
+
+**Success Criteria** (what must be TRUE):
+1. Users can upload PDF invoices via web browser
+2. System shows processing status in real-time
+3. Users can view list of processed invoices with status (OK/PARTIAL/REVIEW)
+4. Users can filter and sort invoices by status
+5. Users can click on invoices to see detailed information
+6. Review workflow: Clickable links open PDF at correct page/position for verification
+7. Users can download Excel files and review reports
+8. API available for external system integration
+
+**Plans**: TBD (to be planned)
+
 ## Progress
 
 **Execution Order:**
@@ -98,5 +119,6 @@ Phases execute in numeric order: 1 → 2 → 3
 | 1. Document Normalization | 5/5 | Complete | 2026-01-17 |
 | 2. Header + Wrap | 5/5 | Complete | 2026-01-17 |
 | 3. Validation | 4/4 | Complete | 2026-01-17 |
+| 4. Web UI | 0/0 | Planning | — |
 
-**Note:** Phase 3 implementation is complete. Test results need further analysis (see 03-UAT.md for details).
+**Note:** Phase 3 implementation is complete. Phase 4 (Web UI) is in planning phase.
