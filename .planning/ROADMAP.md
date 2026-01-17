@@ -107,7 +107,12 @@ Plans:
 7. Users can download Excel files and review reports
 8. API available for external system integration
 
-**Plans**: TBD (to be planned)
+**Plans**: 3 plans
+
+Plans:
+- [ ] 04-01: Streamlit MVP - Grundläggande UI och Filuppladdning
+- [ ] 04-02: Streamlit MVP - Detaljvy och Review Workflow
+- [ ] 04-03: API Endpoints för Extern Integration
 
 ## Progress
 
