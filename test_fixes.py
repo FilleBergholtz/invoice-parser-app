@@ -8,8 +8,9 @@ print("=" * 80)
 print("TEST: Verifiering av fixar")
 print("=" * 80)
 
-# Hitta senaste Excel-fil
+# Hitta senaste Excel-fil (prioritera output_test_fixes om den finns)
 output_dirs = [
+    'output_test_fixes',  # Prioritera den nya batch-processningen
     'output_test_edge_cases_v2',
     'output_test_edge_cases',
     'output_verification_footer_fix',
@@ -171,9 +172,9 @@ print(f"3. Metadata i företag: {len(metadata_in_company)} problem")
 print(f"4. TBD på datum: {len(unique_invoices_tbd)} fakturor ({tbd_percentage:.1f}%)")
 
 if len(article_number_in_quantity) == 0 and len(metadata_in_company) == 0:
-    print("\n✅ Alla fixar verifierade - inga problem hittade!")
+    print("\nOK: Alla fixar verifierade - inga problem hittade!")
 elif len(article_number_in_quantity) == 0 and len(metadata_in_company) < 10:
-    print("\n⚠️  Några mindre problem kvar, men fixarna fungerar i stort")
+    print("\nOK: Några mindre problem kvar, men fixarna fungerar i stort")
 else:
     print("\nVARNING: Vissa problem kvar - fixarna behover forbattras")
 

@@ -292,9 +292,12 @@ Om artikelnummer behövs i framtiden (t.ex. för produktkatalog-matchning, rappo
 - ✅ Identifiering av artikelnummer: mönster för 6+ siffror i början av beskrivningen
 - ✅ Förbättrad logik: hoppa över numeriska tokens som matchar första numret i beskrivningen (artikelnummer)
 - ✅ Heuristik: nummer med 6+ siffror i första 2 tokens = troligen artikelnummer
-- ⚠️ **Delvis fixad:** 287 problem kvar - behöver förbättras ytterligare
+- ✅ Jämförelse med första numret i beskrivningen för att identifiera artikelnummer
 
-**Status:** ⚠️ In Progress - Delvis fixad, behöver förbättring
+**Verifiering med riktiga fakturor:**
+- ✅ 0 problem (från 287 problem) - alla artikelnummer filtreras bort korrekt
+
+**Status:** ✅ Fixed
 
 ---
 
@@ -307,6 +310,10 @@ Om artikelnummer behövs i framtiden (t.ex. för produktkatalog-matchning, rappo
 **Fix:** Implementerat i `src/pipeline/invoice_line_parser.py`:
 - ✅ Utökad unit_keywords-lista med: 'day', 'days', 'dagar', 'ea', 'ltr', 'liter', 'liters', 'månad', 'månader', 'xpa'
 - ✅ Ytterligare enheter: 'paket', 'box', 'burk', 'flaska', 'flaskor'
+
+**Verifiering med riktiga fakturor:**
+- ✅ 10 enheter hittades: dagar, day, ea, h, ltr, månad, st, tim, timmar, xpa
+- ✅ Alla förväntade enheter (som finns i testdata) extraheras nu korrekt
 
 **Status:** ✅ Fixed
 
@@ -334,9 +341,12 @@ Om artikelnummer behövs i framtiden (t.ex. för produktkatalog-matchning, rappo
   - `r'\d+\s+\d+[.,]\d{2}\s+sek'` - Belopp "7 517,00 SEK"
 - ✅ Förbättrad filtrering: kolla både full match och start-match för mönster
 - ✅ Ytterligare heuristik: hoppa över rader med >70% icke-alfabetiska tecken (troligen metadata)
-- ⚠️ **Delvis fixad:** 140 problem kvar - "Sida 2/2" matchas inte korrekt i alla fall
 
-**Status:** ⚠️ In Progress - Delvis fixad, behöver förbättring
+**Verifiering med riktiga fakturor:**
+- ✅ 0 problem (från 140 problem) - alla metadata filtreras bort korrekt
+- ✅ "Sida 2/2" och andra metadata-mönster identifieras och filtreras bort
+
+**Status:** ✅ Fixed
 
 ---
 
@@ -356,9 +366,12 @@ Om artikelnummer behövs i framtiden (t.ex. för produktkatalog-matchning, rappo
   - `r'(\d{2})\.(\d{2})\.(\d{2})'` - DD.MM.YY (assumera 20YY)
   - `r'(\d{2})/(\d{2})/(\d{2})'` - DD/MM/YY (assumera 20YY)
 - ✅ Förbättrad parsing: hantera både 4-siffriga och 2-siffriga år
-- ⚠️ **Delvis fixad:** 14 fakturor kvar med TBD - kan bero på att datumet inte finns i header-segmentet eller använder ovanliga format
 
-**Status:** ⚠️ In Progress - Delvis fixad, behöver förbättring
+**Verifiering med riktiga fakturor:**
+- ✅ Förbättrad från 14 fakturor (11.6%) till 13 fakturor (10.7%) med TBD
+- ⚠️ 13 fakturor kvar med TBD - kan bero på att datumet inte finns i header-segmentet eller använder ovanliga format som inte matchar mönstren
+
+**Status:** ⚠️ In Progress - Förbättrad, men några fakturor kvar
 
 ---
 
@@ -375,10 +388,10 @@ Om artikelnummer behövs i framtiden (t.ex. för produktkatalog-matchning, rappo
 | Artikelnummer i beskrivning | Low | ✅ Investigation complete | No action needed - keep in description |
 | Konfidensprocent visar fel värde | High | ✅ Fixed | None |
 | Footer-rader i produktrader | High | ✅ Fixed | None |
-| Artikelnummer i antal | High | ⚠️ In Progress | Förbättra artikelnummer-identifiering |
+| Artikelnummer i antal | High | ✅ Fixed | None |
 | Enheter saknas | Medium | ✅ Fixed | None |
-| Företag registreras inte korrekt | High | ⚠️ In Progress | Förbättra metadata-filtrering |
-| TBD på datum | Medium | ⚠️ In Progress | Förbättra datum-extraktion |
+| Företag registreras inte korrekt | High | ✅ Fixed | None |
+| TBD på datum | Medium | ⚠️ In Progress | Förbättra datum-extraktion (13 fakturor kvar, 10.7%) |
 
 ---
 
@@ -393,10 +406,10 @@ Om artikelnummer behövs i framtiden (t.ex. för produktkatalog-matchning, rappo
 7. ✅ **Investigation complete:** Artikelnummer - undersökning visar att artikelnummer INTE är ett krav, behålls i beskrivningen enligt nuvarande specifikation
 8. ✅ **Fixed:** Konfidensprocent - tog bort dubbelmultiplikation, Excel-formaten hanterar procenten automatiskt
 9. ✅ **Fixed:** Footer-rader - implementerat `_is_footer_row()` som identifierar och filtrerar bort footer-rader (summa/total/att betala) från produktrader
-10. ⚠️ **In Progress:** Artikelnummer i antal - implementerat identifiering av artikelnummer, men 287 problem kvar (behöver förbättras)
-11. ✅ **Fixed:** Enheter - utökad unit_keywords-lista med DAY, dagar, EA, LTR, Liter, månad, XPA
-12. ⚠️ **In Progress:** Företag - implementerat metadata-filtrering, men 140 problem kvar ("Sida 2/2" matchas inte korrekt)
-13. ⚠️ **In Progress:** TBD på datum - utökade datum-mönster, men 14 fakturor kvar (11.6%)
+10. ✅ **Fixed:** Artikelnummer i antal - implementerat identifiering av artikelnummer, 0 problem kvar (från 287)
+11. ✅ **Fixed:** Enheter - utökad unit_keywords-lista med DAY, dagar, EA, LTR, Liter, månad, XPA, alla förväntade enheter extraheras nu
+12. ✅ **Fixed:** Företag - implementerat metadata-filtrering, 0 problem kvar (från 140), "Sida 2/2" och andra metadata filtreras bort korrekt
+13. ⚠️ **In Progress:** TBD på datum - utökade datum-mönster, förbättrad från 14 (11.6%) till 13 fakturor (10.7%) med TBD
 
 ---
 
