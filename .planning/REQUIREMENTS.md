@@ -40,18 +40,18 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Validation & Quality Control
 
-- [ ] **VALID-01**: System performs mathematical validation: calculates lines_sum = SUM(all line item totals), compares with extracted total, calculates diff = total - lines_sum
-- [ ] **VALID-02**: System applies tolerance-based validation (±1 SEK) for rounding differences and shipping/discount rows
+- [x] **VALID-01**: System performs mathematical validation: calculates lines_sum = SUM(all line item totals), compares with extracted total, calculates diff = total - lines_sum
+- [x] **VALID-02**: System applies tolerance-based validation (±1 SEK) for rounding differences and shipping/discount rows
 - [x] **VALID-03**: System assigns confidence scores to all critical fields (invoice number, total)
-- [ ] **VALID-04**: System implements hard gates: OK status ONLY when both invoice number AND total are certain (high confidence ≥0.95). Otherwise REVIEW (no silent guessing)
-- [ ] **VALID-05**: System assigns status: OK (high confidence + validation pass), PARTIAL (sum mismatch but header OK), or REVIEW (low confidence or validation failure)
+- [x] **VALID-04**: System implements hard gates: OK status ONLY when both invoice number AND total are certain (high confidence ≥0.95). Otherwise REVIEW (no silent guessing)
+- [x] **VALID-05**: System assigns status: OK (high confidence + validation pass), PARTIAL (sum mismatch but header OK), or REVIEW (low confidence or validation failure)
 
 ### Export & Output
 
 - [x] **EXPORT-01**: System exports primary output as Excel file (one row per line item/product row)
 - [x] **EXPORT-02**: Excel includes invoice metadata repeated per row: Fakturanummer, Fakturadatum, Företag, Totalsumma
-- [ ] **EXPORT-03**: Excel includes control columns: Status, LinesSum, Diff, InvoiceNoConfidence, TotalConfidence (or HeaderConfidence if combined)
-- [ ] **EXPORT-04**: System creates review reports: review folder with PDF + metadata/annotations and JSON/CSV report with page + bbox + text excerpt for debugging
+- [x] **EXPORT-03**: Excel includes control columns: Status, LinesSum, Diff, InvoiceNoConfidence, TotalConfidence (or HeaderConfidence if combined)
+- [x] **EXPORT-04**: System creates review reports: review folder with PDF + metadata/annotations and JSON/CSV report with page + bbox + text excerpt for debugging
 
 ### Interface & Processing
 
@@ -139,4 +139,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2025-01-27*
-*Last updated: 2026-01-17 after Phase 2 completion*
+*Last updated: 2026-01-17 after Phase 3 completion*
