@@ -373,12 +373,16 @@ def extract_invoice_date(
     # Date keywords
     date_keywords = ["datum", "date", "fakturadatum", "invoice date"]
     
-    # Date patterns (Heuristik 6)
+    # Date patterns (Heuristik 6) - extended with more formats
     date_patterns = [
         (r'(\d{4}-\d{2}-\d{2})', '%Y-%m-%d'),  # ISO: YYYY-MM-DD
+        (r'(\d{4})\.(\d{2})\.(\d{2})', None),  # YYYY.MM.DD
         (r'(\d{1,2})/(\d{1,2})/(\d{4})', None),  # DD/MM/YYYY or MM/DD/YYYY
         (r'(\d{1,2})\.(\d{1,2})\.(\d{4})', None),  # DD.MM.YYYY
         (r'(\d{1,2})-(\d{1,2})-(\d{4})', None),  # DD-MM-YYYY
+        (r'(\d{2})-(\d{2})-(\d{2})', None),  # YY-MM-DD (assume 20YY)
+        (r'(\d{2})\.(\d{2})\.(\d{2})', None),  # DD.MM.YY (assume 20YY)
+        (r'(\d{2})/(\d{2})/(\d{2})', None),  # DD/MM/YY (assume 20YY)
     ]
     
     for row in header_segment.rows:
@@ -398,10 +402,26 @@ def extract_invoice_date(
                     else:
                         # DD/MM/YYYY or similar - assume Swedish format (DD/MM/YYYY)
                         groups = match.groups()
-                        day = int(groups[0])
-                        month = int(groups[1])
-                        year = int(groups[2])
-                        date_obj = date(year, month, day)
+                        if len(groups) == 3:
+                            # Check if first group is 4 digits (year) or 2 digits
+                            if len(groups[0]) == 4:
+                                # YYYY.MM.DD format
+                                year = int(groups[0])
+                                month = int(groups[1])
+                                day = int(groups[2])
+                            elif len(groups[2]) == 2:
+                                # DD.MM.YY format - assume 20YY
+                                day = int(groups[0])
+                                month = int(groups[1])
+                                year = 2000 + int(groups[2])
+                            else:
+                                # DD/MM/YYYY format
+                                day = int(groups[0])
+                                month = int(groups[1])
+                                year = int(groups[2])
+                            date_obj = date(year, month, day)
+                        else:
+                            continue
                     
                     invoice_header.invoice_date = date_obj
                     return  # Found date, stop searching
@@ -431,7 +451,25 @@ def extract_vendor_name(
         return
     
     # Keywords to avoid (metadata, not company name)
-    skip_keywords = ["faktura", "invoice", "datum", "date", "fakturanummer", "invoice number"]
+    skip_keywords = [
+        "faktura", "invoice", "datum", "date", "fakturanummer", "invoice number",
+        "sida", "page", "nr:", "betaling", "betalningsreferens", "betalnings referens",
+        "betalningsreferens", "lagerplats", "referens", "reference", "sek", "kr"
+    ]
+    
+    # Patterns to skip (metadata patterns) - case insensitive
+    skip_patterns = [
+        r'sida\s+\d+/\d+',  # "sida 2/2", "Sida 2/2"
+        r'^sida\s+\d+/\d+',  # Start with "sida 2/2"
+        r'nr:\s*\d+',  # "Nr: xxxxxx"
+        r'^nr:\s*\d+',  # Start with "Nr:"
+        r'\d{2}-\d{2}-\d{2}',  # Dates like "25-03-11"
+        r'\d{4}-\d{2}-\d{2}',  # Dates like "2024-08-22"
+        r'\d+\s+\d+\s+\(\d+\)',  # "001002687 1(1)"
+        r'\d{5}\s*[A-ZÅÄÖ]+',  # Postcodes like "11798STOCKHOLM"
+        r'\d+\s+\d+[.,]\d{2}\s+sek',  # Amounts like "7 517,00 SEK"
+        r'^sida\s+\d+/\d+\s*$',  # Only "sida X/Y"
+    ]
     
     # Company suffixes
     company_suffixes = ["AB", "Ltd", "Inc", "AB", "Ltd.", "Inc.", "Aktiebolag"]
@@ -440,14 +478,35 @@ def extract_vendor_name(
     
     for row in header_segment.rows[:5]:  # Check first 5 rows (company name usually in top)
         row_lower = row.text.lower()
+        row_text = row.text.strip()
         
         # Skip rows with metadata keywords
         if any(keyword in row_lower for keyword in skip_keywords):
             continue
         
-        # Skip very short rows
-        if len(row.text.strip()) < 3:
+        # Skip rows matching metadata patterns (check both full match and start)
+        matches_pattern = False
+        for pattern in skip_patterns:
+            if re.search(pattern, row_text, re.IGNORECASE):
+                matches_pattern = True
+                break
+            # Also check if row starts with pattern (for "Sida 2/2")
+            if pattern.startswith('^') and re.match(pattern, row_text, re.IGNORECASE):
+                matches_pattern = True
+                break
+        
+        if matches_pattern:
             continue
+        
+        # Skip very short rows
+        if len(row_text) < 3:
+            continue
+        
+        # Skip rows that are mostly numbers/dates/metadata
+        # If row contains mostly numbers, dates, or metadata patterns, skip it
+        non_alpha_chars = sum(1 for c in row_text if not c.isalpha() and not c.isspace())
+        if len(row_text) > 0 and non_alpha_chars / len(row_text) > 0.7:
+            continue  # Too many non-alphabetic characters (likely metadata)
         
         # Check for company suffixes
         has_suffix = any(suffix in row.text for suffix in company_suffixes)

@@ -51,6 +51,8 @@ output_verification/
 output_test_footer_fix/
 output_test_footer_fix_full/
 output_verification_footer_fix/
+output_test_edge_cases/
+output_test_edge_cases_v2/
 
 # OS
 .DS_Store

@@ -277,6 +277,91 @@ Om artikelnummer behövs i framtiden (t.ex. för produktkatalog-matchning, rappo
 
 ---
 
+### 10. Artikelnummer hamnar i antal-kolumnen ⚠️ IN PROGRESS
+
+**Problem:** Artikelnummer (långa nummer i början av beskrivningen) hamnar i antal-kolumnen istället för att ignoreras.
+
+**Root Cause:** I `src/pipeline/invoice_line_parser.py` rad 351-381 extraheras alla numeriska tokens före amount-kolumnen som potentiell quantity eller unit_price. Heuristiken identifierar inte artikelnummer korrekt, så långa nummer (t.ex. "2120212009", "26 011407") behandlas som quantity.
+
+**Exempel från fakturor:**
+- "2120212009 557742 1000" → antal = 2120212009.0 (fel, ska vara tomt eller 1000)
+- "26 011407 EntrebodTB3entre" → antal = 26011407 (fel, ska vara tomt)
+- "39 93178 KonferensbodK11" → antal = 3993178 (fel, ska vara tomt)
+
+**Fix:** Implementerat i `src/pipeline/invoice_line_parser.py`:
+- ✅ Identifiering av artikelnummer: mönster för 6+ siffror i början av beskrivningen
+- ✅ Förbättrad logik: hoppa över numeriska tokens som matchar första numret i beskrivningen (artikelnummer)
+- ✅ Heuristik: nummer med 6+ siffror i första 2 tokens = troligen artikelnummer
+- ⚠️ **Delvis fixad:** 287 problem kvar - behöver förbättras ytterligare
+
+**Status:** ⚠️ In Progress - Delvis fixad, behöver förbättring
+
+---
+
+### 11. Vissa enheter registreras inte ✅ FIXED
+
+**Problem:** Vissa enheter extraheras inte från fakturor: DAY, dagar, EA, LTR, Liter, månad, XPA.
+
+**Root Cause:** I `src/pipeline/invoice_line_parser.py` rad 388 finns bara en begränsad lista med enheter: `['st', 'kg', 'h', 'm²', 'm2', 'tim', 'timmar', 'pcs', 'pkt']`. De saknade enheterna finns inte i listan.
+
+**Fix:** Implementerat i `src/pipeline/invoice_line_parser.py`:
+- ✅ Utökad unit_keywords-lista med: 'day', 'days', 'dagar', 'ea', 'ltr', 'liter', 'liters', 'månad', 'månader', 'xpa'
+- ✅ Ytterligare enheter: 'paket', 'box', 'burk', 'flaska', 'flaskor'
+
+**Status:** ✅ Fixed
+
+---
+
+### 12. Företag registreras inte korrekt ⚠️ IN PROGRESS
+
+**Problem:** Företagsnamn extraheras inte korrekt - istället hamnar metadata som "sida 2/2", "Nr: xxxxxx", "Betalningsreferens", "25-03-11 001002687 1(1) Lagerplats, 11798STOCKHOLM 2024-08-22 7 517,00 SEK" i företag-kolumnen.
+
+**Root Cause:** I `src/pipeline/header_extractor.py` rad 433-450 filtreras bort vissa keywords, men metadata-mönster som "sida 2/2", datum, postnummer, belopp etc. filtreras inte bort korrekt.
+
+**Exempel från fakturor:**
+- "Sida 2/2" → hamnar i företag-kolumnen
+- "25-03-11 001002687 1(1) Lagerplats, 11798STOCKHOLM 2024-08-22 7 517,00 SEK" → hamnar i företag-kolumnen
+
+**Fix:** Implementerat i `src/pipeline/header_extractor.py`:
+- ✅ Utökade skip_keywords: "sida", "page", "nr:", "betaling", "betalningsreferens", "lagerplats", "referens", "sek", "kr"
+- ✅ Nya skip_patterns för metadata:
+  - `r'sida\s+\d+/\d+'` - "sida 2/2"
+  - `r'nr:\s*\d+'` - "Nr: xxxxxx"
+  - `r'\d{2}-\d{2}-\d{2}'` - Datum "25-03-11"
+  - `r'\d{4}-\d{2}-\d{2}'` - Datum "2024-08-22"
+  - `r'\d+\s+\d+\s+\(\d+\)'` - "001002687 1(1)"
+  - `r'\d{5}\s*[A-ZÅÄÖ]+'` - Postnummer "11798STOCKHOLM"
+  - `r'\d+\s+\d+[.,]\d{2}\s+sek'` - Belopp "7 517,00 SEK"
+- ✅ Förbättrad filtrering: kolla både full match och start-match för mönster
+- ✅ Ytterligare heuristik: hoppa över rader med >70% icke-alfabetiska tecken (troligen metadata)
+- ⚠️ **Delvis fixad:** 140 problem kvar - "Sida 2/2" matchas inte korrekt i alla fall
+
+**Status:** ⚠️ In Progress - Delvis fixad, behöver förbättring
+
+---
+
+### 13. Vissa fakturor har TBD på datum ⚠️ IN PROGRESS
+
+**Problem:** Vissa fakturor visar "TBD" istället för faktureringsdatum.
+
+**Root Cause:** I `src/pipeline/header_extractor.py` rad 359-412 extraheras datum med begränsade mönster och keywords. Vissa datumformat hittas inte, eller datumet finns inte i header-segmentet.
+
+**Statistik:**
+- 14 fakturor med TBD (11.6% av 121 fakturor)
+
+**Fix:** Implementerat i `src/pipeline/header_extractor.py`:
+- ✅ Utökade datum-mönster:
+  - `r'(\d{4})\.(\d{2})\.(\d{2})'` - YYYY.MM.DD
+  - `r'(\d{2})-(\d{2})-(\d{2})'` - YY-MM-DD (assumera 20YY)
+  - `r'(\d{2})\.(\d{2})\.(\d{2})'` - DD.MM.YY (assumera 20YY)
+  - `r'(\d{2})/(\d{2})/(\d{2})'` - DD/MM/YY (assumera 20YY)
+- ✅ Förbättrad parsing: hantera både 4-siffriga och 2-siffriga år
+- ⚠️ **Delvis fixad:** 14 fakturor kvar med TBD - kan bero på att datumet inte finns i header-segmentet eller använder ovanliga format
+
+**Status:** ⚠️ In Progress - Delvis fixad, behöver förbättring
+
+---
+
 ## Summary
 
 | Issue | Severity | Status | Action Required |
@@ -290,6 +375,10 @@ Om artikelnummer behövs i framtiden (t.ex. för produktkatalog-matchning, rappo
 | Artikelnummer i beskrivning | Low | ✅ Investigation complete | No action needed - keep in description |
 | Konfidensprocent visar fel värde | High | ✅ Fixed | None |
 | Footer-rader i produktrader | High | ✅ Fixed | None |
+| Artikelnummer i antal | High | ⚠️ In Progress | Förbättra artikelnummer-identifiering |
+| Enheter saknas | Medium | ✅ Fixed | None |
+| Företag registreras inte korrekt | High | ⚠️ In Progress | Förbättra metadata-filtrering |
+| TBD på datum | Medium | ⚠️ In Progress | Förbättra datum-extraktion |
 
 ---
 
@@ -304,6 +393,10 @@ Om artikelnummer behövs i framtiden (t.ex. för produktkatalog-matchning, rappo
 7. ✅ **Investigation complete:** Artikelnummer - undersökning visar att artikelnummer INTE är ett krav, behålls i beskrivningen enligt nuvarande specifikation
 8. ✅ **Fixed:** Konfidensprocent - tog bort dubbelmultiplikation, Excel-formaten hanterar procenten automatiskt
 9. ✅ **Fixed:** Footer-rader - implementerat `_is_footer_row()` som identifierar och filtrerar bort footer-rader (summa/total/att betala) från produktrader
+10. ⚠️ **In Progress:** Artikelnummer i antal - implementerat identifiering av artikelnummer, men 287 problem kvar (behöver förbättras)
+11. ✅ **Fixed:** Enheter - utökad unit_keywords-lista med DAY, dagar, EA, LTR, Liter, månad, XPA
+12. ⚠️ **In Progress:** Företag - implementerat metadata-filtrering, men 140 problem kvar ("Sida 2/2" matchas inte korrekt)
+13. ⚠️ **In Progress:** TBD på datum - utökade datum-mönster, men 14 fakturor kvar (11.6%)
 
 ---
 
@@ -311,4 +404,5 @@ Om artikelnummer behövs i framtiden (t.ex. för produktkatalog-matchning, rappo
 *Updated: 2026-01-17 - Added issues #5, #6, #7*  
 *Updated: 2026-01-17 - Completed investigation of issue #7 (artikelnummer)*  
 *Updated: 2026-01-17 - Fixed issue #8 (konfidensprocent dubbelmultiplikation)*  
-*Updated: 2026-01-17 - Fixed issue #9 (footer-rader i produktrader)*
+*Updated: 2026-01-17 - Fixed issue #9 (footer-rader i produktrader)*  
+*Updated: 2026-01-17 - Added issues #10, #11, #12, #13 (artikelnummer, enheter, företag, datum)*
