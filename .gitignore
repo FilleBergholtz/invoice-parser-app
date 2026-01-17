@@ -46,6 +46,7 @@ htmlcov/
 *.xls
 temp/
 tmp/
+output_test/
 
 # OS
 .DS_Store
