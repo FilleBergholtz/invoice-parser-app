@@ -1,0 +1,216 @@
+# Test-korpus Beskrivning
+
+## Översikt
+
+Detta dokument beskriver test-korpusen för invoice-parser, inklusive `sample_invoice_1.pdf` och förväntade resultat.
+
+## Test-filer
+
+### sample_invoice_1.pdf
+
+**Beskrivning**: En representativ faktura-PDF som används för grundläggande testing av pipeline.
+
+**Läge**: `tests/fixtures/pdfs/sample_invoice_1.pdf`
+
+**Obs**: Detta är en placeholder-beskrivning. Den faktiska PDF-filen ska läggas till i mappen när den finns tillgänglig.
+
+---
+
+## Förväntade resultat
+
+### Förväntad struktur
+
+En typisk test-faktura bör innehålla:
+
+#### Header-segment
+- Fakturanummer: T.ex. "INV-2024-001" eller numeriskt "12345"
+- Fakturadatum: T.ex. "2024-01-15" eller "15/01/2024"
+- Leverantörsnamn: T.ex. "Acme AB"
+- Leverantörsadress: T.ex. "Storgatan 1, 123 45 Stockholm"
+- Kundnamn: T.ex. "Kundföretag AB" (valfritt)
+- Kundadress: T.ex. "Kundgatan 2, 678 90 Göteborg" (valfritt)
+
+#### Items-segment
+- Minst 2-3 produktrader med:
+  - Beskrivning: T.ex. "Produkt A", "Tjänst B"
+  - Kvantitet: T.ex. "2 st", "10 kg", "1.5 h"
+  - Enhetspris: T.ex. "100.00 SEK", "50.00"
+  - Totalt belopp: T.ex. "200.00 SEK", "500.00"
+
+#### Footer-segment
+- Subtotal: T.ex. "Subtotal: 700.00 SEK"
+- Moms (om tillämpligt): T.ex. "Moms (25%): 175.00 SEK"
+- Totalt: T.ex. "Totalt: 875.00 SEK"
+
+---
+
+## Förväntade pipeline-resultat
+
+### Steg 1-3: PDF → Page → Tokens
+- [ ] PDF läsbar och kan parsas
+- [ ] Minst en sida extraheras
+- [ ] Tokens extraheras med korrekt positioner (x, y, width, height)
+- [ ] Alla tokens har text-innehåll
+
+### Steg 4: Tokens → Rows
+- [ ] Tokens grupperas i rader baserat på Y-position
+- [ ] Radordning bevaras (top-to-bottom)
+- [ ] Produktrader identifieras (rader med belopp)
+
+### Steg 5: Rows → Segments
+- [ ] Header-segment identifieras (övre del)
+- [ ] Items-segment identifieras (mittdel)
+- [ ] Footer-segment identifieras (nedre del)
+
+### Steg 6-8: Segments → Zoner → Header → Specifikation
+- [ ] Spatiala zoner skapas korrekt
+- [ ] Header-scoring identifierar korrekt header-segment
+- [ ] Fakturanummer extraheras: "INV-2024-001" (eller motsvarande)
+- [ ] Fakturadatum extraheras: "2024-01-15" (eller motsvarande format)
+- [ ] Leverantörsnamn extraheras
+
+### Steg 9: Segments → InvoiceLine
+- [ ] Minst 2-3 produktrader extraheras
+- [ ] Varje InvoiceLine har:
+  - `description`: Extraherat korrekt
+  - `quantity`: Extraherat (om tillgängligt)
+  - `unit_price`: Extraherat (om tillgängligt)
+  - `total_amount`: Extraherat korrekt
+
+### Steg 10: InvoiceLine → Reconciliation
+- [ ] Subtotal beräknas korrekt: `sum(InvoiceLine.total_amount)`
+- [ ] Footer-parsing extraherar subtotal/total från PDF
+- [ ] Skillnader beräknas korrekt
+
+### Steg 11: Reconciliation → Validation
+- [ ] Status sätts korrekt:
+  - **OK**: Om alla summor stämmer och obligatoriska fält finns
+  - **Warning**: Om små avvikelser eller valfria fält saknas
+  - **Review**: Om stora avvikelser eller kritiska fält saknas
+
+### Steg 12: Validation → Export
+- [ ] CSV genereras med korrekt struktur
+- [ ] Header-rad inkluderar metadata (fakturanummer, datum, leverantör)
+- [ ] Produktrader exporteras korrekt
+- [ ] Footer med summor inkluderas
+- [ ] UTF-8 kodning fungerar (ä, ö, å hanteras)
+
+---
+
+## Edge cases
+
+### Edge case 1: Saknad kvantitet
+**Scenario**: Produktrad utan kvantitet, endast enhetspris och total.
+
+**Förväntat resultat**:
+- `quantity` = None eller 1.0 (default)
+- `total_amount` extraheras korrekt
+- Status: **Warning** ("Varning: Produktrad X saknar kvantitet")
+
+---
+
+### Edge case 2: Fortsättningsrader (wrapped text)
+**Scenario**: Produktbeskrivning uppdelad på flera rader.
+
+**Förväntat resultat**:
+- Wrapped rader kopplas till samma InvoiceLine
+- `description` konsolideras från alla rader
+- `total_amount` finns bara på sista raden
+
+---
+
+### Edge case 3: Saknad moms
+**Scenario**: Faktura utan moms eller nollmoms.
+
+**Förväntat resultat**:
+- `tax` = None eller 0.0
+- `calculated_total` = `calculated_subtotal`
+- Status: **OK** (om summor stämmer)
+
+---
+
+### Edge case 4: Aritmetiska avvikelser
+**Scenario**: `quantity * unit_price ≠ total_amount` (p.g.a. avrundning eller rabatt).
+
+**Förväntat resultat**:
+- Avvikelse < 0.01 SEK → Status: **OK**
+- Avvikelse 0.01-1.00 SEK → Status: **Warning**
+- Avvikelse > 1.00 SEK → Status: **Review**
+
+---
+
+### Edge case 5: Saknade obligatoriska fält
+**Scenario**: Faktura utan fakturanummer eller datum.
+
+**Förväntat resultat**:
+- `invoice_number` eller `invoice_date` = None
+- Status: **Review**
+- Error: "Kritisk: Fakturanummer saknas (obligatoriskt)" eller "Fakturadatum saknas"
+
+---
+
+### Edge case 6: Stora summa-avvikelser
+**Scenario**: Beräknad subtotal skiljer sig mycket från extraherad subtotal.
+
+**Förväntat resultat**:
+- Avvikelse > 1.00 SEK → Status: **Review**
+- Error: "Kritisk: Stor subtotal-avvikelse: X.XX SEK"
+
+---
+
+### Edge case 7: Olika datumformat
+**Scenario**: Faktura med datum i format "15/01/2024" eller "15.01.2024".
+
+**Förväntat resultat**:
+- Datum parsas korrekt till `datetime.date`-objekt
+- Status: **OK** (om format är känt)
+
+---
+
+### Edge case 8: Olika decimalseparatorer
+**Scenario**: Belopp med komma som decimalseparator (t.ex. "100,50").
+
+**Förväntat resultat**:
+- Belopp parsas korrekt (100.50)
+- Status: **OK**
+
+---
+
+## Test-utfall
+
+### Success-kriterier
+
+För att en test ska anses lyckad:
+
+1. **Alla obligatoriska fält extraherade**: Fakturanummer, datum, minst en produktrad
+2. **Summa-avvikelse ≤ 1.00 SEK**: Tolerans för små avrundningsfel
+3. **Alla produktrader har total_amount**: Kritiskt för korrekt summa-beräkning
+4. **CSV export fungerar**: Korrekt struktur och UTF-8 kodning
+
+### Förväntad output-fil
+
+**Exempel CSV** (med placeholder-data):
+
+```csv
+Invoice Number,Invoice Date,Supplier,Description,Quantity,Unit Price,Total Amount
+INV-2024-001,2024-01-15,Acme AB,Produkt A,2,100.00,200.00
+INV-2024-001,2024-01-15,Acme AB,Tjänst B,10,50.00,500.00
+```
+
+---
+
+## Ytterligare test-filer (framtida)
+
+När pipeline är mer mogen kan ytterligare test-filer läggas till:
+
+- `sample_invoice_2.pdf`: Faktura med wraps
+- `sample_invoice_3.pdf`: Faktura med nollmoms
+- `sample_invoice_4.pdf`: Faktura med saknade fält (edge case testing)
+- `sample_invoice_5.pdf`: Multi-sidig faktura
+
+## Implementation-anvisningar
+
+1. **Testa varje steg**: Använd `sample_invoice_1.pdf` för att testa varje pipeline-steg
+2. **Validera mot förväntade resultat**: Jämför output med detta dokument
+3. **Edge cases**: Testa edge cases när grundfunktionalitet fungerar
+4. **Uppdatera dokumentation**: Om nya edge cases upptäcks, uppdatera detta dokument
