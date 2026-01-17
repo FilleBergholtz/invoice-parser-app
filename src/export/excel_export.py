@@ -22,6 +22,12 @@ def export_to_excel(
             - fakturanummer: Invoice number (or placeholder)
             - foretag: Vendor name (or placeholder)
             - fakturadatum: Invoice date (or placeholder)
+            - referenser: Optional reference field
+            - status: Validation status (OK/PARTIAL/REVIEW, default: "REVIEW")
+            - lines_sum: Sum of all line item totals (default: 0.0)
+            - diff: Difference between total and lines_sum, or "N/A" if None (default: "N/A")
+            - invoice_number_confidence: Confidence score for invoice number (0.0-1.0, default: 0.0)
+            - total_confidence: Confidence score for total amount (0.0-1.0, default: 0.0)
             
     Returns:
         Path to created Excel file
@@ -29,9 +35,11 @@ def export_to_excel(
     Excel structure:
     - One row per InvoiceLine (product row)
     - Swedish column names: Fakturanummer, Referenser, Företag, Fakturadatum,
-      Beskrivning, Antal, Enhet, Á-pris, Rabatt, Summa, Hela summan
+      Beskrivning, Antal, Enhet, Á-pris, Rabatt, Summa, Hela summan,
+      Status, Radsumma, Avvikelse, Fakturanummer-konfidens, Totalsumma-konfidens
     - Invoice metadata repeated per row
     - Line item data from InvoiceLine objects
+    - Control columns with validation data (after existing columns)
     """
     if not invoice_lines:
         raise ValueError("Cannot export empty invoice lines list")
@@ -42,6 +50,13 @@ def export_to_excel(
     foretag = metadata.get("foretag", "TBD")
     fakturadatum = metadata.get("fakturadatum", "TBD")
     referenser = metadata.get("referenser", "")
+    
+    # Extract validation fields (defaults for backward compatibility)
+    status = metadata.get("status", "REVIEW")
+    lines_sum = metadata.get("lines_sum", 0.0)
+    diff = metadata.get("diff", "N/A")
+    invoice_number_confidence = metadata.get("invoice_number_confidence", 0.0)
+    total_confidence = metadata.get("total_confidence", 0.0)
     
     # Calculate Hela summan (sum of all line totals)
     hela_summan = sum(line.total_amount for line in invoice_lines)
@@ -61,6 +76,12 @@ def export_to_excel(
             "Rabatt": line.discount if line.discount is not None else "",
             "Summa": line.total_amount,
             "Hela summan": hela_summan,
+            # Control columns (after existing columns)
+            "Status": status,
+            "Radsumma": lines_sum,
+            "Avvikelse": diff,
+            "Fakturanummer-konfidens": invoice_number_confidence * 100,  # Convert to percentage
+            "Totalsumma-konfidens": total_confidence * 100,  # Convert to percentage
         }
         rows.append(row)
     
@@ -79,8 +100,7 @@ def export_to_excel(
         worksheet = writer.sheets['Invoices']
         
         # Format numeric columns
-        from openpyxl.styles import NamedStyle
-        from openpyxl.styles.numbers import FORMAT_NUMBER_00
+        from openpyxl.styles.numbers import FORMAT_NUMBER_00, FORMAT_PERCENTAGE_00
         
         # Format Summa and Hela summan columns (currency)
         for row in worksheet.iter_rows(min_row=2, max_row=worksheet.max_row):
@@ -101,5 +121,25 @@ def export_to_excel(
                     apris_cell.number_format = FORMAT_NUMBER_00
                 except (ValueError, TypeError):
                     pass
+        
+        # Format control columns
+        for row in worksheet.iter_rows(min_row=2, max_row=worksheet.max_row):
+            # Radsumma column (index L = 12, 0-indexed = 11)
+            radsumma_cell = row[11]
+            radsumma_cell.number_format = FORMAT_NUMBER_00
+            
+            # Avvikelse column (index M = 13, 0-indexed = 12)
+            avvikelse_cell = row[12]
+            # Only format if numeric (not "N/A" or None)
+            if isinstance(avvikelse_cell.value, (int, float)) and avvikelse_cell.value != "N/A":
+                avvikelse_cell.number_format = FORMAT_NUMBER_00
+            
+            # Fakturanummer-konfidens column (index N = 14, 0-indexed = 13)
+            fakturanummer_konfidens_cell = row[13]
+            fakturanummer_konfidens_cell.number_format = FORMAT_PERCENTAGE_00
+            
+            # Totalsumma-konfidens column (index O = 15, 0-indexed = 14)
+            totalsumma_konfidens_cell = row[14]
+            totalsumma_konfidens_cell.number_format = FORMAT_PERCENTAGE_00
     
     return str(output_path)
