@@ -81,7 +81,7 @@ notes: |
   - Folders created correctly: output_test/review/export_2026-01-13_08-57-43__{index}/
   - Each folder contains metadata.json
   - Folder naming uses virtual_invoice_id format (filename__index)
-  - Note: PDF copy not present (may be due to source PDF path or copy logic)
+  - ✅ PDF copy present (verified: export_2026-01-13_08-57-43.pdf exists in review folders)
 
 ### 6. Review Reports - Metadata JSON Content
 expected: |
@@ -187,7 +187,7 @@ skipped: 3
 - ✅ Batch processing handles multiple virtual invoices correctly
 - ✅ CLI output format matches specification
 - ✅ Excel export created successfully
-- ⚠️ PDF copy not present in review folders (may need investigation)
+- ✅ PDF copies present in review folders (verified: PDF files exist in review folders)
 - ⚠️ Some PDF files in test directory had read errors (separate issue)
 
 ## Unit Test Verification
