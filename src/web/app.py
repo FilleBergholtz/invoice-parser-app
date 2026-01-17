@@ -1,5 +1,6 @@
 """Streamlit web application for invoice parser."""
 
+import base64
 import tempfile
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -9,6 +10,159 @@ import streamlit as st
 
 from ..cli.main import process_invoice
 from ..export.excel_export import export_to_excel
+
+
+def display_invoice_detail(invoice_idx: int) -> None:
+    """Display detailed view for a selected invoice.
+    
+    Args:
+        invoice_idx: Index of invoice in st.session_state.results
+    """
+    if invoice_idx >= len(st.session_state.results):
+        st.error("Ogiltigt faktura-index")
+        return
+    
+    result = st.session_state.results[invoice_idx]
+    
+    st.header("3. Detaljvy")
+    
+    # Back button
+    if st.button("← Tillbaka till lista"):
+        st.session_state.selected_invoice_idx = None
+        st.rerun()
+    
+    # Invoice header information
+    st.subheader("Fakturainformation")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown(f"**Filnamn:** {result.get('filename', 'Okänt')}")
+        st.markdown(f"**Status:** {result.get('status', 'UNKNOWN')}")
+        st.markdown(f"**Fakturanummer:** {result.get('invoice_number', 'TBD')}")
+        st.markdown(f"**Företag:** {result.get('vendor_name', 'TBD')}")
+        st.markdown(f"**Datum:** {result.get('invoice_date', 'TBD')}")
+    
+    with col2:
+        total_amount = result.get("total_amount", 0.0)
+        st.markdown(f"**Totalsumma:** {total_amount:,.2f} SEK" if total_amount else "**Totalsumma:** —")
+        
+        invoice_number_conf = result.get("invoice_number_confidence", 0.0)
+        total_conf = result.get("total_confidence", 0.0)
+        st.markdown(f"**Fakturanummer-konfidens:** {invoice_number_conf:.2%}")
+        st.markdown(f"**Totalsumma-konfidens:** {total_conf:.2%}")
+        
+        lines_sum = result.get("lines_sum", 0.0)
+        diff = result.get("diff", "N/A")
+        st.markdown(f"**Radsumma:** {lines_sum:,.2f} SEK")
+        st.markdown(f"**Avvikelse:** {diff if isinstance(diff, str) else f'{diff:,.2f} SEK'}")
+    
+    # PDF viewing section
+    invoice_header = result.get("invoice_header")
+    if invoice_header and result.get("filename") in st.session_state.pdf_files:
+        pdf_path = st.session_state.pdf_files[result.get("filename")]
+        display_pdf_viewer(pdf_path, invoice_header)
+    
+    # Line items table
+    st.subheader("Radobjekt")
+    invoice_lines = result.get("invoice_lines", [])
+    validation_result = result.get("validation_result")
+    
+    if invoice_lines:
+        # Get warnings per line (from validation_result)
+        line_warnings = {}
+        if validation_result and hasattr(validation_result, 'warnings'):
+            # Warnings are typically at invoice level, but we can check line-level issues
+            pass
+        
+        # Create DataFrame for line items
+        line_data = []
+        for line in invoice_lines:
+            line_data.append({
+                "Rad": line.line_number,
+                "Beskrivning": line.description or "",
+                "Antal": f"{line.quantity:,.2f}" if line.quantity else "",
+                "Enhet": line.unit or "",
+                "Á-pris": f"{line.unit_price:,.2f}" if line.unit_price else "",
+                "Rabatt": f"{line.discount:,.2f}" if line.discount else "",
+                "Summa": f"{line.total_amount:,.2f} SEK",
+            })
+        
+        df_lines = pd.DataFrame(line_data)
+        st.dataframe(df_lines, use_container_width=True, hide_index=True)
+        
+        # Show validation warnings/errors if any
+        if validation_result:
+            if validation_result.errors:
+                st.error("**Valideringsfel:**")
+                for error in validation_result.errors:
+                    st.error(f"  - {error}")
+            
+            if validation_result.warnings:
+                st.warning("**Valideringsvarningar:**")
+                for warning in validation_result.warnings:
+                    st.warning(f"  - {warning}")
+    else:
+        st.info("Inga radobjekt hittades")
+    
+    # Error message if failed
+    if result.get("status") == "FAILED":
+        error_msg = result.get("error", "Okänt fel")
+        st.error(f"**Bearbetning misslyckades:** {error_msg}")
+
+
+def display_pdf_viewer(pdf_path: str, invoice_header) -> None:
+    """Display PDF viewer with navigation links.
+    
+    Args:
+        pdf_path: Path to PDF file
+        invoice_header: InvoiceHeader object with traceability data
+    """
+    st.subheader("PDF-visning")
+    
+    # Read PDF file
+    try:
+        with open(pdf_path, "rb") as pdf_file:
+            pdf_bytes = pdf_file.read()
+            base64_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
+            
+            # Display PDF using iframe
+            pdf_display = f"""
+            <iframe src="data:application/pdf;base64,{base64_pdf}" 
+                    width="100%" 
+                    height="600px" 
+                    type="application/pdf">
+            </iframe>
+            """
+            st.markdown(pdf_display, unsafe_allow_html=True)
+            
+    except Exception as e:
+        st.error(f"Kunde inte visa PDF: {str(e)}")
+    
+    # Navigation links for traceability
+    st.markdown("**Navigera till:**")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        if invoice_header and invoice_header.invoice_number_traceability:
+            trace = invoice_header.invoice_number_traceability
+            page = trace.evidence.get("page_number", 1)
+            st.markdown(f"📄 [Fakturanummer (sida {page})](#pdf-page-{page})")
+        else:
+            st.markdown("📄 Fakturanummer (ingen traceability)")
+    
+    with col2:
+        if invoice_header and invoice_header.total_traceability:
+            trace = invoice_header.total_traceability
+            page = trace.evidence.get("page_number", 1)
+            st.markdown(f"💰 [Totalsumma (sida {page})](#pdf-page-{page})")
+        else:
+            st.markdown("💰 Totalsumma (ingen traceability)")
+    
+    # Note: Actual PDF page navigation requires JavaScript or PDF.js
+    # This is a simplified version that shows the links
+    st.info("💡 PDF-visning fungerar bäst i Chrome/Firefox. För exakt sidnavigation krävs PDF.js (framtida förbättring).")
 
 
 def main():
@@ -46,9 +200,15 @@ def main():
     if st.session_state.results:
         display_results()
         
+        # Show detail view if invoice is selected
+        if st.session_state.selected_invoice_idx is not None:
+            display_invoice_detail(st.session_state.selected_invoice_idx)
+        
         # Clear results button
         if st.button("Rensa resultat", type="secondary"):
             st.session_state.results = []
+            st.session_state.selected_invoice_idx = None
+            st.session_state.pdf_files = {}
             st.rerun()
     
     # Excel download
