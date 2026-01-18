@@ -1,7 +1,7 @@
 [project]
-name = "invoice-parser-app"
+name = "epg-pdf-extraherare"
 version = "0.1.0"
-description = "PDF invoice parser med 12-stegs pipeline för strukturerad dataextraktion"
+description = "EPG PDF Extraherare - PDF invoice parser med 12-stegs pipeline för strukturerad dataextraktion"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [

@@ -10,6 +10,7 @@ import streamlit as st
 
 from ..cli.main import process_invoice
 from ..export.excel_export import export_to_excel
+from ..config import get_default_output_dir
 
 
 def display_invoice_detail(invoice_idx: int) -> None:
@@ -168,12 +169,12 @@ def display_pdf_viewer(pdf_path: str, invoice_header) -> None:
 def main():
     """Main Streamlit application."""
     st.set_page_config(
-        page_title="Invoice Parser",
+        page_title="EPG PDF Extraherare",
         page_icon="📄",
         layout="wide"
     )
     
-    st.title("📄 Invoice Parser")
+    st.title("📄 EPG PDF Extraherare")
     st.markdown("Ladda upp PDF-fakturor för automatisk extraktion och validering")
     
     # Initialize session state
@@ -227,7 +228,10 @@ def process_uploaded_files(uploaded_files: List) -> None:
         uploaded_files: List of uploaded file objects from Streamlit
     """
     results = []
-    temp_dir = tempfile.mkdtemp()
+    # Use default output directory for temp files
+    default_output = get_default_output_dir()
+    temp_dir = str(default_output / 'temp')
+    Path(temp_dir).mkdir(parents=True, exist_ok=True)
     
     try:
         # Create progress bar

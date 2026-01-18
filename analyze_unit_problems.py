@@ -2,7 +2,7 @@
 import pandas as pd
 import re
 
-df = pd.read_excel('output_test_fixes/invoices_2026-01-17_21-42-15.xlsx')
+df = pd.read_excel('tests/output_test_fixes/invoices_2026-01-17_21-42-15.xlsx')
 
 print("=" * 80)
 print("ANALYS: Problem med EA, LTR, månad, DAY, XPA enheter")

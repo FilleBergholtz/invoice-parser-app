@@ -1,4 +1,4 @@
-# Invoice Parser App
+# EPG PDF Extraherare
 
 Ett system som automatiskt läser, förstår och strukturerar svenska PDF-fakturor – oavsett layout, namn på fält eller antal sidor – och sammanställer resultatet i en tydlig Excel-tabell. Varje rad i Excel är en produktrad, fakturainformation (fakturanummer, företag, datum, total) upprepas korrekt, och summeringar samt belopp är validerade och pålitliga.
 

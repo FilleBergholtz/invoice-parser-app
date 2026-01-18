@@ -10,13 +10,13 @@ print("=" * 80)
 
 # Hitta senaste Excel-fil
 output_dirs = [
-    'output_test_quantity_fix_v2',
-    'output_test_quantity_fix',
-    'output_test_unit_fix_v3',
-    'output_test_unit_fix_v2',
-    'output_test_unit_fix',
-    'output_test_fixes',
-    'output_test_edge_cases_v2'
+    'tests/output_test_quantity_fix_v2',
+    'tests/output_test_quantity_fix',
+    'tests/output_test_unit_fix_v3',
+    'tests/output_test_unit_fix_v2',
+    'tests/output_test_unit_fix',
+    'tests/output_test_fixes',
+    'tests/output_test_edge_cases_v2'
 ]
 
 excel_files = []

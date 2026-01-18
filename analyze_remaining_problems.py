@@ -10,9 +10,9 @@ print("=" * 80)
 
 # Hitta senaste Excel-fil
 output_dirs = [
-    'output_test_unit_fix_v3',
-    'output_test_unit_fix_v2',
-    'output_test_unit_fix',
+    'tests/output_test_unit_fix_v3',
+    'tests/output_test_unit_fix_v2',
+    'tests/output_test_unit_fix',
 ]
 
 excel_files = []

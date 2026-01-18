@@ -33,6 +33,7 @@ from ..pipeline.validation import validate_invoice
 from ..pipeline.invoice_boundary_detection import detect_invoice_boundaries
 from ..export.excel_export import export_to_excel
 from ..export.review_report import create_review_report
+from ..config import get_default_output_dir, get_output_subdirs
 
 
 class InvoiceProcessingError(Exception):
@@ -405,12 +406,16 @@ def process_batch(
     if not pdf_files:
         raise ValueError(f"No PDF files found in: {input_path}")
     
-    # Setup output directories
+    # Setup output directories with subdirectory structure
     output_dir_obj = Path(output_dir)
     output_dir_obj.mkdir(parents=True, exist_ok=True)
     
-    errors_dir = output_dir_obj / "errors"
-    errors_dir.mkdir(exist_ok=True)
+    # Create subdirectory structure (excel/, review/, errors/, temp/)
+    subdirs = get_output_subdirs(output_dir_obj)
+    errors_dir = subdirs['errors']
+    
+    # Store subdirs for later use (e.g., Excel export)
+    process_batch.subdirs = subdirs  # Store as function attribute
     
     # Process each invoice
     # Note: invoice_lines are collected via invoice_results, not all_invoice_lines
@@ -525,7 +530,7 @@ def process_batch(
     if invoice_results:
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         excel_filename = f"invoices_{timestamp}.xlsx"
-        excel_path = output_dir_obj / excel_filename
+        excel_path = subdirs['excel'] / excel_filename
         
         # Prepare invoice results for Excel export (list of dicts with invoice_lines and invoice_metadata)
         excel_invoice_results = []
@@ -561,7 +566,7 @@ def process_batch(
     if results["errors"]:
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         errors_filename = f"errors_{timestamp}.json"
-        errors_path = output_dir_obj / "errors" / errors_filename
+        errors_path = subdirs['errors'] / errors_filename
         
         with open(errors_path, 'w', encoding='utf-8') as f:
             json.dump(results["errors"], f, indent=2, ensure_ascii=False)
@@ -576,7 +581,7 @@ def process_batch(
 def main():
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
-        description="Invoice Parser - Extract structured data from Swedish PDF invoices"
+        description="EPG PDF Extraherare - Extract structured data from Swedish PDF invoices"
     )
     
     parser.add_argument(
@@ -587,8 +592,8 @@ def main():
     
     parser.add_argument(
         "--output",
-        required=True,
-        help="Output directory for Excel files"
+        required=False,
+        help="Output directory for Excel files (default: Documents/EPG PDF Extraherare/output)"
     )
     
     parser.add_argument(
@@ -605,10 +610,16 @@ def main():
     
     args = parser.parse_args()
     
+    # Use default output directory if not specified
+    output_dir = args.output
+    if not output_dir:
+        output_dir = str(get_default_output_dir())
+        print(f"Using default output directory: {output_dir}")
+    
     try:
         results = process_batch(
             args.input,
-            args.output,
+            output_dir,
             fail_fast=args.fail_fast,
             verbose=args.verbose
         )

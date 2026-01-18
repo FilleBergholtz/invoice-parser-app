@@ -9,6 +9,7 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
 
 from ..cli.main import process_invoice
+from ..config import get_default_output_dir
 from .models import (
     BatchProcessResponse,
     ErrorResponse,
@@ -19,7 +20,7 @@ from .models import (
 )
 
 app = FastAPI(
-    title="Invoice Parser API",
+    title="EPG PDF Extraherare API",
     description="REST API för automatisk fakturabearbetning och extraktion",
     version="1.0.0",
 )
@@ -45,7 +46,7 @@ def _get_invoice_result(invoice_id: str) -> Dict:
 async def root():
     """Root endpoint."""
     return {
-        "message": "Invoice Parser API",
+        "message": "EPG PDF Extraherare API",
         "version": "1.0.0",
         "docs": "/docs",
     }
@@ -78,10 +79,12 @@ async def process_invoice_endpoint(file: UploadFile = File(...)):
         tmp_file.write(content)
     
     try:
+        # Use default output directory
+        default_output = get_default_output_dir()
         # Process invoice using pipeline
         result = process_invoice(
             tmp_path,
-            output_dir=str(Path(tmp_path).parent),
+            output_dir=str(default_output),
             verbose=False
         )
         

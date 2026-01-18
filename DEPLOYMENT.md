@@ -8,9 +8,10 @@ Denna guide beskriver hur man deployar Invoice Parser App i olika miljöer.
 
 1. [Lokal Deployment](#lokal-deployment)
 2. [Docker Deployment](#docker-deployment)
-3. [Cloud Deployment](#cloud-deployment)
-4. [Production Considerations](#production-considerations)
-5. [Troubleshooting](#troubleshooting)
+3. [Windows Installer](#windows-installer)
+4. [Cloud Deployment](#cloud-deployment)
+5. [Production Considerations](#production-considerations)
+6. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -81,6 +82,85 @@ python -m src.cli.main process invoice.pdf output/
 # Batch-bearbetning
 python -m src.cli.main batch input_folder/ output/
 ```
+
+---
+
+## 💻 Windows Installer
+
+### Bygg Windows .exe Executable
+
+För att skapa en fristående Windows .exe-fil utan att användaren behöver Python installerat:
+
+```bash
+# 1. Installera PyInstaller (om det inte redan är installerat)
+pip install pyinstaller
+
+# 2. Bygg executable
+python build_windows.py
+```
+
+Detta skapar `dist/EPG_PDF_Extraherare.exe` som kan köras direkt på Windows utan Python.
+
+### Skapa Windows Installer (.exe Setup)
+
+För att skapa en professionell installer med NSIS:
+
+#### Förutsättningar
+
+- [NSIS (Nullsoft Scriptable Install System)](https://nsis.sourceforge.io/Download) måste vara installerat
+- Executable måste vara byggd först (se ovan)
+
+#### Steg
+
+1. **Bygg executable först:**
+   ```bash
+   python build_windows.py
+   ```
+
+2. **Kompilera NSIS installer:**
+   ```bash
+   cd installer
+   makensis installer.nsi
+   ```
+
+   Detta skapar `EPG_PDF_Extraherare_Setup.exe` i `installer/`-mappen.
+
+3. **Distribuera installer:**
+   - `EPG_PDF_Extraherare_Setup.exe` kan distribueras till slutanvändare
+   - Installern installerar appen i `C:\Program Files\EPG PDF Extraherare\`
+   - Skapar Start Menu-genvägar
+   - Valfritt: Desktop-genväg
+
+#### Installer-funktioner
+
+- ✅ Automatisk installation till Program Files
+- ✅ Start Menu-genvägar
+- ✅ Desktop-genväg (valfritt)
+- ✅ Integrering med Windows Add/Remove Programs
+- ✅ Avinstallationsstöd
+- ✅ Version-hantering
+
+#### Användning av installerad app
+
+Efter installation kan användaren:
+
+```bash
+# Använd direkt från kommandoraden (om PATH är konfigurerad)
+EPG_PDF_Extraherare.exe --input fakturor/ --output output/
+
+# Eller navigera till installationsmappen
+cd "C:\Program Files\EPG PDF Extraherare"
+.\EPG_PDF_Extraherare.exe --input fakturor/ --output output/
+```
+
+**Notera:** Default output-mapp används automatiskt om `--output` inte anges:
+- `%USERPROFILE%\Documents\EPG PDF Extraherare\output\`
+
+#### Avinstallation
+
+Användare kan avinstallera via:
+- **Settings → Apps → EPG PDF Extraherare → Uninstall**
+- Eller kör `Uninstall.exe` från installationsmappen
 
 ---
 
@@ -561,8 +641,8 @@ python -m streamlit run run_streamlit.py
 # FastAPI
 python run_api.py
 
-# CLI
-python -m src.cli.main batch input/ output/
+# CLI (default output används automatiskt om --output inte anges)
+python -m src.cli.main --input fakturor/
 ```
 
 ### Docker

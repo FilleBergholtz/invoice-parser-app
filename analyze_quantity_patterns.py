@@ -9,7 +9,7 @@ print("ANALYS: Quantity-mönster med tusen-separatorer")
 print("=" * 80)
 
 # Hitta senaste Excel-fil
-output_dirs = ['output_test_unit_fix_v3']
+output_dirs = ['tests/output_test_unit_fix_v3']
 excel_files = []
 for output_dir in output_dirs:
     if os.path.exists(output_dir):

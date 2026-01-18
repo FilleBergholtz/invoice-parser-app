@@ -10,11 +10,11 @@ print("=" * 80)
 
 # Hitta senaste Excel-fil (prioritera output_test_fixes om den finns)
 output_dirs = [
-    'output_test_fixes',  # Prioritera den nya batch-processningen
-    'output_test_edge_cases_v2',
-    'output_test_edge_cases',
-    'output_verification_footer_fix',
-    'output_verification'
+    'tests/output_test_fixes',  # Prioritera den nya batch-processningen
+    'tests/output_test_edge_cases_v2',
+    'tests/output_test_edge_cases',
+    'tests/output_verification_footer_fix',
+    'tests/output_verification'
 ]
 
 excel_files = []
@@ -25,7 +25,7 @@ for output_dir in output_dirs:
 
 if not excel_files:
     print("\nFEL: Ingen Excel-fil hittades. Kör först batch-processning:")
-    print("  python -m src.cli.main --input tests/fixtures/pdfs --output output_test")
+    print("  python -m src.cli.main --input tests/fixtures/pdfs --output tests/output_test")
     exit(1)
 
 latest_file = max(excel_files, key=lambda p: os.path.getmtime(p))
