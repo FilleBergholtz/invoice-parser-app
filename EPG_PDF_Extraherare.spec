@@ -23,7 +23,18 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=[
+        # Exkludera testfiler och analysfiler
+        'test_fixes',
+        'test_unit_fix',
+        'analyze_unit_problems',
+        'analyze_quantity_patterns',
+        'analyze_remaining_problems',
+        'pytest',
+        'unittest',
+        # Exkludera test-mappen helt
+        'tests',
+    ],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,

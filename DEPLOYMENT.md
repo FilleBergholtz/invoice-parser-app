@@ -101,14 +101,34 @@ python build_windows.py
 
 Detta skapar `dist/EPG_PDF_Extraherare.exe` som kan köras direkt på Windows utan Python.
 
+> **ℹ️ Vad inkluderas i bygget?**
+> 
+> **Inkluderas:**
+> - ✅ All kod från `src/` mappen (applikationskod)
+> - ✅ Alla Python-dependencies (pdfplumber, pandas, openpyxl, etc.)
+> - ✅ Python runtime (inbyggd i executable)
+> 
+> **Exkluderas (inkluderas INTE):**
+> - ❌ Testfiler (`test_*.py`, `tests/` mappen)
+> - ❌ Analysfiler (`analyze_*.py`)
+> - ❌ Output-mappar och genererade filer
+> - ❌ Development-verktyg (pytest, unittest)
+> - ❌ Källkod-filer som inte används av applikationen
+> 
+> Endast produktionskod inkluderas - testfiler och output-mappar behövs inte i den färdiga produkten.
+
 ### Skapa Windows Installer (.exe Setup)
 
 För att skapa en professionell installer med NSIS:
 
-#### Förutsättningar
+> **⚠️ Viktigt:** NSIS behövs BARA för utvecklare som bygger installer-filen. Slutanvändare behöver INTE ha NSIS installerat - de behöver bara köra den färdiga `EPG_PDF_Extraherare_Setup.exe`-filen.
 
-- [NSIS (Nullsoft Scriptable Install System)](https://nsis.sourceforge.io/Download) måste vara installerat
+#### Förutsättningar (för utvecklare)
+
 - Executable måste vara byggd först (se ovan)
+- [NSIS (Nullsoft Scriptable Install System)](https://nsis.sourceforge.io/Download) måste vara installerat på utvecklarens dator för att bygga installer-filen
+
+**Notera:** Om NSIS inte är installerat kan du ändå använda den färdiga `.exe`-filen direkt från `dist/` mappen och distribuera den till slutanvändare.
 
 #### Steg
 
@@ -116,8 +136,18 @@ För att skapa en professionell installer med NSIS:
    ```bash
    python build_windows.py
    ```
+   
+   > **ℹ️ Automatisk rensning:** Scriptet rensar automatiskt gamla `build/` och `dist/` mappar innan nytt bygge. Du behöver inte manuellt ta bort gamla filer.
 
 2. **Kompilera NSIS installer:**
+   
+   **Alternativ A: Använd build_installer.py (rekommenderat)**
+   ```bash
+   python build_installer.py
+   ```
+   Detta script hittar automatiskt NSIS och bygger installern. Gamla installer-filer rensas automatiskt innan nytt bygge.
+
+   **Alternativ B: Manuellt med makensis**
    ```bash
    cd installer
    makensis installer.nsi
@@ -127,6 +157,7 @@ För att skapa en professionell installer med NSIS:
 
 3. **Distribuera installer:**
    - `EPG_PDF_Extraherare_Setup.exe` kan distribueras till slutanvändare
+   - **Slutanvändare behöver INTE ha NSIS eller Python installerat** - de behöver bara köra installer-filen
    - Installern installerar appen i `C:\Program Files\EPG PDF Extraherare\`
    - Skapar Start Menu-genvägar
    - Valfritt: Desktop-genväg
@@ -161,6 +192,19 @@ cd "C:\Program Files\EPG PDF Extraherare"
 Användare kan avinstallera via:
 - **Settings → Apps → EPG PDF Extraherare → Uninstall**
 - Eller kör `Uninstall.exe` från installationsmappen
+
+#### För slutanvändare
+
+**Slutanvändare behöver INTE:**
+- ❌ Python installerat
+- ❌ NSIS installerat
+- ❌ Några dependencies eller verktyg
+
+**Slutanvändare behöver BARA:**
+- ✅ Windows-operativsystem
+- ✅ Installer-filen: `EPG_PDF_Extraherare_Setup.exe`
+
+Installationen är helt fristående och kräver inga extra verktyg eller dependencies.
 
 ---
 
