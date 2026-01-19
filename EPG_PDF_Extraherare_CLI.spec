@@ -53,7 +53,7 @@ a = Analysis(
         'PySide6',
         'pydoc',
         'doctest',
-        'distutils',
+        # 'distutils',  # Borttaget - orsakar konflikt med PyInstaller hooks i Python 3.13
         'setuptools',
         'wheel',
         'email',

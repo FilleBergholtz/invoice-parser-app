@@ -54,7 +54,7 @@ a = Analysis(
         'PySide6',  # GUI (används inte)
         'pydoc',  # Dokumentation (används inte)
         'doctest',  # Testverktyg
-        'distutils',  # Deprecated
+        # 'distutils',  # Borttaget - orsakar konflikt med PyInstaller hooks i Python 3.13
         'setuptools',  # Build tools (behövs inte i runtime)
         'wheel',  # Build tools
         'email',  # Email (används inte)
