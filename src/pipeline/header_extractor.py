@@ -2,7 +2,7 @@
 
 import re
 from datetime import date
-from typing import List, Optional
+from typing import List, Optional, Callable
 
 from ..models.invoice_header import InvoiceHeader
 from ..models.row import Row
@@ -13,13 +13,15 @@ from ..pipeline.confidence_scoring import score_invoice_number_candidate
 
 def extract_invoice_number(
     header_segment: Optional[Segment],
-    invoice_header: InvoiceHeader
+    invoice_header: InvoiceHeader,
+    strategy: Optional[str] = None
 ) -> None:
     """Extract invoice number from header segment using extended labels, normalization, and improved search logic.
     
     Args:
         header_segment: Header segment (or None if not found)
         invoice_header: InvoiceHeader to update with extracted invoice number
+        strategy: Optional strategy variant ('aggressive', 'conservative', 'extended_patterns', 'broader_search')
         
     Algorithm:
     1. Normalize text and search for invoice number labels (Swedish + English variants)
@@ -28,6 +30,13 @@ def extract_invoice_number(
     4. Score all candidates using multi-factor scoring
     5. Always store best candidate (even if confidence < 0.95) - status will be REVIEW
     6. Create traceability evidence
+    
+    Strategy variants:
+    - None/standard: Default behavior
+    - 'aggressive': Use broader patterns, search more rows, lower thresholds
+    - 'conservative': Use stricter patterns, only same-row matches
+    - 'extended_patterns': Add more label pattern variations
+    - 'broader_search': Search larger area (top 40% instead of 25%)
     """
     if header_segment is None or not header_segment.rows:
         # No header segment → REVIEW
@@ -70,9 +79,16 @@ def extract_invoice_number(
     )
     
     # Primary regex for invoice number: 6-10 digits
-    primary_number_pattern = re.compile(r'\b(\d{6,10})\b')
-    # Fallback regex: 5-12 digits
-    fallback_number_pattern = re.compile(r'\b(\d{5,12})\b')
+    # Adjust based on strategy
+    if strategy == 'aggressive':
+        primary_number_pattern = re.compile(r'\b(\d{4,12})\b')  # Broader range
+        fallback_number_pattern = re.compile(r'\b(\d{3,15})\b')  # Even broader
+    elif strategy == 'conservative':
+        primary_number_pattern = re.compile(r'\b(\d{7,10})\b')  # Stricter range
+        fallback_number_pattern = re.compile(r'\b(\d{6,10})\b')
+    else:
+        primary_number_pattern = re.compile(r'\b(\d{6,10})\b')
+        fallback_number_pattern = re.compile(r'\b(\d{5,12})\b')
     
     # Step 2: Search for labels and extract numbers
     for row_index, row in enumerate(all_rows):
@@ -126,8 +142,13 @@ def extract_invoice_number(
     
     # Step 3: Fallback - header scan (if no label found)
     if not candidates:
-        # Limit to top 25% of page
-        page_top_threshold = page.height * 0.25
+        # Adjust search area based on strategy
+        if strategy == 'broader_search':
+            page_top_threshold = page.height * 0.40  # Search larger area
+        elif strategy == 'conservative':
+            page_top_threshold = page.height * 0.20  # Smaller area
+        else:
+            page_top_threshold = page.height * 0.25  # Default
         header_rows = [r for r in all_rows if r.y < page_top_threshold]
         
         for row_index, row in enumerate(header_rows):
@@ -536,14 +557,33 @@ def extract_vendor_name(
 
 def extract_header_fields(
     header_segment: Optional[Segment],
-    invoice_header: InvoiceHeader
+    invoice_header: InvoiceHeader,
+    progress_callback: Optional[Callable[[str, float, int], None]] = None
 ) -> None:
-    """Extract all header fields (invoice number, date, vendor) in one call.
+    """Extract all header fields (invoice number, date, vendor) in one call with retry logic.
     
     Args:
         header_segment: Header segment (or None if not found)
         invoice_header: InvoiceHeader to update with extracted fields
+        progress_callback: Optional callback function(status_message, confidence, attempt_num) for progress updates
     """
-    extract_invoice_number(header_segment, invoice_header)
+    from ..pipeline.retry_extraction import extract_with_retry
+    
+    # Extract invoice number with retry (target: 95% confidence)
+    if progress_callback:
+        progress_callback("Extraherar fakturanummer...", 0.0, 0)
+    
+    def extract_inv_num(strategy=None):
+        extract_invoice_number(header_segment, invoice_header, strategy=strategy)
+        return invoice_header  # Return object with confidence attribute
+    
+    result, confidence, attempts = extract_with_retry(
+        extract_inv_num,
+        target_confidence=0.95,
+        max_attempts=5,
+        progress_callback=progress_callback
+    )
+    
+    # Extract date and vendor (no retry needed, lower priority)
     extract_invoice_date(header_segment, invoice_header)
     extract_vendor_name(header_segment, invoice_header)

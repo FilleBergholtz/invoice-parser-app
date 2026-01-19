@@ -13,7 +13,8 @@ from ..pipeline.confidence_scoring import score_total_amount_candidate, validate
 def extract_total_amount(
     footer_segment: Optional[Segment],
     line_items: List[InvoiceLine],
-    invoice_header: InvoiceHeader
+    invoice_header: InvoiceHeader,
+    strategy: Optional[str] = None
 ) -> None:
     """Extract total amount from footer segment using keyword matching and confidence scoring.
     

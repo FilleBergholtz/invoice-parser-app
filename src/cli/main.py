@@ -134,12 +134,36 @@ def process_invoice(
         invoice_header = None
         if header_segment:
             invoice_header = InvoiceHeader(segment=header_segment)
-            # Extract header fields (invoice number, date, vendor)
-            extract_header_fields(header_segment, invoice_header)
+            # Extract header fields (invoice number, date, vendor) with retry
+            # Progress callback for UI (if verbose)
+            def progress_callback(msg, conf, attempt):
+                if verbose:
+                    print(f"  {msg} (confidence: {conf*100:.1f}%)")
+            extract_header_fields(header_segment, invoice_header, progress_callback=progress_callback if verbose else None)
         
-        # Extract total amount from footer
+        # Extract total amount from footer with retry
         if footer_segment and invoice_header:
-            extract_total_amount(footer_segment, all_invoice_lines, invoice_header)
+            from ..pipeline.retry_extraction import extract_with_retry
+            
+            def extract_total(strategy=None):
+                extract_total_amount(footer_segment, all_invoice_lines, invoice_header, strategy=strategy)
+                return invoice_header
+            
+            if verbose:
+                def total_progress(msg, conf, attempt):
+                    print(f"  {msg} (confidence: {conf*100:.1f}%)")
+                extract_with_retry(
+                    extract_total,
+                    target_confidence=0.90,
+                    max_attempts=5,
+                    progress_callback=total_progress
+                )
+            else:
+                extract_with_retry(
+                    extract_total,
+                    target_confidence=0.90,
+                    max_attempts=5
+                )
         
         # Step 8: Run validation
         validation_result = None
@@ -279,11 +303,35 @@ def process_virtual_invoice(
         invoice_header = None
         if header_segment:
             invoice_header = InvoiceHeader(segment=header_segment)
-            extract_header_fields(header_segment, invoice_header)
+            # Extract header fields with retry
+            def progress_callback(msg, conf, attempt):
+                if verbose:
+                    print(f"  {msg} (confidence: {conf*100:.1f}%)")
+            extract_header_fields(header_segment, invoice_header, progress_callback=progress_callback if verbose else None)
         
-        # Extract total amount from footer
+        # Extract total amount from footer with retry
         if footer_segment and invoice_header:
-            extract_total_amount(footer_segment, all_invoice_lines, invoice_header)
+            from ..pipeline.retry_extraction import extract_with_retry
+            
+            def extract_total(strategy=None):
+                extract_total_amount(footer_segment, all_invoice_lines, invoice_header, strategy=strategy)
+                return invoice_header
+            
+            if verbose:
+                def total_progress(msg, conf, attempt):
+                    print(f"  {msg} (confidence: {conf*100:.1f}%)")
+                extract_with_retry(
+                    extract_total,
+                    target_confidence=0.90,
+                    max_attempts=5,
+                    progress_callback=total_progress
+                )
+            else:
+                extract_with_retry(
+                    extract_total,
+                    target_confidence=0.90,
+                    max_attempts=5
+                )
         
         # Run validation
         validation_result = None

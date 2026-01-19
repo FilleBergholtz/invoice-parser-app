@@ -242,67 +242,85 @@ def process_uploaded_files(uploaded_files: List) -> None:
             # Update progress
             progress = (idx + 1) / len(uploaded_files)
             progress_bar.progress(progress)
-            status_text.text(f"Processar {uploaded_file.name} ({idx + 1}/{len(uploaded_files)})...")
             
-            # Save uploaded file temporarily
-            temp_file_path = Path(temp_dir) / uploaded_file.name
-            with open(temp_file_path, "wb") as f:
-                f.write(uploaded_file.getbuffer())
-            
-            # Process invoice
-            try:
-                result = process_invoice(
-                    str(temp_file_path),
-                    output_dir=temp_dir,
-                    verbose=False
-                )
+            # Create detailed status container
+            with st.container():
+                file_status = st.empty()
+                file_status.info(f"📄 **{uploaded_file.name}** ({idx + 1}/{len(uploaded_files)})")
                 
-                # Extract data from invoice_header and validation_result
-                invoice_header = result.get("invoice_header")
-                validation_result = result.get("validation_result")
+                # Save uploaded file temporarily
+                temp_file_path = Path(temp_dir) / uploaded_file.name
+                with open(temp_file_path, "wb") as f:
+                    f.write(uploaded_file.getbuffer())
                 
-                # Add filename and extracted fields to result
-                result["filename"] = uploaded_file.name
-                result["file_size"] = uploaded_file.size
-                
-                # Extract fields from invoice_header
-                if invoice_header:
-                    result["invoice_number"] = invoice_header.invoice_number or "TBD"
-                    result["vendor_name"] = invoice_header.supplier_name or "TBD"
-                    result["invoice_date"] = (
-                        invoice_header.invoice_date.isoformat() 
-                        if invoice_header.invoice_date else "TBD"
+                # Process invoice
+                try:
+                    result = process_invoice(
+                        str(temp_file_path),
+                        output_dir=temp_dir,
+                        verbose=False
                     )
-                    result["total_amount"] = invoice_header.total_amount or 0.0
-                    result["invoice_number_confidence"] = invoice_header.invoice_number_confidence
-                    result["total_confidence"] = invoice_header.total_confidence
-                else:
-                    result["invoice_number"] = "TBD"
-                    result["vendor_name"] = "TBD"
-                    result["invoice_date"] = "TBD"
-                    result["total_amount"] = 0.0
-                    result["invoice_number_confidence"] = 0.0
-                    result["total_confidence"] = 0.0
-                
-                # Extract fields from validation_result
-                if validation_result:
-                    result["lines_sum"] = validation_result.lines_sum
-                    result["diff"] = validation_result.diff if validation_result.diff is not None else "N/A"
-                else:
-                    result["lines_sum"] = 0.0
-                    result["diff"] = "N/A"
-                
-                results.append(result)
-                
-            except Exception as e:
-                # Handle errors gracefully
-                results.append({
-                    "filename": uploaded_file.name,
-                    "status": "FAILED",
-                    "error": str(e),
-                    "line_count": 0,
-                    "invoice_lines": []
-                })
+                    
+                    # Update status with result
+                    invoice_header = result.get("invoice_header")
+                    if invoice_header:
+                        inv_conf = invoice_header.invoice_number_confidence * 100
+                        total_conf = invoice_header.total_confidence * 100
+                        status_icon = "✅" if inv_conf >= 95 and total_conf >= 90 else "⚠️"
+                        file_status.success(
+                            f"{status_icon} **{uploaded_file.name}** - "
+                            f"Fakturanummer: {inv_conf:.1f}% | Totalsumma: {total_conf:.1f}%"
+                        )
+                    else:
+                        file_status.warning(f"⚠️ **{uploaded_file.name}** - Ingen header hittades")
+                    
+                    # Extract data from invoice_header and validation_result
+                    invoice_header = result.get("invoice_header")
+                    validation_result = result.get("validation_result")
+                    
+                    # Add filename and extracted fields to result
+                    result["filename"] = uploaded_file.name
+                    result["file_size"] = uploaded_file.size
+                    
+                    # Extract fields from invoice_header
+                    if invoice_header:
+                        result["invoice_number"] = invoice_header.invoice_number or "TBD"
+                        result["vendor_name"] = invoice_header.supplier_name or "TBD"
+                        result["invoice_date"] = (
+                            invoice_header.invoice_date.isoformat() 
+                            if invoice_header.invoice_date else "TBD"
+                        )
+                        result["total_amount"] = invoice_header.total_amount or 0.0
+                        result["invoice_number_confidence"] = invoice_header.invoice_number_confidence
+                        result["total_confidence"] = invoice_header.total_confidence
+                    else:
+                        result["invoice_number"] = "TBD"
+                        result["vendor_name"] = "TBD"
+                        result["invoice_date"] = "TBD"
+                        result["total_amount"] = 0.0
+                        result["invoice_number_confidence"] = 0.0
+                        result["total_confidence"] = 0.0
+                    
+                    # Extract fields from validation_result
+                    if validation_result:
+                        result["lines_sum"] = validation_result.lines_sum
+                        result["diff"] = validation_result.diff if validation_result.diff is not None else "N/A"
+                    else:
+                        result["lines_sum"] = 0.0
+                        result["diff"] = "N/A"
+                    
+                    results.append(result)
+                    
+                except Exception as e:
+                    # Handle errors gracefully
+                    file_status.error(f"❌ **{uploaded_file.name}** - Fel: {str(e)}")
+                    results.append({
+                        "filename": uploaded_file.name,
+                        "status": "FAILED",
+                        "error": str(e),
+                        "line_count": 0,
+                        "invoice_lines": []
+                    })
         
         # Update session state
         st.session_state.results.extend(results)
