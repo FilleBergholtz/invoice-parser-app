@@ -11,6 +11,13 @@ Name "EPG PDF Extraherare"
 OutFile "EPG_PDF_Extraherare_Setup.exe"
 Unicode True
 
+; Define source directory (relative to installer.nsi location)
+; Om filerna finns i installer-mappen (kopierade dit), använd dem direkt
+; Annars använd relativa sökvägar till dist/
+!if /FileExists "EPG_PDF_Extraherare.exe"
+    !define USE_LOCAL_FILES
+!endif
+
 ; Default installation folder
 InstallDir "$PROGRAMFILES64\EPG PDF Extraherare"
 
@@ -19,6 +26,12 @@ InstallDirRegKey HKCU "Software\EPG PDF Extraherare" ""
 
 ; Request application privileges for Windows Vista and later
 RequestExecutionLevel admin
+
+; Compression settings (för stora filer)
+; NSIS har kända problem med filer >2 GB, även utan komprimering
+; För filer på 2.8 GB måste komprimering vara helt avstängd
+SetCompress off
+SetDatablockOptimize off
 
 ; Version information (update from pyproject.toml)
 !define VERSION "0.1.0"
@@ -36,7 +49,7 @@ VIAddVersionKey "FileDescription" "EPG PDF Extraherare - PDF invoice parser"
 ;--------------------------------
 ; Pages
 !insertmacro MUI_PAGE_WELCOME
-!insertmacro MUI_PAGE_LICENSE "..\LICENSE"  ; Om du har en LICENSE-fil, annars kommentera bort
+; !insertmacro MUI_PAGE_LICENSE "..\LICENSE"  ; Kommenterad bort - ingen LICENSE-fil finns
 !insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
@@ -61,8 +74,14 @@ Section "Main Application" SecMain
     SetOutPath "$INSTDIR"
     
     ; Install executables
-    File "..\dist\EPG_PDF_Extraherare.exe"  ; CLI version
-    File "..\dist\EPG_PDF_Extraherare_GUI.exe"  ; GUI version
+    ; Försök använda lokala kopior först (för att undvika memory-mapping problem med stora filer)
+    !ifdef USE_LOCAL_FILES
+        File "EPG_PDF_Extraherare.exe"  ; CLI version (lokal kopia)
+        File "EPG_PDF_Extraherare_GUI.exe"  ; GUI version (lokal kopia)
+    !else
+        File "..\dist\EPG_PDF_Extraherare.exe"  ; CLI version (relativ sökväg)
+        File "..\dist\EPG_PDF_Extraherare_GUI.exe"  ; GUI version (relativ sökväg)
+    !endif
     
     ; Install README and other documentation (if needed)
     ; File "..\README.md"

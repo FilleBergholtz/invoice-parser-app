@@ -33,8 +33,35 @@ a = Analysis(
         'analyze_remaining_problems',
         'pytest',
         'unittest',
-        # Exkludera test-mappen helt
         'tests',
+        # Exkludera onödiga moduler för att minska storlek
+        'matplotlib',  # Används inte
+        'scipy',  # Används inte
+        'IPython',  # Används inte
+        'jupyter',  # Används inte
+        'notebook',  # Används inte
+        'pandas.tests',  # Testfiler
+        'numpy.tests',  # Testfiler
+        'pandas.testing',  # Testverktyg
+        'numpy.testing',  # Testverktyg
+        'pandas._testing',  # Interna testverktyg
+        'pandas.plotting',  # Plotting (används inte)
+        'pandas.io.formats.style',  # Styling (används inte)
+        'tkinter',  # GUI (används inte, vi använder Streamlit)
+        'PyQt5',  # GUI (används inte)
+        'PyQt6',  # GUI (används inte)
+        'PySide2',  # GUI (används inte)
+        'PySide6',  # GUI (används inte)
+        'pydoc',  # Dokumentation (används inte)
+        'doctest',  # Testverktyg
+        'distutils',  # Deprecated
+        'setuptools',  # Build tools (behövs inte i runtime)
+        'wheel',  # Build tools
+        'email',  # Email (används inte)
+        'http.server',  # HTTP server (används inte, vi använder uvicorn)
+        'xmlrpc',  # XML-RPC (används inte)
+        'sqlite3',  # SQLite (används inte)
+        'dbm',  # Database (används inte)
     ],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
