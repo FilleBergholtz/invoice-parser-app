@@ -8,9 +8,9 @@ from typing import Dict, List, Optional
 import pandas as pd
 import streamlit as st
 
-from ..cli.main import process_invoice
-from ..export.excel_export import export_to_excel
-from ..config import get_default_output_dir
+from src.cli.main import process_invoice
+from src.export.excel_export import export_to_excel
+from src.config import get_default_output_dir
 
 
 def display_invoice_detail(invoice_idx: int) -> None:

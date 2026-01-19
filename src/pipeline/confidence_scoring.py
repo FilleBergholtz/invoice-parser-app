@@ -37,17 +37,61 @@ def score_total_amount_candidate(
     score = 0.0
     
     # Keyword match (0.35 weight)
-    keyword_scores = {
-        "att betala": 0.35,
-        "totalt": 0.30,
-        "total": 0.30,
-        "summa att betala": 0.30
-    }
+    # Prioritize "with VAT" keywords (what customer actually pays)
+    # Check in order of priority (most specific first)
     row_lower = row.text.lower()
-    for keyword, kw_score in keyword_scores.items():
+    
+    # Highest priority: "att betala" / "inkl. moms" (total WITH VAT)
+    high_priority_keywords = [
+        "att betala", "attbetala", "att betala sek", "attbetala sek",
+        "summa att betala", "summa attbetala", "summa att betala sek",
+        "belopp att betala", "belopp attbetala", "belopp att betala sek",
+        "betalningsbelopp", "betalningsbeloppet", "betalningsbelopp sek",
+        "totalt inkl. moms", "total inkl. moms", "totalt inklusive moms",
+        "total inklusive moms", "totalt inkl moms", "total inkl moms",
+        "inkl. moms", "inklusive moms", "inkl moms",
+        "totalt med moms", "total med moms", "med moms",
+        "totalt moms inkluderad", "total moms inkluderad",
+        "betalas", "betalas sek", "belopp betalas",
+        "slutsumma inkl. moms", "netto att betala", "netto betalas"
+    ]
+    
+    # Medium priority: generic totals
+    medium_priority_keywords = [
+        "totalt", "total", "summa", "belopp", "slutsumma",
+        "fakturabelopp", "fakturabeloppet"
+    ]
+    
+    # Lower priority: "exkl. moms" (subtotal, not final total)
+    low_priority_keywords = [
+        "totalt exkl. moms", "total exkl. moms", "totalt exklusive moms",
+        "total exklusive moms", "totalt exkl moms", "total exkl moms",
+        "exkl. moms", "exklusive moms", "exkl moms",
+        "totalt utan moms", "total utan moms", "utan moms",
+        "delsumma", "subtotal", "summa exkl. moms", "summa exklusive moms",
+        "momsfri summa", "momsfritt belopp", "netto exkl. moms"
+    ]
+    
+    # Check in priority order (don't return early - need to continue scoring)
+    keyword_found = False
+    for keyword in high_priority_keywords:
         if keyword in row_lower:
-            score += kw_score
+            score += 0.35
+            keyword_found = True
             break
+    
+    if not keyword_found:
+        for keyword in medium_priority_keywords:
+            if keyword in row_lower:
+                score += 0.30
+                keyword_found = True
+                break
+    
+    if not keyword_found:
+        for keyword in low_priority_keywords:
+            if keyword in row_lower:
+                score += 0.20
+                break
     
     # Position (0.20 weight)
     if row.y > 0.8 * page.height:
@@ -57,7 +101,30 @@ def score_total_amount_candidate(
     if validate_total_against_line_items(candidate, line_items, tolerance=1.0):
         score += 0.35
     elif line_items:
-        score += 0.15  # Partial: has line items but doesn't validate
+        # Partial scoring based on how close the match is
+        lines_sum = sum(line.total_amount for line in line_items)
+        diff = abs(candidate - lines_sum)
+        
+        # Use percentage-based thresholds for larger amounts
+        if candidate > 1000:
+            # For larger amounts, VAT/shipping can cause larger absolute differences
+            percentage_diff = (diff / candidate) * 100
+            if percentage_diff <= 0.5:  # Within 0.5% - very likely correct
+                score += 0.30  # Very high partial score
+            elif percentage_diff <= 2.0:  # Within 2% - likely VAT/shipping
+                score += 0.20  # High partial score
+            elif percentage_diff <= 5.0:  # Within 5% - might be VAT/shipping
+                score += 0.10  # Medium partial score
+            else:
+                score += 0.05  # Low partial score
+        else:
+            # For smaller amounts, use fixed thresholds
+            if diff <= 5.0:  # Within 5 SEK - likely correct with small rounding/VAT differences
+                score += 0.25  # High partial score
+            elif diff <= 50.0:  # Within 50 SEK - might be VAT or shipping
+                score += 0.15  # Medium partial score
+            else:
+                score += 0.05  # Low partial score - likely wrong
     
     # Relative size (0.10 weight)
     if _is_largest_in_footer(candidate, footer_rows):
@@ -83,13 +150,24 @@ def validate_total_against_line_items(
         
     Formula: lines_sum = SUM(all line item totals), diff = |total - lines_sum|
     Validation passes if diff <= tolerance.
+    
+    Note: Many invoices have VAT, shipping, or other fees not included in line items.
+    For larger amounts, use percentage-based tolerance (e.g., 0.5% of total).
     """
     if not line_items:
         return False  # Cannot validate without line items
     
     lines_sum = sum(line.total_amount for line in line_items)
     diff = abs(total - lines_sum)
-    return diff <= tolerance
+    
+    # Use percentage-based tolerance for larger amounts (handles VAT/shipping better)
+    # For amounts > 1000 SEK, allow 0.5% difference (for VAT ~25% on subtotal)
+    # For amounts <= 1000 SEK, use fixed tolerance
+    if total > 1000:
+        percentage_tolerance = total * 0.005  # 0.5% of total
+        return diff <= max(tolerance, percentage_tolerance)
+    else:
+        return diff <= tolerance
 
 
 def _is_largest_in_footer(candidate: float, footer_rows: List[Row]) -> bool:
@@ -197,9 +275,15 @@ def _validate_invoice_number_format(candidate: str) -> bool:
     if not re.match(r'^[A-Z0-9\-]+$', candidate, re.IGNORECASE):
         return False
     
-    # Not just digits (likely not org number or amount)
-    if candidate.isdigit() and len(candidate) > 6:
-        return False
+    # Numeric invoice numbers are valid (6-12 digits are common)
+    # Previously rejected >6 digits, but many invoices use 7-12 digit numbers
+    # Only reject if it looks like an org number (10 digits starting with 5 or 6)
+    if candidate.isdigit():
+        if len(candidate) == 10 and candidate[0] in ['5', '6']:
+            # Likely Swedish org number (10 digits starting with 5 or 6)
+            return False
+        # All other numeric sequences are valid invoice numbers
+        return True
     
     # Not a date pattern (YYYY-MM-DD, DD/MM/YYYY, etc.)
     date_patterns = [
