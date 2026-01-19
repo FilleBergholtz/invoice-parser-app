@@ -140,13 +140,21 @@ def extract_with_retry(
     for attempt_num in range(max_attempts):
         strategy = strategies[attempt_num % len(strategies)] if strategies else None
         
-        if progress_callback and attempt_num > 0:
-            # Show retry message only after first attempt
-            progress_callback(
-                f"Försök {attempt_num + 1}/{max_attempts} (strategi: {strategy or 'standard'})",
-                best_confidence,
-                attempt_num + 1
-            )
+        if progress_callback:
+            if attempt_num == 0:
+                # First attempt
+                progress_callback(
+                    f"Extraherar (försök 1/{max_attempts})...",
+                    0.0,
+                    1
+                )
+            else:
+                # Retry attempts
+                progress_callback(
+                    f"Försök {attempt_num + 1}/{max_attempts} (strategi: {strategy or 'standard'})...",
+                    best_confidence,
+                    attempt_num + 1
+                )
         
         try:
             # Call extraction function with strategy
@@ -174,6 +182,7 @@ def extract_with_retry(
                 'success': confidence >= target_confidence
             })
             
+            # Always track best result (even if we continue)
             if confidence > best_confidence:
                 best_confidence = confidence
                 best_result = result
@@ -188,13 +197,19 @@ def extract_with_retry(
                     )
                 else:
                     progress_callback(
-                        f"Försök {attempt_num + 1}/{max_attempts}: {confidence*100:.1f}% (mål: {target_confidence*100:.0f}%)",
+                        f"Försök {attempt_num + 1}/{max_attempts}: {confidence*100:.1f}% (bästa: {best_confidence*100:.1f}%, mål: {target_confidence*100:.0f}%)",
                         confidence,
                         attempt_num + 1
                     )
             
+            # If we reached target confidence, return early (success!)
             if confidence >= target_confidence:
                 return result, confidence, attempts
+            
+            # If this is the last attempt and we haven't reached target, continue to return best
+            if attempt_num == max_attempts - 1:
+                # Last attempt - will return best result below
+                break
                 
         except Exception as e:
             attempts.append({

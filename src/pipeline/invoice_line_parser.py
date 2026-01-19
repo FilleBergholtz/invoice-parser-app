@@ -477,13 +477,14 @@ def _extract_line_from_row(
     
     # Extended unit list including DAY, dagar, EA, LTR, Liter, månad, XPA, bdag, M2, M3, BD, dgr
     # Support for different invoice layouts (e.g., "bdag" = business days, "BD" = Byggdagar, "dgr" = dagar)
+    # Note: These are exact string matches (case-insensitive), not regex patterns
     unit_keywords = [
         'st', 'kg', 'h', 'm²', 'm2', 'm3', 'm³', 'tim', 'timmar', 'pcs', 'pkt',
         'day', 'days', 'dagar', 'ea', 'ltr', 'liter', 'liters', 'månad', 'månader',
         'xpa', 'pkt', 'paket', 'box', 'burk', 'flaska', 'flaskor',
-        'bdag', 'bdagar', 'business\s*day', 'business\s*days',  # Business days
+        'bdag', 'bdagar', 'businessday', 'businessdays',  # Business days (without space)
         'bd', 'byggdagar', 'byggdag',  # Byggdagar (Ramirent layout)
-        'dgr', 'dgr\.', 'dagar',  # Dag/dagar (Neglinge: "5 dgr.")
+        'dgr', 'dgr.', 'dagar',  # Dag/dagar (Neglinge: "5 dgr." - with or without period)
         'enh', 'enhet', 'unit', 'units',  # Generic unit labels
         # Volume and area units
         'm²', 'm2', 'kvadratmeter', 'm³', 'm3', 'kubikmeter',

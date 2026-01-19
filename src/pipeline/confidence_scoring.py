@@ -94,12 +94,15 @@ def score_total_amount_candidate(
                 break
     
     # Position (0.20 weight)
-    if row.y > 0.8 * page.height:
+    # Footer zone is typically bottom 20-30% of page
+    if row.y > 0.7 * page.height:  # Bottom 30% of page
         score += 0.20
+    elif row.y > 0.6 * page.height:  # Bottom 40% of page (still likely footer)
+        score += 0.15  # Partial score
     
     # Mathematical validation (0.35 weight)
     if validate_total_against_line_items(candidate, line_items, tolerance=1.0):
-        score += 0.35
+        score += 0.35  # Perfect match - full score
     elif line_items:
         # Partial scoring based on how close the match is
         lines_sum = sum(line.total_amount for line in line_items)
@@ -109,26 +112,54 @@ def score_total_amount_candidate(
         if candidate > 1000:
             # For larger amounts, VAT/shipping can cause larger absolute differences
             percentage_diff = (diff / candidate) * 100
-            if percentage_diff <= 0.5:  # Within 0.5% - very likely correct
-                score += 0.30  # Very high partial score
+            if percentage_diff <= 0.5:  # Within 0.5% - very likely correct (VAT/rounding)
+                score += 0.32  # Very high partial score (almost full)
+            elif percentage_diff <= 1.0:  # Within 1% - likely VAT/shipping
+                score += 0.28  # High partial score
             elif percentage_diff <= 2.0:  # Within 2% - likely VAT/shipping
-                score += 0.20  # High partial score
+                score += 0.22  # Medium-high partial score
             elif percentage_diff <= 5.0:  # Within 5% - might be VAT/shipping
-                score += 0.10  # Medium partial score
+                score += 0.15  # Medium partial score
+            elif percentage_diff <= 10.0:  # Within 10% - questionable
+                score += 0.08  # Low partial score
             else:
-                score += 0.05  # Low partial score
+                score += 0.03  # Very low partial score - likely wrong
         else:
             # For smaller amounts, use fixed thresholds
-            if diff <= 5.0:  # Within 5 SEK - likely correct with small rounding/VAT differences
+            if diff <= 2.0:  # Within 2 SEK - very likely correct with small rounding
+                score += 0.30  # Very high partial score
+            elif diff <= 5.0:  # Within 5 SEK - likely correct with small rounding/VAT differences
                 score += 0.25  # High partial score
-            elif diff <= 50.0:  # Within 50 SEK - might be VAT or shipping
-                score += 0.15  # Medium partial score
+            elif diff <= 20.0:  # Within 20 SEK - might be VAT or shipping
+                score += 0.18  # Medium partial score
+            elif diff <= 50.0:  # Within 50 SEK - questionable
+                score += 0.10  # Low-medium partial score
             else:
                 score += 0.05  # Low partial score - likely wrong
     
     # Relative size (0.10 weight)
-    if _is_largest_in_footer(candidate, footer_rows):
-        score += 0.10
+    if footer_rows:
+        # Find largest amount in footer rows
+        amounts_in_footer = []
+        for footer_row in footer_rows:
+            # Simple extraction: find numbers that look like amounts
+            amount_pattern = re.compile(r'\d{1,3}(?:\s+\d{3})*(?:[.,]\d{2})?')
+            matches = amount_pattern.findall(footer_row.text)
+            for match in matches:
+                try:
+                    cleaned = match.replace(' ', '').replace(',', '.')
+                    amount = float(cleaned)
+                    if amount > 0:
+                        amounts_in_footer.append(amount)
+                except ValueError:
+                    continue
+        
+        if amounts_in_footer:
+            max_amount = max(amounts_in_footer)
+            if candidate >= max_amount * 0.98:  # Candidate is largest or very close to largest
+                score += 0.10  # Full score
+            elif candidate >= max_amount * 0.90:  # Candidate is close to largest
+                score += 0.07  # Partial score
     
     return min(score, 1.0)  # Normalize to 0.0-1.0
 
@@ -230,15 +261,22 @@ def score_invoice_number_candidate(
     score = 0.0
     
     # Position scoring (0.30 weight)
-    if row.y < 0.3 * page.height:
+    # Header zone is typically top 20-30% of page
+    if row.y < 0.25 * page.height:  # Top 25% of page (strong header signal)
         score += 0.30
+    elif row.y < 0.35 * page.height:  # Top 35% of page (still likely header)
+        score += 0.20  # Partial score
     
     # Keyword proximity (0.35 weight)
-    keyword_pattern = r"(?:fakturanummer|invoice\s*number|no\.|nr|number)"
+    # Extended pattern to match more invoice number label variations
+    keyword_pattern = r"(?:fakturanummer|faktura\s*nr|faktnr|fakt\.nr|invoice\s*number|invoice\s*no|inv\s*no|no\.|nr|number)"
     if re.search(keyword_pattern, row.text, re.IGNORECASE):
-        score += 0.35
+        score += 0.35  # Same row - highest confidence
     elif _has_keyword_in_adjacent_row(row, all_rows, keyword_pattern):
-        score += 0.25  # Slightly lower for adjacent
+        score += 0.28  # Adjacent row - still high confidence
+    # Also check if number appears near "Faktura" text (common pattern: "Faktura 123456")
+    elif re.search(r'faktura\s+\d', row.text, re.IGNORECASE):
+        score += 0.30  # "Faktura" followed by number - high confidence
     
     # Format validation (0.20 weight)
     if _validate_invoice_number_format(candidate):

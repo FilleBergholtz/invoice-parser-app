@@ -261,9 +261,16 @@ def extract_total_amount(
         invoice_header.total_traceability = None
         return
     
-    # Step 2: Score each candidate (limit to top 10 for performance)
+    # Step 2: Score each candidate (limit based on strategy)
+    # Adjust candidate limit based on strategy
+    candidate_limit = 10
+    if strategy == 'aggressive':
+        candidate_limit = 20  # Check more candidates
+    elif strategy == 'conservative':
+        candidate_limit = 5  # Check fewer, higher quality candidates
+    
     scored_candidates = []
-    for candidate in candidates[:10]:  # Limit to top 10
+    for candidate in candidates[:candidate_limit]:
         score = score_total_amount_candidate(
             candidate['amount'],
             candidate['row'],
@@ -275,9 +282,23 @@ def extract_total_amount(
         # Boost score based on keyword type (prioritize "with VAT" totals)
         keyword_type = candidate.get('keyword_type')
         if keyword_type == 'with_vat':
-            score = min(score + 0.15, 1.0)  # Boost for "att betala" / "inkl. moms"
+            # Adjust boost based on strategy
+            if strategy == 'aggressive':
+                boost = 0.20  # Higher boost for aggressive strategy
+            elif strategy == 'conservative':
+                boost = 0.10  # Lower boost for conservative strategy
+            else:
+                boost = 0.15  # Default boost
+            score = min(score + boost, 1.0)  # Boost for "att betala" / "inkl. moms"
         elif keyword_type == 'without_vat':
-            score = max(score - 0.10, 0.0)  # Penalize "exkl. moms" (this is subtotal, not total)
+            # Adjust penalty based on strategy
+            if strategy == 'aggressive':
+                penalty = 0.05  # Lower penalty for aggressive (might accept subtotals)
+            elif strategy == 'conservative':
+                penalty = 0.15  # Higher penalty for conservative (strictly reject subtotals)
+            else:
+                penalty = 0.10  # Default penalty
+            score = max(score - penalty, 0.0)  # Penalize "exkl. moms" (this is subtotal, not total)
         # 'generic' and None get no boost/penalty
         
         scored_candidates.append({
