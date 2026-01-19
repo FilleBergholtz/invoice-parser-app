@@ -22,6 +22,7 @@ def _is_footer_row(row: Row) -> bool:
     - "summa", "total", "att betala", "moms", "exkl", "inkl"
     - Summary labels that indicate totals rather than product rows
     - Edge cases: Short descriptions with large amounts that match invoice totals
+    - Fee descriptions: "Fraktavgift", "Avgiftsbeskrivning" (Derome layout)
     """
     if not row.text:
         return False
@@ -30,6 +31,7 @@ def _is_footer_row(row: Row) -> bool:
     text_stripped = row.text.strip()
     
     # Footer keywords (Swedish + English)
+    # Support different layouts: "Fakturabelopp", "SUMMA ATT BETALA", "Fraktavgift"
     footer_keywords = [
         'summa',
         'total',
@@ -67,7 +69,17 @@ def _is_footer_row(row: Row) -> bool:
         'bifogad',
         'bifogadspec',
         'hyraställning',
-        'hyraställningen'
+        'hyraställningen',
+        # Fee/summary rows (Derome, etc.)
+        'fraktavgift',
+        'avgiftsbeskrivning',
+        'avgift',
+        'delsumma',
+        'total delsumma',
+        'nettobelopp',
+        'fakturabelopp',
+        'summa att betala',
+        'SUMMA ATT BETALA',  # Uppercase (CERTEX layout)
     ]
     
     # Check if row text contains footer keywords
@@ -134,35 +146,46 @@ def _extract_amount_from_row_text(row: Row) -> Optional[Tuple[float, Optional[fl
     Returns:
         Tuple of (total_amount, discount, amount_token_idx) if amount found, None otherwise
         - total_amount: Extracted numeric amount (must be positive)
-        - discount: Optional discount amount (if negative amount found before total_amount)
+        - discount: Optional discount (as percentage 0.0-1.0 or amount in SEK)
         - amount_token_idx: Index of token containing or closest to total_amount
         
     This function extracts amounts from row.text instead of token-by-token,
     which better handles thousand separators (spaces) that may span multiple tokens.
-    Also detects negative amounts (discounts) before the total amount.
+    Also detects:
+    - Negative amounts (discounts) before the total amount: "-474,30" → 474.30 SEK
+    - Percentage discounts: "100,0%" → 1.0 (100%), "10,5%" → 0.105 (10.5%)
     
     Examples: 
     - "1 072,60" → (1072.60, None, idx)
-    - "440,00 -88,00 1 672,00" → (1672.00, 88.00, idx)
-    - "-2 007,28 10 000,00" → (10000.00, 2007.28, idx)
+    - "440,00 -88,00 1 672,00" → (1672.00, 88.00, idx)  # Discount as amount
+    - "-2 007,28 10 000,00" → (10000.00, 2007.28, idx)  # Discount as amount
+    - "100,0% 0,00" → (0.00, 1.0, idx)  # Discount as percentage (100%)
+    - "10,5% 1 200,00" → (1200.00, 0.105, idx)  # Discount as percentage (10.5%)
     """
     currency_symbols = ['kr', 'SEK', 'sek', ':-']
+    row_text = row.text
     
     # Pattern for amounts (positive or negative) with thousand separators (spaces)
     # Matches: "123,45", "-123,45", "1 234,56", "-1 234,56", "-2 007,28", etc.
     # Also handles period as decimal: "123.45", "-123.45"
-    # Pattern: optional minus sign, then digits with optional thousand separators, then decimal
-    amount_pattern = re.compile(r'-?\d{1,3}(?:\s+\d{3})*(?:[.,]\d{2})|-?\d+(?:[.,]\d{2})')
+    amount_pattern = re.compile(r'-?\d{1,3}(?:\s+\d{3})*(?:[.,]\d{1,2})|-?\d+(?:[.,]\d{1,2})')
+    
+    # Pattern for percentage discounts: "100,0%", "10,5%", "25%", etc.
+    # Matches: digits with optional decimal, followed by %
+    percentage_pattern = re.compile(r'(\d{1,3}(?:\s+\d{3})*(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?)\s*%')
     
     # Find all amount matches in row.text
-    matches = list(amount_pattern.finditer(row.text))
-    if not matches:
+    amount_matches = list(amount_pattern.finditer(row_text))
+    percentage_matches = list(percentage_pattern.finditer(row_text))
+    
+    if not amount_matches and not percentage_matches:
         return None
     
     # Extract all amounts with their positions and values
-    amounts = []  # List of (value, is_negative, match_start, match_end)
+    amounts = []  # List of (value, is_negative, is_percentage, match_start, match_end)
     
-    for match in matches:
+    # Process amount matches
+    for match in amount_matches:
         amount_text = match.group(0)
         is_negative = amount_text.startswith('-')
         
@@ -175,7 +198,30 @@ def _extract_amount_from_row_text(row: Row) -> Optional[Tuple[float, Optional[fl
         try:
             value = float(cleaned)
             if value > 0:  # Only process positive values (we handle sign separately)
-                amounts.append((value, is_negative, match.start(), match.end()))
+                amounts.append((value, is_negative, False, match.start(), match.end()))
+        except ValueError:
+            continue
+    
+    # Process percentage matches
+    for match in percentage_matches:
+        # Group 1: percentage with % sign, Group 2: standalone percentage value
+        percent_text = match.group(1) if match.group(1) else match.group(2)
+        if not percent_text:
+            continue
+        
+        # Clean percentage value (handle both komma and punkt as decimal)
+        cleaned = percent_text.replace(' ', '')
+        # If contains both comma and dot, assume Swedish format (e.g., "67,00" -> "67.00")
+        if ',' in cleaned and '.' in cleaned:
+            cleaned = cleaned.replace(',', '')  # Remove comma, keep dot
+        elif ',' in cleaned:
+            cleaned = cleaned.replace(',', '.')  # Convert comma to dot
+        
+        try:
+            percent_value = float(cleaned)
+            # Convert to decimal (100% = 1.0, 10.5% = 0.105, 67.00% = 0.67)
+            decimal_value = percent_value / 100.0
+            amounts.append((decimal_value, False, True, match.start(), match.end()))
         except ValueError:
             continue
     
@@ -183,31 +229,75 @@ def _extract_amount_from_row_text(row: Row) -> Optional[Tuple[float, Optional[fl
         return None
     
     # Find rightmost positive amount (this is total_amount)
+    # Prioritize non-percentage amounts for total_amount
     total_amount = None
     total_amount_pos = None
     total_amount_match = None
     
-    for value, is_negative, start_pos, end_pos in amounts:
-        if not is_negative:
-            # This is a positive amount - track rightmost one
+    for value, is_negative, is_percentage, start_pos, end_pos in amounts:
+        if not is_negative and not is_percentage:
+            # This is a positive amount (not percentage) - track rightmost one
             if total_amount_pos is None or start_pos > total_amount_pos:
                 total_amount = value
                 total_amount_pos = start_pos
                 total_amount_match = (start_pos, end_pos)
     
-    if total_amount is None or total_amount <= 0:
+    # If no non-percentage amount found, look for any positive amount
+    if total_amount is None:
+        for value, is_negative, is_percentage, start_pos, end_pos in amounts:
+            if not is_negative:
+                if total_amount_pos is None or start_pos > total_amount_pos:
+                    total_amount = value
+                    total_amount_pos = start_pos
+                    total_amount_match = (start_pos, end_pos)
+    
+    if total_amount is None or total_amount < 0:
         return None
     
-    # Find negative amounts before total_amount (this is discount)
-    # Use the rightmost negative amount before total_amount as discount
+    # Find discount: negative amounts, percentages, or standalone values before total_amount
+    # Support different formats:
+    # - Percentage: "100,0%", "10,5%", "67.00" (in Rabatt % column)
+    # - Negative amount: "-474,30"
+    # - Standalone value after price: "283.00 38" (Jicon: "38" could be percentage or amount)
     discount = None
     discount_pos = None
-    for value, is_negative, start_pos, end_pos in amounts:
-        if is_negative and start_pos < total_amount_pos:
-            # This is a negative amount before total_amount - use rightmost one as discount
+    discount_is_percentage = False
+    
+    # First, look for percentage discounts (prioritize these)
+    for value, is_negative, is_percentage, start_pos, end_pos in amounts:
+        if is_percentage and start_pos < total_amount_pos:
+            # This is a percentage discount before total_amount
             if discount_pos is None or start_pos > discount_pos:
-                discount = value
+                discount = value  # Already in decimal form (0.0-1.0)
                 discount_pos = start_pos
+                discount_is_percentage = True
+    
+    # If no percentage found, look for negative amounts
+    if discount is None:
+        for value, is_negative, is_percentage, start_pos, end_pos in amounts:
+            if is_negative and start_pos < total_amount_pos:
+                # This is a negative amount before total_amount - use rightmost one as discount
+                if discount_pos is None or start_pos > discount_pos:
+                    discount = value  # Amount in SEK
+                    discount_pos = start_pos
+                    discount_is_percentage = False
+    
+    # If still no discount found, check for standalone numeric values between unit_price and total_amount
+    # This handles cases like "Pris Per Rab" column with values like "38" (could be percentage or amount)
+    # We'll let the validation logic in confidence_scoring.py determine if it's percentage or amount
+    if discount is None:
+        # Look for numeric values that are not the total_amount and are positioned before it
+        # These could be discounts in "Pris Per Rab" or "Rabatt" columns
+        for value, is_negative, is_percentage, start_pos, end_pos in amounts:
+            if not is_negative and not is_percentage and start_pos < total_amount_pos:
+                # Check if this value is reasonable as a discount
+                # If it's small (< 100) and close to total_amount, it might be a percentage value
+                # If it's larger, it might be a discount amount
+                if discount_pos is None or start_pos > discount_pos:
+                    # Store as potential discount (validation will determine type)
+                    discount = value
+                    discount_pos = start_pos
+                    discount_is_percentage = False  # Default to amount, validation will correct if needed
     
     # Map character position back to token index
     # Find which token contains the total amount (or is closest)
@@ -339,44 +429,154 @@ def _extract_line_from_row(
     total_amount, discount, amount_token_idx = result
     
     # Extract description: leftmost text before amount column
+    # Skip common column headers/prefixes that appear at start:
+    # - Line numbers: "1", "001", "Pos 1"
+    # - Article numbers: "3838969", "2406CSX1P10.10"
+    # - Position markers: "Pos", "Rad"
     description_tokens = row.tokens[:amount_token_idx] if amount_token_idx else row.tokens
+    
+    # Skip leading numeric tokens that look like line numbers or article numbers
+    # Line numbers are typically: single digit or 3-digit with leading zeros (001, 002)
+    # Article numbers are typically: 6+ digits or alphanumeric codes
+    description_start_idx = 0
+    for i, token in enumerate(description_tokens[:5]):  # Check first 5 tokens
+        token_text = token.text.strip()
+        # Skip if it's a simple line number (1-3 digits, possibly with leading zeros)
+        if re.match(r'^0?\d{1,3}$', token_text):
+            # Could be line number - check if next token is also numeric (likely article number)
+            if i + 1 < len(description_tokens):
+                next_token = description_tokens[i + 1].text.strip()
+                # If next is alphanumeric or long number, first was line number
+                if re.match(r'^[A-Z0-9]{4,}', next_token) or re.match(r'^\d{6,}', next_token):
+                    description_start_idx = i + 1
+                    break
+        # Skip if it's an article number (alphanumeric code or 6+ digits)
+        elif re.match(r'^[A-Z0-9]{4,}$', token_text) or re.match(r'^\d{6,}$', token_text):
+            description_start_idx = i + 1
+            break
+        # Skip position markers
+        elif token_text.lower() in ['pos', 'rad', 'obj']:
+            description_start_idx = i + 1
+            continue
+        else:
+            # Found start of actual description
+            break
+    
+    description_tokens = description_tokens[description_start_idx:]
     description = " ".join(t.text for t in description_tokens).strip()
     
     # Extract quantity and unit_price: look for numeric columns before amount
-    # Typically: description | quantity | unit | unit_price | total_amount
-    # IMPORTANT: For rows with units like EA, LTR, månad, DAY, XPA, use unit position as anchor
+    # Support different column orders:
+    # - Standard: description | quantity | unit | unit_price | total_amount
+    # - Derome: description | ... | Fsg. kvant. | Enhet | Pris | Nettobelopp
+    # - CERTEX: Artikelnr/Beskrivning | ... | Enhet | Pris | Rab% | Belopp
+    # - Ahlsell: Art nr | Benämning | Antal | Enhet | á-pris | Rabatt | Total
     quantity = None
     unit = None
     unit_price = None
     
-    # Extended unit list including DAY, dagar, EA, LTR, Liter, månad, XPA
+    # Extended unit list including DAY, dagar, EA, LTR, Liter, månad, XPA, bdag, M2, M3, BD, dgr
+    # Support for different invoice layouts (e.g., "bdag" = business days, "BD" = Byggdagar, "dgr" = dagar)
     unit_keywords = [
-        'st', 'kg', 'h', 'm²', 'm2', 'tim', 'timmar', 'pcs', 'pkt',
+        'st', 'kg', 'h', 'm²', 'm2', 'm3', 'm³', 'tim', 'timmar', 'pcs', 'pkt',
         'day', 'days', 'dagar', 'ea', 'ltr', 'liter', 'liters', 'månad', 'månader',
-        'xpa', 'pkt', 'paket', 'box', 'burk', 'flaska', 'flaskor'
+        'xpa', 'pkt', 'paket', 'box', 'burk', 'flaska', 'flaskor',
+        'bdag', 'bdagar', 'business\s*day', 'business\s*days',  # Business days
+        'bd', 'byggdagar', 'byggdag',  # Byggdagar (Ramirent layout)
+        'dgr', 'dgr\.', 'dagar',  # Dag/dagar (Neglinge: "5 dgr.")
+        'enh', 'enhet', 'unit', 'units',  # Generic unit labels
+        # Volume and area units
+        'm²', 'm2', 'kvadratmeter', 'm³', 'm3', 'kubikmeter',
+        # Additional common units
+        'l', 'liter', 'kg', 'gram', 'g', 'ton', 't',
     ]
     
     # First, try to find unit token - use it as anchor for quantity/unit_price extraction
+    # Support "Plockat Enh" format: "10 ST" (quantity + unit together)
     unit_token_idx = None
     for i, token in enumerate(row.tokens):
         if i >= amount_token_idx:
             break
-        token_text = token.text.strip().lower()
-        if token_text in unit_keywords:
-            unit = token_text
+        token_text = token.text.strip()
+        token_lower = token_text.lower()
+        
+        # Check exact match in unit_keywords (case-insensitive)
+        if token_lower in unit_keywords:
+            unit = token_lower
             unit_token_idx = i
+            # Check if previous token is a number (quantity + unit pattern: "10 ST")
+            if i > 0:
+                prev_token = row.tokens[i - 1].text.strip()
+                if re.match(r'^\d+$', prev_token):
+                    try:
+                        potential_quantity = float(prev_token)
+                        if 1 <= potential_quantity <= 100000:  # Reasonable quantity range
+                            quantity = potential_quantity
+                    except ValueError:
+                        pass
+            break
+        # Also check if token matches unit pattern (uppercase units like "ST", "EA", "M2", "BD")
+        elif re.match(r'^[A-Z]{1,4}$', token_text):
+            token_lower_check = token_lower
+            if token_lower_check in unit_keywords:
+                unit = token_lower_check
+                unit_token_idx = i
+                # Check if previous token is a number (quantity + unit pattern: "10 ST")
+                if i > 0:
+                    prev_token = row.tokens[i - 1].text.strip()
+                    if re.match(r'^\d+$', prev_token):
+                        try:
+                            potential_quantity = float(prev_token)
+                            if 1 <= potential_quantity <= 100000:
+                                quantity = potential_quantity
+                        except ValueError:
+                            pass
+                break
+        # Check for units with numbers (M2, M3)
+        elif re.match(r'^[Mm][23]$', token_text):
+            unit = token_lower
+            unit_token_idx = i
+            # Check if previous token is a number
+            if i > 0:
+                prev_token = row.tokens[i - 1].text.strip()
+                if re.match(r'^\d+$', prev_token):
+                    try:
+                        potential_quantity = float(prev_token)
+                        if 1 <= potential_quantity <= 100000:
+                            quantity = potential_quantity
+                    except ValueError:
+                        pass
             break
     
     # Identify potential article numbers in description
-    article_number_pattern = re.compile(r'^(\d{1,2}\s+\d{5,8}|\d{6,12})\s+')
+    # Support different formats:
+    # - Numeric: "3838969", "2406CSX1P10.10"
+    # - Alphanumeric: "2406CSX1P10.10", "10452L"
+    # - With spaces: "27 7615"
+    article_number_pattern = re.compile(r'^([A-Z0-9]{4,}(?:\.[A-Z0-9]+)?|\d{1,2}\s+\d{5,8}|\d{6,12})\s+')
     has_article_number = bool(article_number_pattern.match(description))
-    first_number_match = re.match(r'^(\d+(?:\s+\d+)*)', description)
+    
+    # Also check for article numbers that might be in separate column (before description)
+    # Look at tokens before description_start_idx
+    if description_start_idx > 0:
+        article_tokens = row.tokens[:description_start_idx]
+        for token in article_tokens:
+            token_text = token.text.strip()
+            # Check if token looks like article number (alphanumeric 4+ chars or 6+ digits)
+            if re.match(r'^[A-Z0-9]{4,}(?:\.[A-Z0-9]+)?$', token_text) or re.match(r'^\d{6,}$', token_text):
+                has_article_number = True
+                break
+    
+    first_number_match = re.match(r'^(\d+(?:\s+\d+)*|[A-Z0-9]{4,}(?:\.[A-Z0-9]+)?)', description)
     first_number_str = first_number_match.group(1) if first_number_match else ""
-    first_number_cleaned = first_number_str.replace(' ', '')
+    first_number_cleaned = first_number_str.replace(' ', '').replace('.', '')
     first_number_value = None
-    if first_number_cleaned and first_number_cleaned.isdigit():
+    if first_number_cleaned and (first_number_cleaned.isdigit() or re.match(r'^[A-Z0-9]{4,}$', first_number_cleaned)):
         try:
-            first_number_value = float(first_number_cleaned)
+            # Try to extract numeric part if alphanumeric
+            numeric_part = re.sub(r'[^0-9]', '', first_number_cleaned)
+            if numeric_part:
+                first_number_value = float(numeric_part)
         except ValueError:
             pass
     
@@ -384,6 +584,8 @@ def _extract_line_from_row(
     # Format: ... quantity unit unit_price ... total_amount
     # Example: "2 5220 ELMÄTARE63A 3 EA 13,00" → quantity=3, unit=EA, unit_price=13.00
     # Example: "27 7615 COMBISAFESTÖLBALKSTVING 2 108 EA 1,95" → quantity=2108, unit=EA, unit_price=1.95
+    # Special case: "Plockat Enh" column (K-Bygg, Jicon) contains "10 ST" → quantity=10, unit=ST
+    # Special case: "Pris Per Rab" column may contain "N" (no discount) or numeric value (discount)
     if unit_token_idx is not None:
         # First, try to extract quantity from text (handles thousand separators across tokens)
         # Get text before unit token
@@ -481,14 +683,35 @@ def _extract_line_from_row(
             unit_to_amount_tokens = row.tokens[unit_token_idx + 1:amount_token_idx]
             unit_to_amount_text = " ".join(t.text for t in unit_to_amount_tokens)
             
-            # Pattern for amounts with thousand separators (spaces)
-            # Matches: "123,45", "1 234,56", "1 034,00", etc.
-            amount_pattern = re.compile(r'\d{1,3}(?:\s+\d{3})*(?:[.,]\d{2})|\d+(?:[.,]\d{2})')
+            # Pattern for amounts with thousand separators (spaces or dots)
+            # Matches: "123,45", "1 234,56", "1 034,00", "3.717,35" (punkt som tusentalsavgränsare), "8302.00" (punkt som decimal)
+            amount_pattern = re.compile(
+                r'\d{1,3}(?:\s+\d{3})*(?:[.,]\d{2})?|'  # Swedish: "1 234,56" or "1 234"
+                r'\d{1,3}(?:\.\d{3})*(?:,\d{2})?|'      # Swedish with dots: "3.717,35"
+                r'\d+(?:[.,]\d{2})?'                     # Simple: "123,45" or "123.45" or "8302.00"
+            )
             match = amount_pattern.search(unit_to_amount_text)
             
             if match:
                 amount_text = match.group(0)
-                cleaned = amount_text.replace(' ', '').replace(',', '.')
+                # Handle both Swedish format (komma som decimal, punkt som tusentalsavgränsare)
+                # and international format (punkt som decimal)
+                cleaned = amount_text.replace(' ', '')
+                if ',' in cleaned and '.' in cleaned:
+                    # Swedish format: "3.717,35" -> "3717.35"
+                    cleaned = cleaned.replace('.', '').replace(',', '.')
+                elif ',' in cleaned:
+                    # Only comma: if followed by 1-2 digits at end, it's decimal
+                    if re.search(r',\d{1,2}$', cleaned):
+                        cleaned = cleaned.replace(',', '.')
+                    else:
+                        cleaned = cleaned.replace(',', '')
+                elif '.' in cleaned:
+                    # Only dot: if followed by 1-2 digits at end, it's decimal
+                    if not re.search(r'\.\d{1,2}$', cleaned):
+                        # Dot as thousand separator: "1.234" -> "1234"
+                        cleaned = cleaned.replace('.', '')
+                
                 try:
                     numeric_value = float(cleaned)
                     # Unit price should be reasonable (not too small, not too large)

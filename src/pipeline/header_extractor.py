@@ -51,8 +51,25 @@ def extract_invoice_number(
     
     # Step 1: Extended label patterns (Swedish + English)
     # Normalized patterns (will be applied to normalized text)
+    # Support for different invoice layouts:
+    # - "Faktnr:" (with colon, top right)
+    # - "Fakturanummer" (without colon, left-center)
+    # - "Fakturanummer 3799677" (number directly after label)
     label_patterns = [
-        # Swedish variants
+        # Swedish variants - with colon
+        r'fakturanummer\s*:',
+        r'faktura\s*nr\s*:',
+        r'faktura\s*-\s*nr\s*:',
+        r'fakt\.\s*nr\s*:',
+        r'fakt\.nr\s*:',
+        r'faktnr\s*:',
+        r'fakt\s*nr\s*:',
+        r'fakt\s*-\s*nr\s*:',
+        r'fakt\s*nr\.\s*:',
+        r'fakt\.nr\.\s*:',
+        r'fakturanr\s*:',  # "Fakturanr:" (K-Bygg, Jicon layout)
+        r'fakturanr\.\s*:',  # "Fakturanr.:"
+        # Swedish variants - without colon (number may follow directly)
         r'fakturanummer',
         r'faktura\s*nr',
         r'faktura\s*-\s*nr',
@@ -63,10 +80,18 @@ def extract_invoice_number(
         r'fakt\s*-\s*nr',
         r'fakt\s*nr\.',
         r'fakt\.nr\.',
+        r'fakturanr',  # "Fakturanr" (without colon)
+        r'fakturanr\.',  # "Fakturanr."
+        # "Faktura" followed by number (Ramirent layout: "Faktura 40615472")
+        r'faktura\s+\d',  # "Faktura" followed by space and digit
         # English variants
         r'invoice\s*number',
+        r'invoice\s*no\s*:',
+        r'invoice\s*no\.\s*:',
         r'invoice\s*no',
         r'invoice\s*no\.',
+        r'inv\s*no\s*:',
+        r'inv\s*no\.\s*:',
         r'inv\s*no',
         r'inv\s*no\.',
         r'inv#',
@@ -78,17 +103,22 @@ def extract_invoice_number(
         re.IGNORECASE
     )
     
-    # Primary regex for invoice number: 6-10 digits
+    # Primary regex for invoice number: Support different formats
+    # - Numeric: 3128536, 001002687 (with leading zeros), 4578138002 (10 digits)
+    # - Alphanumeric: CD3013683076, INV-2024-001
     # Adjust based on strategy
     if strategy == 'aggressive':
-        primary_number_pattern = re.compile(r'\b(\d{4,12})\b')  # Broader range
-        fallback_number_pattern = re.compile(r'\b(\d{3,15})\b')  # Even broader
+        # Very broad: alphanumeric with dashes, or 3-15 digits
+        primary_number_pattern = re.compile(r'\b([A-Z]{0,3}\d{3,12}[A-Z0-9]{0,3}|[A-Z]+\d+[A-Z0-9]*|\d{3,15})\b')
+        fallback_number_pattern = re.compile(r'\b([A-Z0-9\-]{4,20})\b')  # Very broad alphanumeric
     elif strategy == 'conservative':
-        primary_number_pattern = re.compile(r'\b(\d{7,10})\b')  # Stricter range
-        fallback_number_pattern = re.compile(r'\b(\d{6,10})\b')
+        # Stricter: 7-10 digits or alphanumeric with specific pattern
+        primary_number_pattern = re.compile(r'\b([A-Z]{1,3}\d{6,10}|\d{7,10})\b')
+        fallback_number_pattern = re.compile(r'\b([A-Z]{0,2}\d{6,10})\b')
     else:
-        primary_number_pattern = re.compile(r'\b(\d{6,10})\b')
-        fallback_number_pattern = re.compile(r'\b(\d{5,12})\b')
+        # Default: Support alphanumeric (CD3013683076) and numeric (with leading zeros)
+        primary_number_pattern = re.compile(r'\b([A-Z]{1,3}\d{4,12}[A-Z0-9]{0,3}|\d{5,12})\b')
+        fallback_number_pattern = re.compile(r'\b([A-Z0-9\-]{4,20})\b')  # Alphanumeric with dashes
     
     # Step 2: Search for labels and extract numbers
     for row_index, row in enumerate(all_rows):

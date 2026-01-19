@@ -432,18 +432,31 @@ def validate_and_score_invoice_line(line: InvoiceLine) -> Tuple[float, dict]:
         # Try to determine discount type and validate
         if has_discount:
             # Check if discount is percentage (0.0-1.0) or amount (SEK)
-            # Percentage: typically 0.0-1.0 (e.g., 0.10 = 10%)
-            # Amount: typically > 1.0 (e.g., 50.00 SEK)
-            if 0.0 <= discount <= 1.0:
-                # Likely percentage
+            # Percentage: typically 0.0-1.0 (e.g., 0.10 = 10%, 1.0 = 100%)
+            # Amount: typically > 1.0 (e.g., 50.00 SEK, -474.30 SEK)
+            # Note: discount can be negative if extracted as negative amount
+            if discount < 0:
+                # Negative value = amount in SEK (already extracted as positive from negative amount)
+                discount_type = 'amount'
+                discount_amount = abs(discount)  # Make positive for calculation
+                expected_total = base_total - discount_amount
+            elif 0.0 <= discount <= 1.0:
+                # Likely percentage (0.0-1.0 range)
                 discount_type = 'percent'
                 discount_amount = base_total * discount
                 expected_total = base_total * (1 - discount)
             else:
-                # Likely amount in SEK
-                discount_type = 'amount'
-                discount_amount = discount
-                expected_total = base_total - discount_amount
+                # Value > 1.0 but not negative - could be percentage > 100% (unlikely) or amount
+                # Assume amount in SEK if it's reasonable (not > base_total * 2)
+                if discount <= base_total * 2:
+                    discount_type = 'amount'
+                    discount_amount = discount
+                    expected_total = base_total - discount_amount
+                else:
+                    # Very large value, likely extraction error - treat as percentage anyway
+                    discount_type = 'percent'
+                    discount_amount = base_total * (discount / 100.0)  # Assume it was meant as percentage
+                    expected_total = base_total * (1 - discount / 100.0)
             
             validation_info['discount_type'] = discount_type
             

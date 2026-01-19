@@ -78,66 +78,96 @@ def process_invoice(
             progress_callback("Extraherar text och tokens från PDF-sidor...", 0.0, 0)
         all_invoice_lines = []
         all_segments = []  # Collect segments from all pages
+        all_items_segments = []  # Collect items segments from all pages
         line_number_global = 1
         
-        for page in doc.pages:
-            if extraction_path == "pdfplumber":
-                # Searchable PDF path
-                pdf = pdfplumber.open(doc.filepath)
-                pdfplumber_page = pdf.pages[page.page_number - 1]
-                tokens = extract_tokens_from_page(page, pdfplumber_page)
-                pdf.close()
-            else:
-                # OCR path - would require rendering and OCR
-                # For Phase 1, skip OCR path (requires rendered images)
-                if verbose:
-                    print(f"  Warning: OCR path not yet implemented for {pdf_path}")
-                tokens = []
-            
-            if not tokens:
-                continue
-            
-            # Step 4: Group tokens to rows
-            rows = group_tokens_to_rows(tokens)
-            
-            # Step 5: Identify segments
-            segments = identify_segments(rows, page)
-            all_segments.extend(segments)  # Collect for footer extraction
-            
-        # Step 6: Extract line items from items segment
-        if progress_callback:
-            progress_callback("Identifierar och extraherar produktrader...", 0.0, 0)
-        items_segment = next((s for s in segments if s.segment_type == "items"), None)
+        # Open PDF once for all pages (more efficient)
+        pdf = None
+        if extraction_path == "pdfplumber":
+            pdf = pdfplumber.open(doc.filepath)
         
-        if items_segment:
-            invoice_lines = extract_invoice_lines(items_segment)
-            
-            # Assign global line numbers
-            for line in invoice_lines:
-                line.line_number = line_number_global
-                line_number_global += 1
-            
-            # Validate and score each line item (prioritize sum, then validate other fields)
-            from ..pipeline.confidence_scoring import validate_and_score_invoice_line
-            for line in invoice_lines:
-                confidence, validation_info = validate_and_score_invoice_line(line)
-                # Store validation info as metadata (could be added to InvoiceLine model later)
-                # For now, validation warnings will be included in ValidationResult
-            
-            all_invoice_lines.extend(invoice_lines)
+        try:
+            for page in doc.pages:
+                if extraction_path == "pdfplumber" and pdf:
+                    pdfplumber_page = pdf.pages[page.page_number - 1]
+                    tokens = extract_tokens_from_page(page, pdfplumber_page)
+                else:
+                    # OCR path - would require rendering and OCR
+                    # For Phase 1, skip OCR path (requires rendered images)
+                    if verbose:
+                        print(f"  Warning: OCR path not yet implemented for {pdf_path}")
+                    tokens = []
+                
+                if not tokens:
+                    continue
+                
+                # Step 4: Group tokens to rows
+                rows = group_tokens_to_rows(tokens)
+                
+                # Step 5: Identify segments
+                segments = identify_segments(rows, page)
+                all_segments.extend(segments)  # Collect for header/footer extraction
+                
+                # Collect items segments from all pages (for multi-page invoices)
+                items_segment = next((s for s in segments if s.segment_type == "items"), None)
+                if items_segment:
+                    all_items_segments.append(items_segment)
+        finally:
+            if pdf:
+                pdf.close()
+        
+        # Step 6: Extract line items from all items segments (multi-page support)
+        if progress_callback:
+            progress_callback("Identifierar och extraherar produktrader från alla sidor...", 0.0, 0)
+        
+        # Combine items segments from all pages into a single virtual segment for extraction
+        # This allows line items to span multiple pages
+        if all_items_segments:
+            # Extract line items from each items segment and combine
+            for items_segment in all_items_segments:
+                invoice_lines = extract_invoice_lines(items_segment)
+                
+                # Assign global line numbers
+                for line in invoice_lines:
+                    line.line_number = line_number_global
+                    line_number_global += 1
+                
+                # Validate and score each line item (prioritize sum, then validate other fields)
+                from ..pipeline.confidence_scoring import validate_and_score_invoice_line
+                for line in invoice_lines:
+                    confidence, validation_info = validate_and_score_invoice_line(line)
+                    # Store validation info as metadata (could be added to InvoiceLine model later)
+                    # For now, validation warnings will be included in ValidationResult
+                
+                all_invoice_lines.extend(invoice_lines)
         
         # Step 7: Extract header fields and total amount
-        # Find header segment (from first page)
+        # Find header segment (prefer first page, but search all pages if needed)
         header_segment = None
         if doc.pages:
+            # First, try first page (most common case)
             first_page_segments = [s for s in all_segments if s.page == doc.pages[0]]
             header_segment = next((s for s in first_page_segments if s.segment_type == "header"), None)
+            
+            # If no header found on first page, search all pages (for multi-page invoices)
+            if not header_segment:
+                header_segment = next((s for s in all_segments if s.segment_type == "header"), None)
         
-        # Find footer segment (from last page)
+        # Find footer segment (prefer last page, but search all pages if needed)
         footer_segment = None
         if doc.pages:
+            # First, try last page (most common case - totalsumma is usually on last page)
             last_page_segments = [s for s in all_segments if s.page == doc.pages[-1]]
             footer_segment = next((s for s in last_page_segments if s.segment_type == "footer"), None)
+            
+            # If no footer found on last page, search all pages (for multi-page invoices)
+            if not footer_segment:
+                # Search in reverse order (last pages first)
+                for page in reversed(doc.pages):
+                    page_segments = [s for s in all_segments if s.page == page]
+                    footer_segment = next((s for s in page_segments if s.segment_type == "footer"), None)
+                    if footer_segment:
+                        break
         
         # Create InvoiceHeader
         invoice_header = None

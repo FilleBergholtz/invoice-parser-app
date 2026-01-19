@@ -41,14 +41,37 @@ def extract_total_amount(
     candidates = []
     
     # Keywords for total WITH VAT (highest priority - this is what customer pays)
+    # Support for different layouts:
+    # - "ATT BETALA SEK:" (uppercase, with colon)
+    # - "Att betala 66 322,00 SEK" (in box)
+    # - "SUMMA ATT BETALA" (uppercase)
+    # - "Fakturabelopp" (Derome layout)
     total_with_vat_patterns = [
-        # "Att betala" variants
-        r"att\s+betala",
-        r"attbetala",
+        # "Att betala" variants - with SEK (uppercase and lowercase)
+        r"att\s+betala\s+sek\s*:",
         r"att\s+betala\s+sek",
+        r"attbetala\s+sek\s*:",
         r"attbetala\s+sek",
-        r"att\s+betala:",
-        r"attbetala:",
+        r"att\s+betala\s+sek\s*",
+        r"ATT\s+BETALA\s+SEK\s*:",
+        r"ATT\s+BETALA\s+SEK",
+        # "Att betala" variants - with colon and SEK (Ramirent: "Att betala: SEK 3.717,35")
+        r"att\s+betala\s*:\s*sek",
+        r"ATT\s+BETALA\s*:\s*SEK",
+        # "Att betala" variants - without SEK (may be in box or separate)
+        r"att\s+betala\s*:",
+        r"att\s+betala",
+        r"attbetala\s*:",
+        r"attbetala",
+        r"ATT\s+BETALA\s*:",
+        r"ATT\s+BETALA",
+        # "Summa att betala" variants (uppercase)
+        r"summa\s+att\s+betala",
+        r"SUMMA\s+ATT\s+BETALA",
+        r"summa\s+attbetala",
+        # "Fakturabelopp" (Derome layout)
+        r"fakturabelopp",
+        r"Fakturabelopp",
         # "Summa att betala" variants
         r"summa\s+att\s+betala",
         r"summa\s+attbetala",
@@ -119,6 +142,7 @@ def extract_total_amount(
     ]
     
     # Generic total keywords (medium priority)
+    # Support different layouts: "Fakturabelopp" (Derome), "Totalsumma SEK" (Renta)
     generic_total_patterns = [
         r"totalt",
         r"total",
@@ -126,15 +150,26 @@ def extract_total_amount(
         r"belopp",
         r"slutsumma",  # Could be with or without VAT, but often with
         r"fakturabelopp",
-        r"fakturabeloppet"
+        r"fakturabeloppet",
+        r"Fakturabelopp",  # Uppercase (Derome layout)
+        r"totalsumma",
+        r"Totalsumma",
+        r"totalsumma\s+sek",
+        r"Totalsumma\s+SEK"
     ]
     
     # Combined patterns for keyword detection
     keyword_patterns = total_with_vat_patterns + total_without_vat_patterns + generic_total_patterns
     
     # Improved amount pattern: matches amounts with/without decimals, with/without thousand separators
-    # Matches: "123,45", "123.45", "1 234,56", "1234", "1 234"
-    amount_pattern = re.compile(r'\d{1,3}(?:\s+\d{3})*(?:[.,]\d{2})?|\d+(?:[.,]\d{2})?')
+    # Matches: "123,45", "123.45", "1 234,56", "1234", "1 234", "3.717,35" (punkt som tusentalsavgränsare)
+    # Support both Swedish format (komma som decimal, punkt/mellanslag som tusentalsavgränsare)
+    # and international format (punkt som decimal, komma som tusentalsavgränsare)
+    amount_pattern = re.compile(
+        r'\d{1,3}(?:\s+\d{3})*(?:[.,]\d{1,2})?|'  # Swedish: "1 234,56" or "3.717,35"
+        r'\d{1,3}(?:\.\d{3})*(?:,\d{1,2})?|'      # Swedish with dots: "3.717,35"
+        r'\d+(?:[.,]\d{1,2})?'                     # Simple: "123,45" or "123.45" or "8302.00"
+    )
     currency_symbols = ['kr', 'SEK', 'sek', ':-', '€', '$']
     
     for row_index, row in enumerate(footer_segment.rows):
@@ -164,10 +199,34 @@ def extract_total_amount(
         for match in amount_matches:
             amount_text = match.group(0)
             # Clean and convert to float
+            # Handle both Swedish format (komma som decimal, punkt som tusentalsavgränsare)
+            # and international format (punkt som decimal)
             cleaned = amount_text
             for sym in currency_symbols:
                 cleaned = cleaned.replace(sym, '')
-            cleaned = cleaned.replace(' ', '').replace(',', '.')
+            cleaned = cleaned.replace(' ', '')  # Remove spaces (thousand separators)
+            
+            # Detect format: if contains both comma and dot, assume Swedish format (3.717,35)
+            if ',' in cleaned and '.' in cleaned:
+                # Swedish format: "3.717,35" -> "3717.35"
+                cleaned = cleaned.replace('.', '').replace(',', '.')
+            elif ',' in cleaned:
+                # Only comma: could be Swedish decimal or international thousand separator
+                # If comma is followed by 1-2 digits at end, it's decimal: "123,45" -> "123.45"
+                if re.search(r',\d{1,2}$', cleaned):
+                    cleaned = cleaned.replace(',', '.')
+                else:
+                    # Comma as thousand separator: "1,234" -> "1234"
+                    cleaned = cleaned.replace(',', '')
+            elif '.' in cleaned:
+                # Only dot: could be decimal or thousand separator
+                # If dot is followed by 1-2 digits at end, it's decimal: "123.45" -> "123.45"
+                if re.search(r'\.\d{1,2}$', cleaned):
+                    # Already correct decimal format
+                    pass
+                else:
+                    # Dot as thousand separator: "1.234" -> "1234"
+                    cleaned = cleaned.replace('.', '')
             
             try:
                 amount = float(cleaned)
