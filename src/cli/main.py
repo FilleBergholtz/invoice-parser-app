@@ -108,6 +108,13 @@ def process_invoice(
                     line.line_number = line_number_global
                     line_number_global += 1
                 
+                # Validate and score each line item (prioritize sum, then validate other fields)
+                from ..pipeline.confidence_scoring import validate_and_score_invoice_line
+                for line in invoice_lines:
+                    confidence, validation_info = validate_and_score_invoice_line(line)
+                    # Store validation info as metadata (could be added to InvoiceLine model later)
+                    # For now, validation warnings will be included in ValidationResult
+                
                 all_invoice_lines.extend(invoice_lines)
         
         # Step 7: Extract header fields and total amount

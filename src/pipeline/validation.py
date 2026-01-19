@@ -5,59 +5,77 @@ from typing import List, Optional, Tuple
 from ..models.invoice_header import InvoiceHeader
 from ..models.invoice_line import InvoiceLine
 from ..models.validation_result import ValidationResult
-from ..pipeline.confidence_scoring import validate_total_against_line_items
+from ..pipeline.confidence_scoring import (
+    validate_total_against_line_items,
+    validate_and_score_invoice_line
+)
 
 
 def validate_line_items(
     line_items: List[InvoiceLine],
     tolerance: float = 0.01
 ) -> List[str]:
-    """Validate each line item: quantity × unit_price ≈ total_amount.
+    """Validate each line item using comprehensive validation and confidence scoring.
+    
+    Prioritering:
+    1. Först säkerställ att summan (total_amount) är korrekt (källsanning)
+    2. Sedan validera/beräkna övriga fält (quantity, unit_price, discount) så att de stämmer med summan
     
     Args:
         line_items: List of InvoiceLine objects to validate
         tolerance: Validation tolerance in SEK (default 0.01 for rounding)
         
     Returns:
-        List of warning messages for lines where quantity × unit_price ≠ total_amount
+        List of warning messages for lines with validation issues
         
     Note:
         Uses PDF total_amount as primary (source of truth), but validates against
-        calculated value to flag extraction errors.
+        calculated value to flag extraction errors. Also identifies discount type
+        (percentage vs amount) and suggests corrected values if needed.
     """
     warnings = []
     
-    # Edge case units that may have complex extraction issues
-    edge_case_units = ['ea', 'ltr', 'månad', 'day', 'xpa']
-    
     for line in line_items:
-        # Only validate if both quantity and unit_price are present
-        if line.quantity is not None and line.unit_price is not None:
-            calculated_total = line.quantity * line.unit_price
-            difference = abs(calculated_total - line.total_amount)
-            
-            # Flag if difference exceeds tolerance (rounding/rabatt allowed)
-            if difference > tolerance:
-                # Check if this is an edge case unit that may require manual review
-                is_edge_case = line.unit and line.unit.lower() in edge_case_units
-                
-                # Check if difference is significant (likely extraction error, not just rounding)
-                is_significant_error = difference > 1.0
-                
-                if is_edge_case and is_significant_error:
-                    # Large difference with edge case unit - likely requires manual review
-                    warnings.append(
-                        f"Rad {line.line_number}: "
-                        f"Antal × A-pris ({calculated_total:.2f}) ≠ Summa ({line.total_amount:.2f}), "
-                        f"avvikelse: {difference:.2f} SEK. "
-                        f"⚠️ Kräver manuell granskning (edge case med enhet {line.unit.upper()})"
-                    )
+        # Use comprehensive validation and confidence scoring
+        confidence, validation_info = validate_and_score_invoice_line(line)
+        
+        # Add warnings from validation
+        for warning in validation_info.get('warnings', []):
+            warnings.append(f"Rad {line.line_number}: {warning}")
+        
+        # Add information about discount type if identified
+        discount_type = validation_info.get('discount_type')
+        if discount_type and line.discount is not None:
+            if discount_type == 'percent':
+                discount_pct = line.discount * 100
+                warnings.append(
+                    f"Rad {line.line_number}: Rabatt identifierad som procent ({discount_pct:.1f}%)"
+                )
+            else:
+                warnings.append(
+                    f"Rad {line.line_number}: Rabatt identifierad som belopp ({line.discount:.2f} SEK)"
+                )
+        
+        # Add calculated field suggestions if available
+        calculated_fields = validation_info.get('calculated_fields', {})
+        if calculated_fields:
+            suggestions = []
+            if 'unit_price' in calculated_fields:
+                suggestions.append(f"Föreslaget a-pris: {calculated_fields['unit_price']:.2f} SEK")
+            if 'quantity' in calculated_fields:
+                suggestions.append(f"Föreslaget antal: {calculated_fields['quantity']}")
+            if 'discount' in calculated_fields:
+                discount_val = calculated_fields['discount']
+                discount_type_calc = calculated_fields.get('discount_type', 'amount')
+                if discount_type_calc == 'percent':
+                    suggestions.append(f"Föreslaget rabatt: {discount_val * 100:.1f}%")
                 else:
-                    warnings.append(
-                        f"Rad {line.line_number}: "
-                        f"Antal × A-pris ({calculated_total:.2f}) ≠ Summa ({line.total_amount:.2f}), "
-                        f"avvikelse: {difference:.2f} SEK"
-                    )
+                    suggestions.append(f"Föreslaget rabatt: {discount_val:.2f} SEK")
+            
+            if suggestions:
+                warnings.append(
+                    f"Rad {line.line_number}: Beräknade värden - {', '.join(suggestions)}"
+                )
     
     return warnings
 
