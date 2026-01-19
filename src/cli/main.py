@@ -6,7 +6,7 @@ import shutil
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, Optional, Callable, List, Optional
 
 # Fix encoding for Windows console
 if sys.platform == "win32":
@@ -44,7 +44,8 @@ class InvoiceProcessingError(Exception):
 def process_invoice(
     pdf_path: str,
     output_dir: str,
-    verbose: bool = False
+    verbose: bool = False,
+    progress_callback: Optional[Callable[[str, float, int], None]] = None
 ) -> Dict:
     """Process a single invoice PDF.
     
@@ -62,13 +63,19 @@ def process_invoice(
     """
     try:
         # Step 1: Read PDF
+        if progress_callback:
+            progress_callback("Läser PDF-fil...", 0.0, 0)
         doc = read_pdf(pdf_path)
         
         # Step 2: Detect PDF type and route
+        if progress_callback:
+            progress_callback("Analyserar PDF-typ och struktur...", 0.0, 0)
         pdf_type = detect_pdf_type(doc)
         extraction_path = route_extraction_path(doc)
         
         # Step 3: Extract tokens from all pages
+        if progress_callback:
+            progress_callback("Extraherar text och tokens från PDF-sidor...", 0.0, 0)
         all_invoice_lines = []
         all_segments = []  # Collect segments from all pages
         line_number_global = 1
@@ -97,25 +104,27 @@ def process_invoice(
             segments = identify_segments(rows, page)
             all_segments.extend(segments)  # Collect for footer extraction
             
-            # Step 6: Extract line items from items segment
-            items_segment = next((s for s in segments if s.segment_type == "items"), None)
+        # Step 6: Extract line items from items segment
+        if progress_callback:
+            progress_callback("Identifierar och extraherar produktrader...", 0.0, 0)
+        items_segment = next((s for s in segments if s.segment_type == "items"), None)
+        
+        if items_segment:
+            invoice_lines = extract_invoice_lines(items_segment)
             
-            if items_segment:
-                invoice_lines = extract_invoice_lines(items_segment)
-                
-                # Assign global line numbers
-                for line in invoice_lines:
-                    line.line_number = line_number_global
-                    line_number_global += 1
-                
-                # Validate and score each line item (prioritize sum, then validate other fields)
-                from ..pipeline.confidence_scoring import validate_and_score_invoice_line
-                for line in invoice_lines:
-                    confidence, validation_info = validate_and_score_invoice_line(line)
-                    # Store validation info as metadata (could be added to InvoiceLine model later)
-                    # For now, validation warnings will be included in ValidationResult
-                
-                all_invoice_lines.extend(invoice_lines)
+            # Assign global line numbers
+            for line in invoice_lines:
+                line.line_number = line_number_global
+                line_number_global += 1
+            
+            # Validate and score each line item (prioritize sum, then validate other fields)
+            from ..pipeline.confidence_scoring import validate_and_score_invoice_line
+            for line in invoice_lines:
+                confidence, validation_info = validate_and_score_invoice_line(line)
+                # Store validation info as metadata (could be added to InvoiceLine model later)
+                # For now, validation warnings will be included in ValidationResult
+            
+            all_invoice_lines.extend(invoice_lines)
         
         # Step 7: Extract header fields and total amount
         # Find header segment (from first page)
@@ -135,11 +144,15 @@ def process_invoice(
         if header_segment:
             invoice_header = InvoiceHeader(segment=header_segment)
             # Extract header fields (invoice number, date, vendor) with retry
-            # Progress callback for UI (if verbose)
-            def progress_callback(msg, conf, attempt):
-                if verbose:
+            # Use provided progress_callback or create one for verbose mode
+            if progress_callback:
+                header_progress = progress_callback
+            elif verbose:
+                def header_progress(msg, conf, attempt):
                     print(f"  {msg} (confidence: {conf*100:.1f}%)")
-            extract_header_fields(header_segment, invoice_header, progress_callback=progress_callback if verbose else None)
+            else:
+                header_progress = None
+            extract_header_fields(header_segment, invoice_header, progress_callback=header_progress)
         
         # Extract total amount from footer with retry
         if footer_segment and invoice_header:

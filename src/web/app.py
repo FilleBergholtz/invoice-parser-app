@@ -239,13 +239,15 @@ def process_uploaded_files(uploaded_files: List) -> None:
         status_text = st.empty()
         
         for idx, uploaded_file in enumerate(uploaded_files):
-            # Update progress
-            progress = (idx + 1) / len(uploaded_files)
-            progress_bar.progress(progress)
+            # Calculate base progress (completed files)
+            base_progress = idx / len(uploaded_files)
             
             # Create detailed status container
             with st.container():
                 file_status = st.empty()
+                step_status = st.empty()
+                file_progress_bar = st.progress(0)
+                
                 file_status.info(f"📄 **{uploaded_file.name}** ({idx + 1}/{len(uploaded_files)})")
                 
                 # Save uploaded file temporarily
@@ -253,13 +255,102 @@ def process_uploaded_files(uploaded_files: List) -> None:
                 with open(temp_file_path, "wb") as f:
                     f.write(uploaded_file.getbuffer())
                 
-                # Process invoice
+                # Track progress steps for this file
+                progress_steps = {
+                    "read_pdf": 0.10,
+                    "analyze": 0.05,
+                    "extract_text": 0.15,
+                    "identify_lines": 0.20,
+                    "extract_invoice_number": 0.25,
+                    "extract_total": 0.20,
+                    "validate": 0.05
+                }
+                current_step_progress = 0.0
+                
+                # Create progress callback for UI updates
+                progress_messages = []
+                
+                def ui_progress_callback(msg, conf, attempt):
+                    """Update UI with progress messages and progress bar."""
+                    nonlocal current_step_progress
+                    
+                    progress_messages.append((msg, conf, attempt))
+                    
+                    # Update step progress based on message content
+                    msg_lower = msg.lower()
+                    if "läser pdf" in msg_lower or "read" in msg_lower:
+                        current_step_progress = progress_steps["read_pdf"]
+                    elif "analyserar" in msg_lower or "analyze" in msg_lower:
+                        current_step_progress = sum(list(progress_steps.values())[:2])
+                    elif "extraherar text" in msg_lower or "extract text" in msg_lower:
+                        current_step_progress = sum(list(progress_steps.values())[:3])
+                    elif "identifierar" in msg_lower or "identify" in msg_lower or "produktrader" in msg_lower:
+                        current_step_progress = sum(list(progress_steps.values())[:4])
+                    elif "fakturanummer" in msg_lower or "invoice number" in msg_lower:
+                        # For invoice number, progress increases with each retry attempt
+                        base_prog = sum(list(progress_steps.values())[:5])
+                        if "försök" in msg_lower or "uppnådde" in msg_lower:
+                            # Retry in progress - show partial progress
+                            current_step_progress = base_prog + (progress_steps["extract_invoice_number"] * 0.5)
+                        else:
+                            current_step_progress = base_prog
+                    elif "totalsumma" in msg_lower or "total" in msg_lower:
+                        # For total amount, progress increases with each retry attempt
+                        base_prog = sum(list(progress_steps.values())[:6])
+                        if "försök" in msg_lower or "uppnådde" in msg_lower:
+                            current_step_progress = base_prog + (progress_steps["extract_total"] * 0.5)
+                        else:
+                            current_step_progress = base_prog
+                    elif "validerar" in msg_lower or "validate" in msg_lower:
+                        current_step_progress = 1.0
+                    
+                    # Calculate total progress (base + file progress)
+                    file_progress = base_progress + (current_step_progress / len(uploaded_files))
+                    progress_bar.progress(min(file_progress, 1.0))
+                    file_progress_bar.progress(current_step_progress)
+                    
+                    # Show last 3 messages with better formatting
+                    status_lines = []
+                    for pm_msg, pm_conf, pm_attempt in progress_messages[-3:]:
+                        conf_pct = pm_conf * 100
+                        if conf_pct >= 95:
+                            icon = "✅"
+                        elif conf_pct >= 90:
+                            icon = "⚠️"
+                        elif conf_pct > 0:
+                            icon = "🔄"
+                        else:
+                            icon = "⏳"
+                        # Only show confidence if > 0
+                        if conf_pct > 0:
+                            status_lines.append(f"{icon} {pm_msg} ({conf_pct:.1f}%)")
+                        else:
+                            status_lines.append(f"{icon} {pm_msg}")
+                    
+                    if status_lines:
+                        step_status.info("\n".join(status_lines))
+                
+                # Process invoice with progress updates
                 try:
+                    # Show initial status
+                    step_status.info("🔄 Läser PDF och extraherar data...")
+                    file_progress_bar.progress(0.05)
+                    
                     result = process_invoice(
                         str(temp_file_path),
                         output_dir=temp_dir,
-                        verbose=False
+                        verbose=False,
+                        progress_callback=ui_progress_callback
                     )
+                    
+                    # Finalize progress
+                    file_progress_bar.progress(1.0)
+                    final_progress = (idx + 1) / len(uploaded_files)
+                    progress_bar.progress(final_progress)
+                    
+                    # Clear step status after completion
+                    step_status.empty()
+                    file_progress_bar.empty()
                     
                     # Update status with result
                     invoice_header = result.get("invoice_header")
@@ -344,24 +435,58 @@ def display_results() -> None:
     """
     st.header("2. Resultat")
     
-    # Create DataFrame from results
+    # Create DataFrame from results with all relevant information
     df_data = []
     for result in st.session_state.results:
         # Format total_amount
         total_amount = result.get("total_amount", 0.0)
         total_str = f"{total_amount:,.2f} SEK" if total_amount else "—"
         
+        # Format confidence scores
+        inv_conf = result.get("invoice_number_confidence", 0.0) * 100
+        total_conf = result.get("total_confidence", 0.0) * 100
+        
+        # Format lines_sum and diff
+        lines_sum = result.get("lines_sum", 0.0)
+        diff = result.get("diff", "N/A")
+        if isinstance(diff, (int, float)):
+            diff_str = f"{diff:,.2f} SEK"
+        else:
+            diff_str = str(diff)
+        
         df_data.append({
             "Filnamn": result.get("filename", "Okänt"),
             "Status": result.get("status", "UNKNOWN"),
             "Fakturanummer": result.get("invoice_number", "TBD"),
+            "Fakturanummer-konfidens": f"{inv_conf:.1f}%",
             "Totalsumma": total_str,
+            "Totalsumma-konfidens": f"{total_conf:.1f}%",
+            "Radsumma": f"{lines_sum:,.2f} SEK" if lines_sum else "—",
+            "Avvikelse": diff_str,
             "Antal rader": result.get("line_count", 0),
             "Företag": result.get("vendor_name", "TBD"),
             "Datum": result.get("invoice_date", "TBD"),
         })
     
     df = pd.DataFrame(df_data)
+    
+    # Show summary statistics first (before filter)
+    st.subheader("Sammanfattning")
+    col1, col2, col3, col4, col5 = st.columns(5)
+    with col1:
+        st.metric("Totalt fakturor", len(df))
+    with col2:
+        ok_count = len(df[df["Status"] == "OK"])
+        st.metric("✅ OK", ok_count, help="Fakturor med hög confidence (≥95% fakturanummer och ≥90% totalsumma)")
+    with col3:
+        partial_count = len(df[df["Status"] == "PARTIAL"])
+        st.metric("⚠️ PARTIAL", partial_count, help="Fakturor med hög confidence men summa-avvikelse > 1 SEK")
+    with col4:
+        review_count = len(df[df["Status"] == "REVIEW"])
+        st.metric("🔍 REVIEW", review_count, help="Fakturor med låg confidence eller valideringsfel")
+    with col5:
+        failed_count = len(df[df["Status"] == "FAILED"])
+        st.metric("❌ FAILED", failed_count, help="Fakturor som misslyckades vid bearbetning")
     
     # Filter by status
     st.subheader("Filtrera resultat")
@@ -376,29 +501,16 @@ def display_results() -> None:
     else:
         df_filtered = df
     
-    # Display table
-    st.dataframe(
-        df_filtered,
-        use_container_width=True,
-        hide_index=True
-    )
-    
-    # Summary statistics
-    col1, col2, col3, col4, col5 = st.columns(5)
-    with col1:
-        st.metric("Totalt", len(df))
-    with col2:
-        ok_count = len(df[df["Status"] == "OK"])
-        st.metric("✅ OK", ok_count)
-    with col3:
-        partial_count = len(df[df["Status"] == "PARTIAL"])
-        st.metric("⚠️ PARTIAL", partial_count)
-    with col4:
-        review_count = len(df[df["Status"] == "REVIEW"])
-        st.metric("🔍 REVIEW", review_count)
-    with col5:
-        failed_count = len(df[df["Status"] == "FAILED"])
-        st.metric("❌ FAILED", failed_count)
+    # Display table with all columns
+    if not df_filtered.empty:
+        st.dataframe(
+            df_filtered,
+            use_container_width=True,
+            hide_index=True,
+            height=400  # Fixed height with scroll
+        )
+    else:
+        st.info("Inga fakturor matchar filtret.")
 
 
 def generate_excel_download() -> None:

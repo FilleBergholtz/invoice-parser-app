@@ -140,7 +140,8 @@ def extract_with_retry(
     for attempt_num in range(max_attempts):
         strategy = strategies[attempt_num % len(strategies)] if strategies else None
         
-        if progress_callback:
+        if progress_callback and attempt_num > 0:
+            # Show retry message only after first attempt
             progress_callback(
                 f"Försök {attempt_num + 1}/{max_attempts} (strategi: {strategy or 'standard'})",
                 best_confidence,
@@ -151,8 +152,15 @@ def extract_with_retry(
             # Call extraction function with strategy
             result = extract_func(strategy=strategy)
             
-            # Extract confidence (assumes result has confidence attribute or is dict)
-            if hasattr(result, 'confidence'):
+            # Extract confidence from invoice_header (for invoice number or total)
+            # The result is invoice_header object, check its confidence attributes
+            if hasattr(result, 'invoice_number_confidence'):
+                # This is for invoice number extraction
+                confidence = result.invoice_number_confidence
+            elif hasattr(result, 'total_confidence'):
+                # This is for total amount extraction
+                confidence = result.total_confidence
+            elif hasattr(result, 'confidence'):
                 confidence = result.confidence
             elif isinstance(result, dict) and 'confidence' in result:
                 confidence = result['confidence']
@@ -170,13 +178,22 @@ def extract_with_retry(
                 best_confidence = confidence
                 best_result = result
             
-            if confidence >= target_confidence:
-                if progress_callback:
+            # Update progress callback with current confidence
+            if progress_callback:
+                if confidence >= target_confidence:
                     progress_callback(
-                        f"✓ Uppnådde {target_confidence*100:.0f}% confidence på försök {attempt_num + 1}",
+                        f"✓ Uppnådde {target_confidence*100:.0f}% confidence ({confidence*100:.1f}%)",
                         confidence,
                         attempt_num + 1
                     )
+                else:
+                    progress_callback(
+                        f"Försök {attempt_num + 1}/{max_attempts}: {confidence*100:.1f}% (mål: {target_confidence*100:.0f}%)",
+                        confidence,
+                        attempt_num + 1
+                    )
+            
+            if confidence >= target_confidence:
                 return result, confidence, attempts
                 
         except Exception as e:
@@ -190,7 +207,7 @@ def extract_with_retry(
             continue
     
     # Return best result even if target not reached
-    if progress_callback:
+    if progress_callback and best_confidence < target_confidence:
         progress_callback(
             f"⚠ Bästa confidence: {best_confidence*100:.1f}% (mål: {target_confidence*100:.0f}%)",
             best_confidence,
