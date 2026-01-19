@@ -60,8 +60,9 @@ Section "Main Application" SecMain
     ; Set output path to the installation directory
     SetOutPath "$INSTDIR"
     
-    ; Install executable
-    File "..\dist\EPG_PDF_Extraherare.exe"
+    ; Install executables
+    File "..\dist\EPG_PDF_Extraherare.exe"  ; CLI version
+    File "..\dist\EPG_PDF_Extraherare_GUI.exe"  ; GUI version
     
     ; Install README and other documentation (if needed)
     ; File "..\README.md"
@@ -91,12 +92,13 @@ SectionEnd
 
 Section "Start Menu Shortcut" SecStartMenu
     CreateDirectory "$SMPROGRAMS\EPG PDF Extraherare"
-    CreateShortcut "$SMPROGRAMS\EPG PDF Extraherare\EPG PDF Extraherare.lnk" "$INSTDIR\EPG_PDF_Extraherare.exe"
+    CreateShortcut "$SMPROGRAMS\EPG PDF Extraherare\EPG PDF Extraherare (GUI).lnk" "$INSTDIR\EPG_PDF_Extraherare_GUI.exe"
+    CreateShortcut "$SMPROGRAMS\EPG PDF Extraherare\EPG PDF Extraherare (CLI).lnk" "$INSTDIR\EPG_PDF_Extraherare.exe"
     CreateShortcut "$SMPROGRAMS\EPG PDF Extraherare\Uninstall.lnk" "$INSTDIR\Uninstall.exe"
 SectionEnd
 
 Section "Desktop Shortcut" SecDesktop
-    CreateShortcut "$DESKTOP\EPG PDF Extraherare.lnk" "$INSTDIR\EPG_PDF_Extraherare.exe"
+    CreateShortcut "$DESKTOP\EPG PDF Extraherare.lnk" "$INSTDIR\EPG_PDF_Extraherare_GUI.exe"
 SectionEnd
 
 ;--------------------------------
@@ -112,10 +114,12 @@ SectionEnd
 Section "Uninstall"
     ; Remove files
     Delete "$INSTDIR\EPG_PDF_Extraherare.exe"
+    Delete "$INSTDIR\EPG_PDF_Extraherare_GUI.exe"
     Delete "$INSTDIR\Uninstall.exe"
     
     ; Remove shortcuts
-    Delete "$SMPROGRAMS\EPG PDF Extraherare\EPG PDF Extraherare.lnk"
+    Delete "$SMPROGRAMS\EPG PDF Extraherare\EPG PDF Extraherare (GUI).lnk"
+    Delete "$SMPROGRAMS\EPG PDF Extraherare\EPG PDF Extraherare (CLI).lnk"
     Delete "$SMPROGRAMS\EPG PDF Extraherare\Uninstall.lnk"
     RMDir "$SMPROGRAMS\EPG PDF Extraherare"
     Delete "$DESKTOP\EPG PDF Extraherare.lnk"

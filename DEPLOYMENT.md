@@ -99,7 +99,11 @@ pip install pyinstaller
 python build_windows.py
 ```
 
-Detta skapar `dist/EPG_PDF_Extraherare.exe` som kan köras direkt på Windows utan Python.
+Detta skapar två executables:
+- `dist/EPG_PDF_Extraherare.exe` - CLI-version (kommandorad)
+- `dist/EPG_PDF_Extraherare_GUI.exe` - GUI-version (Streamlit web interface)
+
+Båda kan köras direkt på Windows utan Python.
 
 > **ℹ️ Vad inkluderas i bygget?**
 > 
@@ -173,8 +177,16 @@ För att skapa en professionell installer med NSIS:
 
 #### Användning av installerad app
 
-Efter installation kan användaren:
+Efter installation kan användaren välja mellan två versioner:
 
+**GUI-version (Rekommenderat för slutanvändare):**
+- Dubbelklicka på `EPG PDF Extraherare (GUI)` från Start Menu eller Desktop
+- Webbläsaren öppnas automatiskt med Streamlit-gränssnittet
+- Ladda upp PDF-fakturor via webbläsaren
+- Se resultat direkt i webbläsaren
+- Ladda ner Excel-filer
+
+**CLI-version (För avancerade användare):**
 ```bash
 # Använd direkt från kommandoraden (om PATH är konfigurerad)
 EPG_PDF_Extraherare.exe --input fakturor/ --output output/
@@ -203,6 +215,25 @@ Användare kan avinstallera via:
 **Slutanvändare behöver BARA:**
 - ✅ Windows-operativsystem
 - ✅ Installer-filen: `EPG_PDF_Extraherare_Setup.exe`
+- ✅ Webbläsare (för GUI-versionen)
+
+**Vad händer när användaren öppnar appen?**
+
+**GUI-version (EPG_PDF_Extraherare_GUI.exe):**
+1. Användaren dubbelklickar på ikonen
+2. Streamlit startar en lokal webbserver
+3. Webbläsaren öppnas automatiskt på `http://localhost:8501`
+4. Användaren ser ett grafiskt gränssnitt där de kan:
+   - Ladda upp PDF-fakturor
+   - Se bearbetningsstatus i realtid
+   - Filtrera resultat efter status
+   - Ladda ner Excel-filer
+   - Se detaljerad information om varje faktura
+
+**CLI-version (EPG_PDF_Extraherare.exe):**
+1. Användaren öppnar PowerShell eller CMD
+2. Kör appen med argument: `EPG_PDF_Extraherare.exe --input fakturor/`
+3. Appen processar fakturor och skapar Excel-filer
 
 Installationen är helt fristående och kräver inga extra verktyg eller dependencies.
 

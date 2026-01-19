@@ -1,9 +1,10 @@
 # -*- mode: python ; coding: utf-8 -*-
+# PyInstaller spec file for GUI version (Streamlit)
 
 block_cipher = None
 
 a = Analysis(
-    ['src/cli/main.py'],
+    ['run_streamlit.py'],
     pathex=[],
     binaries=[],
     datas=[],
@@ -50,7 +51,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='EPG_PDF_Extraherare',
+    name='EPG_PDF_Extraherare_GUI',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

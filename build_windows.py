@@ -51,11 +51,16 @@ def build_installer(project_root):
         return False
     
     installer_script = project_root / "installer" / "installer.nsi"
-    dist_exe = project_root / "dist" / "EPG_PDF_Extraherare.exe"
+    dist_cli = project_root / "dist" / "EPG_PDF_Extraherare.exe"
+    dist_gui = project_root / "dist" / "EPG_PDF_Extraherare_GUI.exe"
     
-    if not dist_exe.exists():
-        print(f"\n❌ Executable hittades inte: {dist_exe}")
-        print("Bygg executable först med: python build_windows.py")
+    if not dist_cli.exists() or not dist_gui.exists():
+        print(f"\n❌ Executables hittades inte!")
+        if not dist_cli.exists():
+            print(f"  Saknas: {dist_cli}")
+        if not dist_gui.exists():
+            print(f"  Saknas: {dist_gui}")
+        print("Bygg executables först med: python build_windows.py")
         return False
     
     print(f"\nBygger installer med NSIS från: {nsis_path}")
@@ -110,24 +115,119 @@ def main():
         print(f"Rensar dist directory: {dist_dir}")
         shutil.rmtree(dist_dir)
     
-    # Run PyInstaller
-    spec_file = project_root / "EPG_PDF_Extraherare.spec"
-    print(f"Bygger executable med {spec_file}...")
+    # Build both CLI and GUI versions
+    print("\n" + "="*60)
+    print("Bygger både CLI och GUI versioner...")
+    print("="*60)
     
+    # Build CLI version
+    cli_spec_file = project_root / "EPG_PDF_Extraherare_CLI.spec"
+    if not cli_spec_file.exists():
+        # Create CLI spec file from template
+        cli_spec_content = """# -*- mode: python ; coding: utf-8 -*-
+# PyInstaller spec file for CLI version
+
+block_cipher = None
+
+a = Analysis(
+    ['src/cli/main.py'],
+    pathex=[],
+    binaries=[],
+    datas=[],
+    hiddenimports=[
+        'pdfplumber',
+        'pandas',
+        'openpyxl',
+        'streamlit',
+        'fastapi',
+        'uvicorn',
+        'pydantic',
+        'PIL',
+        'numpy',
+        'chardet',
+        'cryptography',
+    ],
+    hookspath=[],
+    hooksconfig={},
+    runtime_hooks=[],
+    excludes=[
+        'test_fixes',
+        'test_unit_fix',
+        'analyze_unit_problems',
+        'analyze_quantity_patterns',
+        'analyze_remaining_problems',
+        'pytest',
+        'unittest',
+        'tests',
+    ],
+    win_no_prefer_redirects=False,
+    win_private_assemblies=False,
+    cipher=block_cipher,
+    noarchive=False,
+)
+
+pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+
+exe = EXE(
+    pyz,
+    a.scripts,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    [],
+    name='EPG_PDF_Extraherare',
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    runtime_tmpdir=None,
+    console=True,
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+)
+"""
+        with open(cli_spec_file, 'w', encoding='utf-8') as f:
+            f.write(cli_spec_content)
+    
+    # Build GUI version
+    gui_spec_file = project_root / "EPG_PDF_Extraherare.spec"
+    print(f"\n1. Bygger CLI executable med {cli_spec_file}...")
     try:
         subprocess.check_call([
             sys.executable,
             "-m",
             "PyInstaller",
-            str(spec_file),
+            str(cli_spec_file),
             "--clean",
             "--noconfirm",
         ])
-        print("\n✅ Executable byggd framgångsrikt!")
-        print(f"Executable location: {dist_dir / 'EPG_PDF_Extraherare.exe'}")
+        print("✅ CLI executable byggd!")
     except subprocess.CalledProcessError as e:
-        print(f"\n❌ Build misslyckades: {e}")
+        print(f"❌ CLI build misslyckades: {e}")
         sys.exit(1)
+    
+    print(f"\n2. Bygger GUI executable med {gui_spec_file}...")
+    try:
+        subprocess.check_call([
+            sys.executable,
+            "-m",
+            "PyInstaller",
+            str(gui_spec_file),
+            "--clean",
+            "--noconfirm",
+        ])
+        print("✅ GUI executable byggd!")
+    except subprocess.CalledProcessError as e:
+        print(f"❌ GUI build misslyckades: {e}")
+        sys.exit(1)
+    
+    print("\n✅ Båda executables byggda framgångsrikt!")
+    print(f"  CLI: {dist_dir / 'EPG_PDF_Extraherare.exe'}")
+    print(f"  GUI: {dist_dir / 'EPG_PDF_Extraherare_GUI.exe'}")
     
     # Ask if user wants to build installer
     print("\n" + "="*60)
