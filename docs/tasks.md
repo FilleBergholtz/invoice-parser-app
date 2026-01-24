@@ -493,6 +493,167 @@ Varje task följer strikt format:
 
 ---
 
+# Nya Tasks – Post-completion Enhancements
+
+Detta dokument innehåller **nya tasks som adderas efter att samtliga befintliga T/U-tasks är färdigställda**.  
+Inga befintliga tasks ändras eller öppnas upp igen.
+
+Syftet är att höja **observability, produktvärde, robusthet och förvaltbarhet**.
+
+---
+
+## Fas 6: Observability, Robusthet & Förvaltning
+
+### [N1] Deterministic Debug Artifacts (Post-run Observability)
+
+**Input**: `run_summary.json`, artifacts från pipeline  
+**Output**: `artifact_manifest.json` per run
+
+**Files**:
+- `src/debug/artifact_index.py`
+- `src/debug/artifact_manifest.py`
+- `tests/test_artifact_manifest.py`
+
+**DoD**:
+- [ ] Varje körning genererar `artifact_manifest.json`
+- [ ] Manifest listar alla artifacts med:
+  - filnamn
+  - typ (tokens, rows, segments, ai, excel, debug)
+  - pipeline-steg
+  - checksum/hash
+- [ ] Manifest är maskinläsbart och versionsmärkt
+- [ ] Enhetstest verifierar komplett manifest för `sample_invoice_1.pdf`
+
+---
+
+### [N2] Invoice Quality Score
+
+**Input**: Validation, Reconciliation, InvoiceSpecification, InvoiceLines  
+**Output**: `quality_score` (0–100)
+
+**Files**:
+- `src/quality/score.py`
+- `src/quality/model.py`
+- `tests/test_quality_score.py`
+
+**DoD**:
+- [ ] Quality score beräknas deterministiskt
+- [ ] Score baseras på:
+  - validation status (OK / Warning / Review)
+  - antal saknade fält
+  - reconciliation diff
+  - wrap-komplexitet
+- [ ] Score sparas i `run_summary.json`
+- [ ] Score är dokumenterad och testad
+
+---
+
+### [N3] Batch Processing Mode
+
+**Input**: Katalog med PDF-filer  
+**Output**: En Excel per PDF + batch-sammanställning
+
+**Files**:
+- `src/batch/runner.py`
+- `src/batch/batch_summary.py`
+- `tests/test_batch_runner.py`
+
+**DoD**:
+- [ ] CLI-stöd:  
+  `invoice_engine.exe --batch <input_dir> --out <output_dir>`
+- [ ] Varje PDF körs isolerat (egen artifacts-mapp)
+- [ ] `batch_summary.xlsx` skapas med:
+  - filnamn
+  - validation status
+  - quality score
+  - output path
+- [ ] Fel i en PDF stoppar inte batch-körningen
+- [ ] Enhetstest för batch-logik passerar
+
+---
+
+### [N4] Human Review Package Export
+
+**Input**: Validation med status `Review`  
+**Output**: Review-paket (mapp eller ZIP)
+
+**Files**:
+- `src/review/review_package.py`
+- `tests/test_review_package.py`
+
+**DoD**:
+- [ ] Review-paket innehåller:
+  - original PDF
+  - slutlig Excel
+  - `run_summary.json`
+  - `artifact_manifest.json`
+- [ ] `README.txt` genereras automatiskt med instruktioner
+- [ ] UI kan öppna review-mappen direkt
+- [ ] Enhetstest verifierar komplett paket
+
+---
+
+## Fas 7: Produktifiering & Långsiktig Drift
+
+### [N5] Config Profiles (Customer / Supplier Templates)
+
+**Input**: Profilnamn (valfritt)  
+**Output**: Anpassad pipeline-konfiguration
+
+**Files**:
+- `configs/profiles/*.yaml`
+- `src/config/profile_loader.py`
+- `tests/test_profile_loader.py`
+
+**DoD**:
+- [ ] Profiler kan styra:
+  - header-nyckelord
+  - zon-procent (header/items/footer)
+  - belopps- och toleransregler
+- [ ] CLI-flagga: `--profile <profile_name>`
+- [ ] Default-profil ger exakt samma beteende som idag
+- [ ] Profilval sparas i `run_summary.json`
+
+---
+
+### [N6] Safe Upgrade & Backward Compatibility Guard
+
+**Input**: Artifacts från tidigare körningar  
+**Output**: Kompatibilitetsvarning eller OK-status
+
+**Files**:
+- `src/versioning/compat.py`
+- `tests/test_backward_compat.py`
+
+**DoD**:
+- [ ] Pipeline-version sparas i `run_summary.json`
+- [ ] Appen identifierar äldre artifacts
+- [ ] Varning visas vid inkompatibla versioner
+- [ ] Dokumenterad backward-compat policy
+- [ ] Enhetstester verifierar versionslogik
+
+---
+
+## Rekommenderad implementationsordning
+
+1. **N1 – Deterministic Debug Artifacts**
+2. **N2 – Invoice Quality Score**
+3. **N3 – Batch Processing Mode**
+4. **N4 – Human Review Package**
+5. **N5 – Config Profiles**
+6. **N6 – Compatibility Guard**
+
+---
+
+## Arkitekturell notering
+
+Samtliga N-tasks:
+- Kräver inga ändringar i T1–T15
+- Bygger ovanpå befintliga contracts
+- Är fullt kompatibla med CLI, Windows exe och UI
+
+Detta bekräftar att den nuvarande pipelinen är stabil, utbyggbar och produktionsredo.
+
 ## Nästa task
 
 Nästa task väljs från listan ovan. Implementera EN task i taget och uppdatera DoD-kryss vid completion.
