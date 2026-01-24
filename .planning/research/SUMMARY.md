@@ -1,157 +1,226 @@
 # Project Research Summary
 
-**Project:** Invoice Parser App
-**Domain:** Invoice parsing system (OCR + layout analysis + structured data extraction)
-**Researched:** 2025-01-27
+**Project:** Invoice Parser App v2.0
+**Domain:** Invoice parsing with confidence scoring, manual validation, learning systems, and AI integration
+**Researched:** 2026-01-24
 **Confidence:** HIGH
 
 ## Executive Summary
 
-Invoice parsing systems combine OCR, layout analysis, and semantic extraction to transform PDF invoices into structured data. The standard approach uses a multi-stage pipeline: document input detection (searchable vs scanned PDFs), layout analysis for spatial understanding, field extraction for headers and line items, validation for mathematical consistency, and structured export. Modern systems prioritize template-free parsing with layout-aware extraction over brittle template-based approaches.
+v2.0 fokuserar på att förbättra totalsumma-confidence, lägga till manuell validering med inlärning, och integrera AI som fallback. Research visar att experter bygger sådana system med en **fallback-kedja** (heuristics → AI när confidence låg), **feedback-loopar** för inlärning, och **supplier-specific pattern matching**. 
 
-For this project (Swedish invoice parser with 100% accuracy on critical fields), the recommended approach is: pdfplumber for searchable PDFs (fast path) with pytesseract OCR fallback (scanned PDFs), spatial layout analysis for field identification, confidence scoring with hard gates (OK/PARTIAL/REVIEW status), and traceability back to PDF source. The critical risk is over-reliance on OCR accuracy - mitigated through confidence thresholds, mathematical validation, and explicit REVIEW status for uncertain extractions.
-
-Key architectural decision: Modular pipeline (12 stages) with hard gate validation. This enables 100% accuracy guarantee for OK status while flagging uncertain cases for manual review. Unlike commercial SaaS (cost, vendor lock-in) or template-based systems (maintenance burden), this open-source approach provides flexibility and accuracy control at the cost of initial implementation complexity.
+Rekommenderad approach: Förbättra confidence-scoring först (färre REVIEW-status), sedan manuell validering med inlärning, och slutligen AI-integration som fallback. Viktigaste risken är **over-reliance på AI** (dyrt, långsamt) — undvik genom strikt fallback-pattern (AI endast när confidence < 0.95).
 
 ## Key Findings
 
 ### Recommended Stack
 
-Python 3.11+ with pdfplumber (≥0.10.0) for searchable PDF extraction and layout analysis, pandas (≥2.0.0) for data processing and Excel export, pytesseract for OCR fallback on scanned PDFs, and pytest for testing. Supporting libraries: pdf2image for PDF-to-image conversion, opencv-python for image preprocessing, openpyxl for Excel formatting.
-
 **Core technologies:**
-- **pdfplumber**: PDF text extraction with spatial information (x,y,width,height) — essential for layout-aware extraction, preserves reading order and table structure
-- **pandas**: Data processing and Excel export — industry standard for structured data manipulation, excellent Excel integration
-- **pytesseract**: OCR engine for scanned PDFs — free, open-source, supports Swedish language, fallback when PDF has no text layer
+- **Python 3.11+**: Redan etablerat, utmärkt ML/AI-ekosystem
+- **SQLite 3.x**: Embedded database för learning data, perfekt för desktop app
+- **OpenAI API / Claude API**: Industry standard för document understanding, structured outputs
+- **scikit-learn 1.3+**: ML-modeller för confidence prediction, feature engineering
+- **PySide6 6.6.0+**: Redan i bruk, native PDF rendering support
+
+**Supporting libraries:**
+- `openai>=1.0.0` eller `anthropic>=0.7.0` för AI-integration
+- `scikit-learn>=1.3.0` för confidence prediction models
+- `sqlalchemy>=2.0.0` (optional) för enklare database management
+
+**Alternatives:**
+- Claude API ofta bättre för structured outputs än OpenAI
+- Local LLM (Llama, Mistral) om privacy-critical, men kräver GPU
+- PostgreSQL om multi-user/cloud, men SQLite räcker för desktop
 
 ### Expected Features
 
 **Must have (table stakes):**
-- High-accuracy OCR/text extraction (searchable PDFs via pdfplumber, scanned via OCR)
-- Field-level extraction (invoice number, date, vendor, totals) with layout awareness
-- Line item extraction from tables (complex but essential for validation)
-- Mathematical validation (sum of line items vs total) with ±1 SEK tolerance
-- Confidence scoring and exception handling (hard gates: OK/PARTIAL/REVIEW)
-- Export to Excel with status columns and traceability
+- **Manual validation UI** — Användare förväntar sig kunna korrigera när confidence låg
+- **Learning from corrections** — Systemet ska förbättras över tid
+- **AI fallback (confidence < 0.95)** — Moderna system använder AI som backup
+- **Candidate alternatives** — Visa alternativ när osäker
+- **Confidence score display** — Redan finns, behöver förbättras
 
 **Should have (competitive):**
-- Hard gates on critical fields (100% or REVIEW) — differentiator for trust
-- Template-free parsing — adapts to vendor changes without maintenance
-- Batch processing with status tracking — handles volume efficiently
-- Review workflow with clickable PDF links — fast human verification
+- **Supplier-specific learning** — Systemet lär sig varje leverantörs format
+- **Confidence prediction model** — ML-modell för att förutsäga confidence
+- **Batch learning** — Lär från flera korrigeringar samtidigt
+- **AI-powered pattern discovery** — Hitta ovanliga mönster automatiskt
 
-**Defer (v2+):**
-- Web UI — CLI sufficient for v1, add UI later
-- API integration — only if external systems need direct access
-- Real-time processing — batch is sufficient for invoice volumes
+**Defer (v3.0+):**
+- **Natural language queries** — Ställa frågor om fakturdata (komplex, låg prioritet)
+- **Multi-user learning** — Dela learning mellan användare (privacy concerns)
+- **Cloud AI training** — Kontinuerlig AI-förbättring (komplex, dyr)
 
 ### Architecture Approach
 
-Modular 12-stage pipeline matching project specification: Input detection → Layout analysis → Field extraction → Table parsing → Validation → Status assignment → Export. Each stage transforms data and passes to next, enabling independent testing and debugging. Key architectural patterns: Pipeline architecture (sequential stages), Hard gate validation (100% or REVIEW), Spatial traceability (bbox/page references for verification).
+Systemet byggs med **fallback-kedja** (heuristics → AI), **learning feedback-loop** (korrigeringar → patterns → förbättrad confidence), och **candidate generation** (flera alternativ, användare väljer). Major components: PDF Viewer (clickable), Confidence Scorer (enhanced), AI Fallback (when confidence < 0.95), Learning Database (SQLite), Pattern Matcher (supplier-specific).
 
 **Major components:**
-1. **PDF Reader** — Detects PDF type (searchable/scanned), routes to appropriate extraction path
-2. **Layout Analyzer** — Spatial text extraction with bounding boxes, document structure understanding
-3. **Field Extractor** — Invoice number and total extraction with confidence scoring
-4. **Table Parser** — Line item extraction from tables, multi-line item handling
-5. **Validator** — Mathematical reconciliation, confidence assessment, status assignment
-6. **Exporter** — Excel generation with status columns, review reports with PDF links
+1. **PDF Viewer (Clickable)** — Visa PDF, detektera klick på totalsumma, highlighta kandidater
+2. **Confidence Scorer (Enhanced)** — Multi-factor scoring + ML-modell för confidence prediction
+3. **AI Fallback** — Aktiveras när confidence < 0.95, förbättrar extraktion
+4. **Learning Database** — SQLite-databas för supplier-specific patterns
+5. **Pattern Matcher** — Matcha nya fakturor mot lärda mönster
 
 ### Critical Pitfalls
 
-1. **Over-reliance on OCR accuracy** — OCR misreads characters, causing incorrect extractions. Prevention: Confidence scoring, hard gates, preprocessing, validation checks
-2. **Template-based extraction** — Breaks when vendor changes layout. Prevention: Layout analysis, semantic extraction, template-free approach
-3. **Ignoring multi-page context** — Tables/fields split across pages lost. Prevention: Document-level context, table continuation detection
-4. **Silent failure on low confidence** — Returns best guess, violates 100% accuracy. Prevention: Hard gates, explicit REVIEW status, never OK for uncertain extractions
-5. **Poor table/line item extraction** — Header OK but line items missing/misaligned. Prevention: Robust table detection, multi-line handling, validation requirement
+1. **Over-reliance on AI** — Använd AI endast när confidence < 0.95, mät användning, sätt budgetar
+2. **Learning database bloat** — Pattern consolidation, supplier-specific limits, regelbunden cleanup
+3. **Confidence score inflation** — Kalibrera scoring mot faktisk accuracy, validera regelbundet
+4. **Manual validation UX friction** — One-click selection, keyboard shortcuts, visual highlighting
+5. **AI prompt engineering failure** — Structured outputs, error handling, response validation, fallback chain
+6. **Pattern matching false positives** — Supplier-specific matching, high similarity threshold, confidence weighting
 
 ## Implications for Roadmap
 
 Based on research, suggested phase structure:
 
-### Phase 1: Document Normalization
+### Phase 1: Improved Confidence Scoring
 
-**Rationale:** Foundation - stable document representation with full traceability before attempting field extraction. Prevents pitfalls #3 (multi-page context) and #6 (traceability).
+**Rationale:** Core problem (för många REVIEW-status) måste lösas först. Bättre confidence = färre AI-anrop = lägre kostnad och högre hastighet.
 
-**Delivers:** PDF → Page → Tokens → Rows → Segments pipeline with spatial information preserved at every step. Each InvoiceLine traceable back to Page/Row/Token.
+**Delivers:** Förbättrad confidence-scoring algoritm, kalibrering mot faktisk accuracy, ML-modell för confidence prediction (optional).
 
-**Addresses:** Table stakes (OCR/text extraction, layout understanding), differentiator (traceability)
+**Addresses:** 
+- Table stakes: Confidence score display (förbättrad)
+- Differentiator: Confidence prediction model
 
-**Avoids:** Pitfall #3 (multi-page context), Pitfall #6 (traceability)
+**Avoids:** 
+- Confidence score inflation (kalibrering från start)
+- Over-reliance on AI (bättre heuristics = färre AI-anrop)
 
-**Uses:** pdfplumber for spatial extraction, basic tokenization and row grouping
+**Uses:** scikit-learn för ML-modell (optional), befintlig confidence_scoring.py (enhance)
 
-### Phase 2: Header + Wrap
+---
 
-**Rationale:** Build on stable foundation - extract critical fields (invoice number, total) with layout-aware approach. Handles multi-line items.
+### Phase 2: Manual Validation UI
 
-**Delivers:** Header extraction with confidence scoring, line item extraction with wrapped text handling. Spatial zonering for context.
+**Rationale:** Användare behöver kunna korrigera när confidence låg. UI måste vara snabb och enkel (one-click).
 
-**Addresses:** Table stakes (field extraction, line items), differentiator (hard gates, template-free)
+**Delivers:** Clickable PDF viewer, candidate selector, validation workflow, correction collection.
 
-**Avoids:** Pitfall #2 (template-based extraction), Pitfall #5 (poor table extraction)
+**Addresses:**
+- Table stakes: Manual validation UI, candidate alternatives
+- Differentiator: Supplier-specific learning (foundation)
 
-**Implements:** Layout-aware field extraction, header scoring, multi-line item grouping
+**Uses:** PySide6 QGraphicsView, PDF.js eller PyMuPDF rendering
 
-### Phase 3: Validation
+**Implements:** PDF Viewer component, Candidate Selector component
 
-**Rationale:** Quality control layer - mathematical validation, confidence assessment, hard gates. Ensures 100% accuracy on OK status.
+**Avoids:**
+- Manual validation UX friction (UX testing, keyboard shortcuts, visual highlighting)
 
-**Delivers:** Reconciliation (sum validation), status assignment (OK/PARTIAL/REVIEW), Excel export with status columns, review reports.
+---
 
-**Addresses:** Table stakes (validation, confidence scoring), differentiator (hard gates)
+### Phase 3: Learning System
 
-**Avoids:** Pitfall #1 (OCR accuracy), Pitfall #4 (silent failure)
+**Rationale:** Systemet måste lära sig från korrigeringar för att förbättras. Kräver database och pattern matching.
 
-**Implements:** Hard gate logic, tolerance-based validation (±1 SEK), status system
+**Delivers:** SQLite learning database, correction collector, pattern matcher, supplier-specific learning.
+
+**Addresses:**
+- Table stakes: Learning from corrections
+- Differentiator: Supplier-specific learning, batch learning
+
+**Uses:** SQLite (embedded), SQLAlchemy (optional), pattern matching algorithms
+
+**Implements:** Learning Database component, Pattern Matcher component
+
+**Avoids:**
+- Learning database bloat (cleanup, consolidation från start)
+- Pattern matching false positives (supplier isolation, high similarity threshold)
+
+**Enhances:** Phase 1 (Confidence Scoring) — learned patterns förbättrar confidence
+
+---
+
+### Phase 4: AI Integration
+
+**Rationale:** AI som fallback när confidence < 0.95. Förbättrar extraktion för edge cases.
+
+**Delivers:** AI API client, fallback integration, structured outputs, error handling.
+
+**Addresses:**
+- Table stakes: AI fallback when confidence low
+- Differentiator: AI-powered pattern discovery (foundation)
+
+**Uses:** OpenAI API eller Claude API, structured outputs (Pydantic)
+
+**Implements:** AI Fallback component
+
+**Avoids:**
+- Over-reliance on AI (strikt fallback pattern, confidence < 0.95 only)
+- AI prompt engineering failure (structured outputs, validation, error handling)
+
+**Enhances:** Phase 1 (Confidence Scoring) — AI kan boosta confidence
+
+---
+
+### Phase 5: AI Data Analysis (Optional)
+
+**Rationale:** Natural language queries och dataanalys. Komplex, kan deferras till v3.0 om inte kritisk.
+
+**Delivers:** RAG system över processade fakturor, natural language query interface.
+
+**Addresses:**
+- Future: Natural language queries
+
+**Uses:** AI API (OpenAI/Claude), vector database (optional), RAG patterns
+
+---
 
 ### Phase Ordering Rationale
 
-- **Phase 1 before Phase 2:** Must have stable document representation (tokens, rows, segments) before attempting field extraction. Layout analysis depends on spatial information.
-- **Phase 2 before Phase 3:** Must extract fields and line items before validation. Validation compares extracted values, assigns status.
-- **Dependencies:** Field extraction requires layout analysis (Phase 1 → Phase 2). Validation requires field extraction (Phase 2 → Phase 3).
+- **Phase 1 → Phase 2:** Bättre confidence = färre korrigeringar behövs, men UI behövs för att samla in korrigeringar
+- **Phase 2 → Phase 3:** Learning system behöver korrigeringar från Phase 2 som input
+- **Phase 3 → Phase 4:** Learning system kan förbättra confidence, vilket minskar AI-behov, men AI kan också boosta confidence
+- **Phase 1 & 4 kan delvis parallellt:** Confidence scoring och AI-integration är relativt oberoende
+- **Phase 5 är optional:** Kan deferras till v3.0 om inte kritisk
 
 ### Research Flags
 
 Phases likely needing deeper research during planning:
-- **Phase 2:** Header scoring algorithms, confidence threshold calibration (what is "high confidence"?)
-- **Phase 2:** Multi-line item handling strategies (how to group wrapped text?)
+- **Phase 4 (AI Integration):** Prompt engineering, structured outputs, error handling patterns — behöver API-specifik research
+- **Phase 3 (Learning System):** Pattern matching algorithms, similarity thresholds — behöver algoritm-research
 
 Phases with standard patterns (skip research-phase):
-- **Phase 1:** Document normalization patterns well-established (pdfplumber standard usage)
-- **Phase 3:** Validation patterns straightforward (sum reconciliation, status assignment)
+- **Phase 1 (Confidence Scoring):** scikit-learn patterns väl dokumenterade
+- **Phase 2 (Manual Validation UI):** PySide6 PDF viewer patterns väl dokumenterade
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | pdfplumber, pandas are industry standard. Versions verified, well-documented. |
-| Features | HIGH | Feature landscape well-researched from industry sources. Table stakes vs differentiators clear. |
-| Architecture | HIGH | Pipeline architecture is standard pattern. 12-stage design matches project specification. |
-| Pitfalls | HIGH | Common pitfalls well-documented from industry sources and academic papers. Prevention strategies clear. |
+| Stack | HIGH | Etablerade teknologier, väl dokumenterade |
+| Features | HIGH | Tydliga user needs, väl definierade features |
+| Architecture | HIGH | Standard patterns, väl kända mönster |
+| Pitfalls | HIGH | Kända problem i liknande system, väl dokumenterade |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **Confidence threshold calibration:** What confidence score (0.95?) constitutes "high confidence" for hard gates? Need validation with test corpus.
-- **Swedish-specific heuristics:** Field name variations in Swedish ("Fakturanummer", "Faktura nr", etc.) - need comprehensive keyword list.
-- **Tolerance tuning:** ±1 SEK tolerance for sum validation - verify this handles all rounding cases in Swedish invoices.
+- **AI prompt engineering:** Specifika prompts behöver testas under Phase 4 planning
+- **Pattern matching algorithms:** Optimal similarity threshold behöver valideras under Phase 3 planning
+- **Confidence calibration:** Optimal calibration curve behöver valideras mot faktisk data under Phase 1
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- WebSearch 2025 — "invoice parsing PDF OCR Python 2025 best libraries pdfplumber pytesseract"
-- WebSearch 2025 — "invoice parser features requirements table stakes OCR document extraction 2025"
-- WebSearch 2025 — "invoice parsing architecture pipeline OCR layout analysis 2025 design patterns"
-- WebSearch 2025 — "invoice parsing common mistakes pitfalls OCR PDF extraction problems 2025"
-- Project specification: specs/invoice_pipeline_v1.md (12-stage pipeline)
-- Project requirements: .planning/PROJECT.md (hard gates, 100% accuracy)
+- Existing codebase — Current confidence scoring implementation, pipeline architecture
+- AI API documentation — OpenAI/Claude structured outputs, best practices
+- scikit-learn documentation — Confidence scoring, ML patterns
+- PySide6 documentation — PDF viewer implementation
+- SQLite best practices — Embedded database patterns
 
 ### Secondary (MEDIUM confidence)
-- Industry analysis: Commercial SaaS feature comparisons
-- Academic papers: Document parsing architecture patterns
+- Learning system patterns — Feedback loops, pattern matching (community consensus)
+- UX research — Manual validation best practices (industry standards)
+
+### Tertiary (LOW confidence)
+- Supplier-specific learning patterns — Specifika algoritmer behöver valideras (inference från generella patterns)
 
 ---
-*Research completed: 2025-01-27*
+*Research completed: 2026-01-24*
 *Ready for roadmap: yes*

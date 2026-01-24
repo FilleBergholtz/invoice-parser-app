@@ -1,7 +1,7 @@
 # Feature Research
 
-**Domain:** Invoice parsing system (OCR + layout analysis + structured extraction)
-**Researched:** 2025-01-27
+**Domain:** Invoice parsing with confidence scoring, manual validation, learning systems, and AI integration
+**Researched:** 2026-01-24
 **Confidence:** HIGH
 
 ## Feature Landscape
@@ -12,14 +12,11 @@ Features users assume exist. Missing these = product feels incomplete.
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| High-accuracy OCR/text extraction | Invoices contain critical financial data; errors are costly | MEDIUM | Must handle both searchable PDFs (fast path) and scanned (OCR path) |
-| Field-level extraction (invoice number, date, vendor, totals) | Core requirement for any invoice parser | MEDIUM | Requires layout analysis + semantic understanding |
-| Line item extraction | Users need detailed product/service breakdowns, not just totals | HIGH | **Layout-driven approach:** tokens→rows→segments (not "table extractor"-driven). pdfplumber table detection is helper, not single point of failure. Complex due to table variations, multi-line items, wrapped text |
-| Multi-page document support | Real invoices span multiple pages | MEDIUM | Must maintain context across pages, handle page breaks in tables |
-| Mathematical validation (totals check) | Detects extraction errors, builds user trust | LOW | Critical for 100% accuracy requirement on totals |
-| Confidence scoring & exception handling | Users need to know when extraction is uncertain | MEDIUM | Enables hard gates - REVIEW status for low confidence |
-| **Primary output: Excel (one row per line item)** | Core requirement - structured tabular format | LOW | pandas + openpyxl. One row = one product/service line. Invoice metadata (number, date, vendor, total) repeated per row. **Critical:** Must include control columns: Status, LinesSum, Diff |
-| Spatial traceability (link back to PDF) | Users must verify extracted values against source | MEDIUM | **Absolute requirement for hard gates:** Store page + bbox + evidence (source text) for invoice number and total. Enables verification and trust |
+| Manual validation UI | When confidence is low, users expect to correct it | MEDIUM | PDF viewer with clickable totals, candidate selection |
+| Learning from corrections | System should improve over time | MEDIUM | Database of corrections, pattern matching |
+| AI fallback when confidence low | Modern systems use AI as backup | HIGH | API integration, prompt engineering, error handling |
+| Confidence score display | Users need to see why system is uncertain | LOW | Already exists, just needs improvement |
+| Candidate alternatives | When uncertain, show options | MEDIUM | Extract multiple candidates, present in UI |
 
 ### Differentiators (Competitive Advantage)
 
@@ -27,12 +24,11 @@ Features that set the product apart. Not required, but valuable.
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| Hard gates on critical fields (100% or REVIEW) | Guarantees no false positives - critical for trust | LOW | **Definition:** OK status ONLY when invoice number + total are both certain (high confidence). Otherwise REVIEW (no silent guessing). This is the definition of "100% correct" - 100% accurate for all OK exports. Requires traceability (page+bbox+evidence) for both critical fields |
-| Template-free parsing | Adapts to vendor layout changes without maintenance | HIGH | Requires robust layout analysis + semantic understanding |
-| Batch processing with status tracking | Handles volume efficiently, clear visibility into issues | MEDIUM | CLI + status output per invoice |
-| Review workflow with clickable PDF links | Fast human verification of flagged invoices | MEDIUM | PDF viewer integration or metadata for navigation |
-| Swedish language optimization | Better accuracy on Swedish invoices vs generic OCR | LOW | pytesseract Swedish language pack, Swedish field name patterns |
-| Tolerance-based validation (±1 SEK) | Reduces false positives from rounding | LOW | Simple but effective for Swedish currency |
+| Learning database per supplier | System learns each supplier's format | MEDIUM | Supplier-specific patterns improve accuracy |
+| AI-powered pattern discovery | Find unusual patterns automatically | HIGH | AI analyzes edge cases, suggests improvements |
+| Natural language queries | Ask questions about invoice data | HIGH | RAG system over processed invoices |
+| Confidence prediction model | ML model predicts confidence before extraction | MEDIUM | Train on historical data, predict success |
+| Batch learning | Learn from multiple corrections at once | LOW | Aggregate corrections, update patterns |
 
 ### Anti-Features (Commonly Requested, Often Problematic)
 
@@ -40,126 +36,115 @@ Features that seem good but create problems.
 
 | Feature | Why Requested | Why Problematic | Alternative |
 |---------|---------------|-----------------|-------------|
-| Automatic correction of low-confidence fields | Would increase "success rate" | Violates 100% accuracy guarantee - introduces false positives | Hard gate: REVIEW instead of guess |
-| Real-time processing | Feels modern | Adds complexity, latency concerns, not needed for batch | Batch processing is sufficient for invoice volumes |
-| Web UI in v1 | More accessible | Delays core functionality, adds tech stack complexity | CLI first, add UI later once pipeline is stable |
-| Template management system | Seems organized | Creates maintenance burden, breaks with vendor changes | Template-free approach with layout analysis |
-| Generic PDF parser (not invoice-specific) | Broader use case | Loses domain-specific optimizations and accuracy | Invoice-specific heuristics and validation |
+| Auto-correct everything | Users want zero manual work | Breaks hard gates, reduces trust | Manual validation with learning |
+| Real-time AI for all invoices | Better accuracy | Expensive, slow, unnecessary for high-confidence | AI only when confidence < 0.95 |
+| Override hard gates | Users want to force OK status | Breaks core value (100% accuracy guarantee) | Keep hard gates, improve confidence instead |
+| Cloud-based learning | Share learning across users | Privacy concerns, data ownership | Local learning database per user |
+| Continuous AI training | Improve AI over time | Complex, expensive, overkill | Use AI as fallback, not primary |
 
 ## Feature Dependencies
 
 ```
-PDF Input Detection
-    └──requires──> Text Layer Check
-                       ├──requires──> pdfplumber (searchable PDF path)
-                       └──requires──> OCR Pipeline (scanned PDF path)
-                                         └──requires──> Image Preprocessing
+[Manual Validation UI]
+    └──requires──> [PDF Viewer with Clickable Areas]
+                       └──requires──> [Candidate Extraction]
+                                          └──requires──> [Multiple Candidate Scoring]
 
-Layout Analysis
-    └──requires──> Spatial Text Extraction (pdfplumber or OCR with bbox)
-                       └──requires──> Page Segmentation
+[Learning System]
+    └──requires──> [Manual Validation UI] (to collect corrections)
+    └──requires──> [Database] (to store learning data)
+    └──enhances──> [Confidence Scoring] (uses learned patterns)
 
-Field Extraction (Invoice Number, Total)
-    └──requires──> Layout Analysis
-                       └──requires──> Semantic Understanding (rules/heuristics)
+[AI Integration]
+    └──requires──> [Confidence Scoring] (to know when to activate)
+    └──enhances──> [Total Amount Extraction] (when confidence < 0.95)
+    └──enhances──> [Confidence Scoring] (AI can boost confidence)
 
-Line Item Extraction
-    └──requires──> Layout Analysis
-                       └──requires──> Table Detection
-                            └──requires──> Multi-line Item Handling
+[Improved Confidence Scoring]
+    └──enhances──> [Status Assignment] (fewer REVIEW status)
+    └──enhanced by──> [Learning System] (learned patterns)
+    └──enhanced by──> [AI Integration] (AI validation)
 
-Validation
-    └──requires──> Field Extraction
-    └──requires──> Line Item Extraction
-                       └──requires──> Mathematical Reconciliation
-
-Status Assignment (OK/PARTIAL/REVIEW)
-    └──requires──> Validation
-    └──requires──> Confidence Scoring
-
-Export to Excel
-    └──requires──> Structured Data (from all extraction steps)
-    └──requires──> Status Information
+[Natural Language Queries]
+    └──requires──> [Processed Invoice Database]
+    └──requires──> [AI Integration] (for query understanding)
 ```
 
 ### Dependency Notes
 
-- **Field Extraction requires Layout Analysis:** Spatial understanding is critical to distinguish invoice number from other numbers, totals from line items
-- **Line Item Extraction enhances Validation:** Line items enable sum validation against total
-- **Status Assignment conflicts with Auto-correction:** Cannot have both hard gates and automatic fixes
+- **[Manual Validation UI] requires [PDF Viewer with Clickable Areas]:** Users need to see PDF and click on totals
+- **[Learning System] requires [Manual Validation UI]:** Learning needs user corrections as input
+- **[Learning System] enhances [Confidence Scoring]:** Learned patterns improve future confidence
+- **[AI Integration] requires [Confidence Scoring]:** AI only activates when confidence is low
+- **[AI Integration] enhances [Confidence Scoring]:** AI validation can boost confidence scores
 
 ## MVP Definition
 
-### Launch With (v1)
+### Launch With (v2.0)
 
 Minimum viable product — what's needed to validate the concept.
 
-- [x] PDF text extraction (pdfplumber for searchable, OCR for scanned) — Essential input
-- [x] Layout analysis (spatial text extraction with bbox) — Required for field identification
-- [x] Invoice number extraction with confidence scoring — Critical field, hard gate requirement
-- [x] Total extraction with confidence scoring — Critical field, hard gate requirement
-- [x] Line item extraction (best effort) — Needed for validation
-- [x] Mathematical validation (sum of line items vs total) — Core quality check
-- [x] Status assignment (OK/PARTIAL/REVIEW) — Required for hard gates
-- [x] Excel export (primary output: one row per line item) with control columns (Status, LinesSum, Diff) — Required output format
-- [x] CLI interface for batch processing — Required user interface for v1
+- [x] **Improved confidence scoring** — Core problem: too many REVIEW status
+- [ ] **Manual validation UI** — Essential for user to correct low-confidence cases
+- [ ] **Learning database** — System must learn from corrections to improve
+- [ ] **AI fallback (confidence < 0.95)** — AI helps when heuristics fail
+- [ ] **Candidate selection** — Users need alternatives to choose from
 
-### Add After Validation (v1.x)
+### Add After Validation (v2.1)
 
 Features to add once core is working.
 
-- [ ] Review workflow UI (clickable PDF links) — Improves manual review speed
-- [ ] Enhanced OCR preprocessing (deskew, denoise) — Improves scanned PDF accuracy
-- [ ] Vendor-specific heuristics learning — Reduces REVIEW rate over time
-- [ ] Multi-language support (beyond Swedish) — Expands market
+- [ ] **Supplier-specific learning** — Learn patterns per supplier
+- [ ] **Confidence prediction model** — ML model predicts confidence
+- [ ] **Batch learning** — Learn from multiple corrections at once
+- [ ] **AI pattern discovery** — AI finds unusual patterns automatically
 
-### Future Consideration (v2+)
+### Future Consideration (v3.0+)
 
 Features to defer until product-market fit is established.
 
-- [ ] Web UI — Only if CLI usage becomes barrier
-- [ ] API for integration — Only if external systems need direct access
-- [ ] Cloud deployment — Only if users need hosted solution
-- [ ] Real-time processing — Only if batch becomes bottleneck
-- [ ] Template learning system — Only if vendor-specific optimizations needed
+- [ ] **Natural language queries** — Ask questions about invoice data
+- [ ] **Multi-user learning** — Share learning across users (privacy concerns)
+- [ ] **Cloud AI training** — Continuous AI improvement (complexity, cost)
+- [ ] **Real-time AI for all** — AI for every invoice (expensive, slow)
 
 ## Feature Prioritization Matrix
 
 | Feature | User Value | Implementation Cost | Priority |
 |---------|------------|---------------------|----------|
-| Invoice number extraction (100%) | HIGH | MEDIUM | P1 |
-| Total extraction (100%) | HIGH | MEDIUM | P1 |
-| Line item extraction | HIGH | HIGH | P1 |
-| Status assignment (OK/PARTIAL/REVIEW) | HIGH | LOW | P1 |
-| Excel export | HIGH | LOW | P1 |
-| Batch processing CLI | MEDIUM | LOW | P1 |
-| PDF traceability | MEDIUM | MEDIUM | P2 |
-| Review workflow UI | MEDIUM | HIGH | P2 |
-| Enhanced OCR preprocessing | LOW | MEDIUM | P3 |
+| Improved confidence scoring | HIGH | MEDIUM | P1 |
+| Manual validation UI | HIGH | MEDIUM | P1 |
+| Learning database | HIGH | MEDIUM | P1 |
+| AI fallback (confidence < 0.95) | HIGH | HIGH | P1 |
+| Candidate selection | HIGH | LOW | P1 |
+| Supplier-specific learning | MEDIUM | MEDIUM | P2 |
+| Confidence prediction model | MEDIUM | HIGH | P2 |
+| Natural language queries | LOW | HIGH | P3 |
+| Batch learning | MEDIUM | LOW | P2 |
 
 **Priority key:**
-- P1: Must have for launch (v1)
-- P2: Should have, add when possible (v1.x)
-- P3: Nice to have, future consideration (v2+)
+- P1: Must have for v2.0 launch
+- P2: Should have, add when possible
+- P3: Nice to have, future consideration
 
 ## Competitor Feature Analysis
 
-| Feature | Commercial SaaS (Textract, DocAI) | Open Source (invoice2data) | Our Approach |
-|---------|----------------------------------|----------------------------|--------------|
-| Accuracy | HIGH (95%+ on header, 80-90% on line items) | MEDIUM (template-dependent) | Focus on 100% for critical fields (hard gates) |
-| Template handling | AI-based, template-free | Template-based (brittle) | Template-free with layout analysis |
-| Line items | Good but not perfect | Varies by template quality | Best effort with validation |
-| Cost | $$ per document | Free but requires maintenance | Free (open source stack) |
-| Swedish support | Good (multilingual) | Limited | Optimized for Swedish |
-| Traceability | Limited | None | Core feature (critical for trust) |
+| Feature | Competitor A (Generic OCR) | Competitor B (AI Invoice) | Our Approach |
+|---------|---------------------------|--------------------------|--------------|
+| Confidence scoring | Basic (0/1) | ML-based | Multi-factor heuristics + ML + AI |
+| Manual correction | Text editor | Dropdown | Clickable PDF with candidates |
+| Learning | None | Cloud-based | Local database, supplier-specific |
+| AI integration | None | Always-on | Fallback only (confidence < 0.95) |
+| Hard gates | None | Soft | Hard gates (100% accuracy guarantee) |
 
 ## Sources
 
-- WebSearch 2025 — "invoice parser features requirements table stakes OCR document extraction 2025"
-- Industry analysis: Commercial SaaS feature comparisons
-- Project requirements: PROJECT.md (100% accuracy on invoice number/total)
-- Research: Common invoice parsing user expectations
+- Existing codebase analysis — Current confidence scoring implementation
+- User feedback — Too many REVIEW status due to low confidence
+- AI API documentation — OpenAI/Claude structured outputs
+- Learning system patterns — Feedback loops, pattern matching
+- Competitor analysis — Generic OCR tools, AI invoice parsers
 
 ---
-*Feature research for: Invoice Parser App (Swedish invoices, hard gates on critical fields)*
-*Researched: 2025-01-27*
+*Feature research for: Invoice parsing with confidence, learning, and AI*
+*Researched: 2026-01-24*

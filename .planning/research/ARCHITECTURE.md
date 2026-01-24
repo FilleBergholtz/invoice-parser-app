@@ -1,7 +1,7 @@
 # Architecture Research
 
-**Domain:** Invoice parsing system (PDF → structured data pipeline)
-**Researched:** 2025-01-27
+**Domain:** Invoice parsing with confidence scoring, manual validation, learning systems, and AI integration
+**Researched:** 2026-01-24
 **Confidence:** HIGH
 
 ## Standard Architecture
@@ -10,30 +10,37 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Input Layer                               │
-├─────────────────────────────────────────────────────────────┤
-│  PDF Detection → Text Layer Check → Route to Pipeline       │
-│  (searchable PDF) or (scanned → OCR pipeline)               │
-├─────────────────────────────────────────────────────────────┤
-│                    Extraction Layer                          │
+│                        UI Layer (PySide6)                    │
 ├─────────────────────────────────────────────────────────────┤
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │ Layout       │  │ Field        │  │ Line Item    │      │
-│  │ Analysis     │→ │ Extraction   │→ │ Extraction   │      │
-│  │ (spatial)    │  │ (header)     │  │ (table)      │      │
+│  │ PDF Viewer   │  │ Validation   │  │ Candidate   │      │
+│  │ (Clickable)  │  │ UI           │  │ Selector    │      │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬──────┘      │
+│         │                  │                 │              │
+├─────────┴──────────────────┴─────────────────┴──────────────┤
+│                    Pipeline Layer                            │
+├─────────────────────────────────────────────────────────────┤
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │ Total        │  ─→│ Confidence  │  ─→│ AI Fallback │      │
+│  │ Extractor    │     │ Scorer     │     │ (if < 0.95)│      │
+│  └──────────────┘  ┌──┴────────────┴──┐ └──────────────┘      │
+│                    │  Candidate       │                       │
+│                    │  Generator       │                       │
+│                    └──────────────────┘                       │
+├─────────────────────────────────────────────────────────────┤
+│                    Learning Layer                            │
+├─────────────────────────────────────────────────────────────┤
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │ Correction   │  │ Pattern      │  │ Supplier    │      │
+│  │ Collector    │  →│ Matcher      │  →│ Database    │      │
 │  └──────────────┘  └──────────────┘  └──────────────┘      │
 ├─────────────────────────────────────────────────────────────┤
-│                    Validation Layer                          │
+│                    Data Layer                                │
 ├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │  Reconciliation + Status Assignment                  │    │
-│  │  (sum validation, confidence scoring, hard gates)    │    │
-│  └─────────────────────────────────────────────────────┘    │
-├─────────────────────────────────────────────────────────────┤
-│                    Output Layer                              │
-├─────────────────────────────────────────────────────────────┤
-│  Excel Export (with status, traceability columns)            │
-│  Review Reports (PDF + metadata)                             │
+│  ┌──────────────┐  ┌──────────────┐                        │
+│  │ Learning DB  │  │ Invoice      │                        │
+│  │ (SQLite)     │  │ Cache        │                        │
+│  └──────────────┘  └──────────────┘                        │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -41,183 +48,187 @@
 
 | Component | Responsibility | Typical Implementation |
 |-----------|----------------|------------------------|
-| PDF Reader | Detect PDF type, extract text/spatial info | pdfplumber for searchable PDFs, pdf2image+pytesseract for scanned |
-| Layout Analyzer | Understand document structure (header/footer/body, reading order) | pdfplumber spatial analysis + heuristics, OCR bbox grouping |
-| Field Extractor | Identify invoice number, date, vendor, totals from header | Layout-aware extraction with scoring (position, keywords, patterns) |
-| Table Parser | Extract line items from table structures | pdfplumber table detection or OCR-based table reconstruction |
-| Validator | Check mathematical consistency, assign confidence | Sum reconciliation, tolerance checks (±1 SEK), confidence scoring |
-| Status Assigner | Determine OK/PARTIAL/REVIEW based on validation | Hard gate logic: both invoice number and total must pass or REVIEW |
-| Exporter | Generate Excel with structured data + status columns | pandas DataFrame → openpyxl Excel writer |
-| Traceability Manager | Store spatial references (page, bbox) for critical fields | Metadata storage linked to extracted values |
+| PDF Viewer (Clickable) | Display PDF, detect clicks on totals, highlight candidates | PySide6 QGraphicsView with PDF.js or PyMuPDF rendering |
+| Candidate Selector | Show multiple total candidates, let user choose | PySide6 dialog with list of candidates + confidence |
+| Confidence Scorer | Calculate confidence for total extraction | Multi-factor scoring (position, keywords, math validation) + ML model |
+| AI Fallback | Call AI when confidence < 0.95 | OpenAI/Claude API with structured output schema |
+| Correction Collector | Save user corrections to learning database | SQLite insert with supplier, pattern, correction |
+| Pattern Matcher | Match new invoices to learned patterns | SQLite queries, similarity matching |
+| Supplier Database | Store supplier-specific patterns | SQLite table: supplier_name, pattern_hash, correct_total, confidence_boost |
+| Learning Engine | Update confidence scoring based on corrections | Background process, pattern analysis, model retraining |
 
 ## Recommended Project Structure
 
 ```
 src/
-├── pipeline/           # Core pipeline stages
+├── pipeline/              # Existing pipeline
+│   ├── footer_extractor.py    # Total extraction (enhance)
+│   ├── confidence_scoring.py  # Confidence scoring (enhance)
+│   └── ...
+├── ai/                    # AI integration (NEW)
 │   ├── __init__.py
-│   ├── reader.py       # PDF input detection & routing
-│   ├── layout.py       # Layout analysis (segments, zones)
-│   ├── extraction.py   # Field extraction (invoice number, total)
-│   ├── tables.py       # Line item extraction
-│   └── validation.py   # Reconciliation & status assignment
-├── models/             # Data models
+│   ├── client.py          # AI API client (OpenAI/Claude)
+│   ├── schemas.py         # AI request/response models
+│   └── fallback.py        # AI fallback when confidence < 0.95
+├── learning/              # Learning system (NEW)
 │   ├── __init__.py
-│   ├── document.py     # Document, Page, Token models
-│   ├── invoice.py      # InvoiceHeader, InvoiceLine models
-│   └── validation.py   # Validation, Status models
-├── export/             # Output generation
-│   ├── __init__.py
-│   ├── excel.py        # Excel export with status columns
-│   └── review.py       # Review report generation
-├── utils/              # Utilities
-│   ├── __init__.py
-│   ├── spatial.py      # Spatial operations (bbox, grouping)
-│   └── traceability.py # Traceability metadata management
-└── cli.py              # Command-line interface
-
-tests/
-├── fixtures/
-│   └── pdfs/           # Test invoice PDFs
-├── unit/               # Unit tests per module
-└── integration/        # End-to-end pipeline tests
+│   ├── database.py        # SQLite learning database
+│   ├── collector.py       # Collect user corrections
+│   ├── matcher.py         # Match patterns to learned data
+│   └── patterns.py        # Pattern extraction and matching
+├── ui/                    # Existing UI
+│   ├── views/
+│   │   ├── main_window.py     # Enhance with validation UI
+│   │   └── pdf_viewer.py      # NEW: Clickable PDF viewer
+│   └── ...
+└── models/                # Existing models
+    ├── invoice_header.py      # Enhance with learning metadata
+    └── ...
 ```
 
 ### Structure Rationale
 
-- **pipeline/:** Modular stages enable testing each step independently, matches 12-step specification
-- **models/:** Centralized data structures ensure consistency across pipeline stages
-- **export/:** Separated output logic allows adding formats (JSON, CSV) without touching pipeline
-- **utils/:** Reusable spatial/traceability logic shared across extraction stages
+- **ai/:** Separates AI integration from pipeline logic, easier to swap providers
+- **learning/:** Isolated learning system, can be enabled/disabled, testable
+- **ui/views/pdf_viewer.py:** New component for clickable PDF viewing
+- **pipeline/confidence_scoring.py:** Enhance existing, don't replace
 
 ## Architectural Patterns
 
-### Pattern 1: Pipeline Architecture
+### Pattern 1: Fallback Chain
 
-**What:** Sequential transformation stages (PDF → Document → Page → Tokens → Rows → ... → Export)
-**When to use:** Data transformation pipelines with clear stages
+**What:** Try heuristics first, then AI if confidence low
+**When to use:** When you have fast heuristics but need AI backup
 **Trade-offs:** 
-- ✅ Pros: Clear separation of concerns, testable stages, easy to debug
-- ⚠️ Cons: Can be verbose, requires careful data model design
+- Pros: Fast for common cases, accurate for edge cases
+- Cons: Two code paths to maintain
 
 **Example:**
 ```python
-# Each stage transforms input → output
-document = reader.read_pdf("invoice.pdf")
-pages = reader.extract_pages(document)
-tokens = layout.tokenize_pages(pages)
-rows = layout.group_tokens_to_rows(tokens)
-segments = layout.identify_segments(rows)
-header = extraction.extract_header(segments)
-lines = extraction.extract_line_items(segments)
-validation_result = validation.validate(header, lines)
-export.export_excel(validation_result)
+def extract_total_with_fallback(footer_segment, invoice_lines):
+    # Try heuristics first
+    total, confidence = extract_total_heuristic(footer_segment, invoice_lines)
+    
+    if confidence < 0.95:
+        # Fallback to AI
+        total, confidence = extract_total_ai(footer_segment, invoice_lines)
+    
+    return total, confidence
 ```
 
-### Pattern 2: Hard Gate Validation
+### Pattern 2: Learning Feedback Loop
 
-**What:** Strict validation gates that prevent false positives (100% or REVIEW)
-**When to use:** Critical data accuracy requirements
+**What:** Collect corrections, learn patterns, improve future extractions
+**When to use:** When user corrections can improve system accuracy
 **Trade-offs:**
-- ✅ Pros: Guarantees correctness for approved outputs, builds trust
-- ⚠️ Cons: Higher REVIEW rate, requires manual verification workflow
+- Pros: System improves over time, supplier-specific learning
+- Cons: Requires database, pattern matching complexity
 
 **Example:**
 ```python
-def assign_status(invoice_no_conf: float, total_conf: float, sum_diff: float) -> Status:
-    # Hard gate: both critical fields must pass
-    if invoice_no_conf < 0.95 or total_conf < 0.95:
-        return Status.REVIEW
-    # Validation gate: sum must match within tolerance
-    if abs(sum_diff) > 1.00:  # ±1 SEK tolerance
-        return Status.PARTIAL if invoice_no_conf >= 0.95 else Status.REVIEW
-    return Status.OK
+def process_correction(invoice, user_selected_total):
+    # Save correction
+    learning_db.save_correction(
+        supplier=invoice.supplier_name,
+        pattern=extract_pattern(invoice),
+        correct_total=user_selected_total
+    )
+    
+    # Update confidence for similar future invoices
+    update_confidence_model(pattern, user_selected_total)
 ```
 
-### Pattern 3: Spatial Traceability
+### Pattern 3: Candidate Generation
 
-**What:** Store bounding boxes and page references for extracted values
-**When to use:** Need to verify or debug extracted data
+**What:** Extract multiple candidates, let user choose
+**When to use:** When confidence is low, show alternatives
 **Trade-offs:**
-- ✅ Pros: Enables verification, clickable links to PDF source
-- ⚠️ Cons: Increases memory/storage, adds complexity to data models
+- Pros: User can correct, system learns from choice
+- Cons: Requires UI, more complex extraction
 
 **Example:**
 ```python
-@dataclass
-class ExtractedField:
-    value: str
-    confidence: float
-    traceability: TraceabilityInfo  # page, bbox, source_text
-
-@dataclass
-class TraceabilityInfo:
-    page_number: int
-    bbox: BoundingBox  # x, y, width, height
-    source_text: str  # Original text snippet
+def extract_total_candidates(footer_segment):
+    candidates = []
+    # Extract multiple candidates with different strategies
+    candidates.append(extract_by_keyword(footer_segment))
+    candidates.append(extract_by_position(footer_segment))
+    candidates.append(extract_by_format(footer_segment))
+    
+    # Score and return top candidates
+    return sorted(candidates, key=lambda c: c.confidence, reverse=True)[:3]
 ```
 
 ## Data Flow
 
-### Request Flow
+### Total Extraction Flow
 
 ```
-PDF File
+[Footer Segment] 
     ↓
-[PDF Reader] → Detect type (searchable/scanned)
-    ↓
-[Layout Analyzer] → Extract spatial text (tokens with bbox)
-    ↓
-[Field Extractor] → Invoice number, total (with confidence)
-    ↓
-[Table Parser] → Line items
-    ↓
-[Validator] → Reconciliation (sum check)
-    ↓
-[Status Assigner] → OK/PARTIAL/REVIEW
-    ↓
-[Exporter] → Excel + Review Reports
+[Heuristic Extractor] → [Confidence Scorer] → confidence >= 0.95?
+    ↓ (yes)                                    ↓ (no)
+[Return Total]                          [AI Fallback] → [Confidence Scorer]
+    ↓                                            ↓
+[Return Total]                            [Return Total]
 ```
 
-### State Management
+### Learning Flow
 
-For batch processing, each invoice is processed independently:
-- No shared state between invoices
-- Each invoice has isolated pipeline execution
-- Results aggregated at export stage
+```
+[User Correction]
+    ↓
+[Correction Collector] → [Learning Database]
+    ↓
+[Pattern Extractor] → [Pattern Matcher]
+    ↓
+[Confidence Model Update] → [Future Invoices Benefit]
+```
+
+### Manual Validation Flow
+
+```
+[Low Confidence Total]
+    ↓
+[Candidate Generator] → [UI: Show Candidates]
+    ↓
+[User Selects] → [Correction Collector]
+    ↓
+[Learning Database] → [Pattern Learning]
+```
 
 ## Scaling Considerations
 
 | Scale | Architecture Adjustments |
 |-------|--------------------------|
-| 0-100 invoices/week | Single-threaded pipeline, sequential processing |
-| 100-1000 invoices/week | Batch processing with parallel workers (multiprocessing) |
-| 1000+ invoices/week | Queue-based system (Redis/Celery), distributed workers |
+| 0-1k invoices/month | SQLite fine, no caching needed |
+| 1k-10k invoices/month | Add invoice cache, batch learning updates |
+| 10k+ invoices/month | Consider PostgreSQL, async AI calls, learning queue |
 
 ### Scaling Priorities
 
-1. **First bottleneck:** PDF processing (I/O bound) → parallel workers
-2. **Second bottleneck:** OCR processing (CPU bound) → dedicated OCR workers, caching
+1. **First bottleneck:** Learning database queries — Add indexes on supplier_name, pattern_hash
+2. **Second bottleneck:** AI API calls — Batch requests, cache results, rate limiting
 
 ## Anti-Patterns
 
-### Anti-Pattern 1: Template-Based Parsing
+### Anti-Pattern 1: AI for Everything
 
-**What people do:** Create regex/template for each vendor
-**Why it's wrong:** Breaks when vendor changes format, maintenance nightmare
-**Do this instead:** Layout analysis + semantic rules (template-free)
+**What people do:** Call AI for every invoice
+**Why it's wrong:** Expensive, slow, unnecessary for high-confidence cases
+**Do this instead:** Use AI only when confidence < 0.95 (fallback pattern)
 
-### Anti-Pattern 2: Single-Pass Extraction
+### Anti-Pattern 2: No Learning Feedback
 
-**What people do:** Extract all fields in one pass without validation
-**Why it's wrong:** No feedback loop, errors propagate
-**Do this instead:** Extract → Validate → Re-extract low-confidence fields → Final validation
+**What people do:** Collect corrections but don't use them
+**Why it's wrong:** System never improves, users keep correcting same issues
+**Do this instead:** Active learning loop: corrections → patterns → improved confidence
 
-### Anti-Pattern 3: Silent Failure on Low Confidence
+### Anti-Pattern 3: Override Hard Gates
 
-**What people do:** Return best guess even when uncertain
-**Why it's wrong:** Violates 100% accuracy requirement, erodes trust
-**Do this instead:** Hard gates - REVIEW status for uncertain extractions
+**What people do:** Let users override hard gates to force OK status
+**Why it's wrong:** Breaks core value (100% accuracy guarantee)
+**Do this instead:** Improve confidence scoring, keep hard gates intact
 
 ## Integration Points
 
@@ -225,23 +236,27 @@ For batch processing, each invoice is processed independently:
 
 | Service | Integration Pattern | Notes |
 |---------|---------------------|-------|
-| Tesseract OCR | CLI via pytesseract wrapper | Requires system installation, not pure Python |
-| File system | Direct file I/O | Batch processing reads from directory, writes to output directory |
+| OpenAI API | REST API with structured outputs | Rate limiting, error handling, retry logic |
+| Claude API | REST API with structured outputs | Alternative to OpenAI, better structured outputs |
+| SQLite | Embedded database | No external service, but included for completeness |
 
 ### Internal Boundaries
 
 | Boundary | Communication | Notes |
 |----------|---------------|-------|
-| pipeline stages ↔ models | Direct Python objects | Data models passed between stages |
-| extraction ↔ validation | ValidationResult objects | Structured validation output |
+| UI ↔ Pipeline | Direct function calls | UI calls pipeline functions directly |
+| Pipeline ↔ AI | API client abstraction | Abstract AI client, swap providers easily |
+| Pipeline ↔ Learning | Database interface | Learning system isolated, can be disabled |
+| Learning ↔ UI | Event/callback | UI notifies learning system of corrections |
 
 ## Sources
 
-- WebSearch 2025 — "invoice parsing architecture pipeline OCR layout analysis 2025 design patterns"
-- Academic papers: Multi-stage document parsing pipelines
-- Industry patterns: Commercial invoice parsing architecture
-- Project specification: 12-step pipeline in specs/invoice_pipeline_v1.md
+- Existing codebase — Current pipeline architecture
+- AI API documentation — OpenAI/Claude integration patterns
+- Learning system patterns — Feedback loops, pattern matching
+- PySide6 documentation — PDF viewer implementation
+- SQLite best practices — Embedded database patterns
 
 ---
-*Architecture research for: Invoice Parser App (Swedish invoices, hard gates, traceability)*
-*Researched: 2025-01-27*
+*Architecture research for: Invoice parsing with confidence, learning, and AI*
+*Researched: 2026-01-24*
