@@ -157,7 +157,12 @@ Plans:
 5. System validates confidence calibration regularly against ground truth data
 6. Fewer invoices receive REVIEW status due to low confidence (measurable improvement)
 
-**Plans**: TBD (to be planned)
+**Plans**: 3 plans
+
+Plans:
+- [x] 05-01: Enhanced Multi-Factor Scoring - Add additional signals (font size, VAT proximity, currency symbols, row isolation) and improve candidate extraction
+- [ ] 05-02: Confidence Calibration - Implement isotonic regression calibration to map raw scores to actual accuracy
+- [ ] 05-03: Calibration Validation CLI - Add CLI command for regular validation and training of calibration models
 
 ---
 
