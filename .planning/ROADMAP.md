@@ -186,9 +186,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 08-01: AI Provider Abstraction & Fallback - Create AI provider abstraction (OpenAI/Claude), structured outputs, AI fallback function
-- [ ] 08-02: AI Fallback Integration - Integrate AI fallback into footer extractor, activate when confidence < 0.95
-- [ ] 08-03: AI Validation & Confidence Boosting - Add validation of AI results, boost confidence when validation passes
+- [ ] 09-01: Invoice Data Loading - Create data loader to read invoices from Excel files for querying
+- [ ] 09-02: Natural Language Query Processing - Create AI-based query processor to parse natural language queries
+- [ ] 09-03: Query Execution & CLI - Create query executor and add CLI --query command
 
 ---
 
@@ -212,9 +212,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 08-01: AI Provider Abstraction & Fallback - Create AI provider abstraction (OpenAI/Claude), structured outputs, AI fallback function
-- [ ] 08-02: AI Fallback Integration - Integrate AI fallback into footer extractor, activate when confidence < 0.95
-- [ ] 08-03: AI Validation & Confidence Boosting - Add validation of AI results, boost confidence when validation passes
+- [ ] 09-01: Invoice Data Loading - Create data loader to read invoices from Excel files for querying
+- [ ] 09-02: Natural Language Query Processing - Create AI-based query processor to parse natural language queries
+- [ ] 09-03: Query Execution & CLI - Create query executor and add CLI --query command
 
 ---
 
@@ -239,9 +239,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 08-01: AI Provider Abstraction & Fallback - Create AI provider abstraction (OpenAI/Claude), structured outputs, AI fallback function
-- [ ] 08-02: AI Fallback Integration - Integrate AI fallback into footer extractor, activate when confidence < 0.95
-- [ ] 08-03: AI Validation & Confidence Boosting - Add validation of AI results, boost confidence when validation passes
+- [ ] 09-01: Invoice Data Loading - Create data loader to read invoices from Excel files for querying
+- [ ] 09-02: Natural Language Query Processing - Create AI-based query processor to parse natural language queries
+- [ ] 09-03: Query Execution & CLI - Create query executor and add CLI --query command
 
 ---
 
@@ -262,9 +262,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 08-01: AI Provider Abstraction & Fallback - Create AI provider abstraction (OpenAI/Claude), structured outputs, AI fallback function
-- [ ] 08-02: AI Fallback Integration - Integrate AI fallback into footer extractor, activate when confidence < 0.95
-- [ ] 08-03: AI Validation & Confidence Boosting - Add validation of AI results, boost confidence when validation passes
+- [ ] 09-01: Invoice Data Loading - Create data loader to read invoices from Excel files for querying
+- [ ] 09-02: Natural Language Query Processing - Create AI-based query processor to parse natural language queries
+- [ ] 09-03: Query Execution & CLI - Create query executor and add CLI --query command
 
 **Note:** This phase is optional and can be deferred to v3.0 if not critical.
 
@@ -285,6 +285,6 @@ Phases execute in numeric order: 5 → 6 → 7 → 8 → 9
 | 6. Manual Validation UI | v2.0 | 3/3 | Complete | - |
 | 7. Learning System | v2.0 | 3/3 | Complete | - |
 | 8. AI Integration | v2.0 | 3/3 | Complete | - |
-| 9. AI Data Analysis | v2.0 | 0/TBD | Not started | - |
+| 9. AI Data Analysis | v2.0 | 0/3 | Not started | - |
 
 **Note:** v1.0 phases complete. v2.0 phases ready for planning.
