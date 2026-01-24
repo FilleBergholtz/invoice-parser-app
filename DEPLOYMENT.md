@@ -87,9 +87,25 @@ Detta skapar `installer/EPG_PDF_Extraherare_Setup.exe`.
 
 ---
 
+## 🖥️ GUI Användning
+
+Installerad applikation kan köras med grafiskt gränssnitt:
+
+```bash
+# Om installerad via setup.exe
+& "C:\Program Files\EPG PDF Extraherare\EPG_PDF_Extraherare_GUI.exe"
+```
+
+**GUI-funktioner:**
+- Drag & drop PDF-filer direkt i fönstret
+- Välj input-fil via dialog
+- Konfigurera output-mapp
+- Visa bearbetningsstatus i realtid
+- Automatisk öppning av output-mapp efter bearbetning
+
 ## ⚙️ CLI Användning
 
-Installerad applikation kan köras från kommandoraden.
+Installerad applikation kan också köras från kommandoraden.
 
 ```bash
 # Om installerad via setup.exe
@@ -124,3 +140,5 @@ Installerad applikation kan köras från kommandoraden.
 
 **Senast uppdaterad:** 2026-01-24
 **Version:** 1.0.1
+
+> **Notera:** GUI-versionen använder PySide6 (Qt-baserad desktop applikation). Web-baserade alternativ (Streamlit/FastAPI) är dokumenterade i `docs/legacy/deployment_legacy.md`.

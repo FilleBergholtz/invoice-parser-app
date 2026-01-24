@@ -135,6 +135,8 @@ Roadmapen är indelad i tre faser som bygger på varandra. Varje fas implementer
    - Summa-validering
    - Status-hantering
 
+**Notera:** Phase 4 (Web UI med Streamlit/FastAPI) planerades men togs bort till förmån för PySide6 desktop GUI. Web-komponenterna är dokumenterade i `docs/legacy/deployment_legacy.md`.
+
 ## Task-sekvens
 
 Varje fas är uppdelad i atomiska tasks enligt `docs/tasks.md`. Tasks implementeras sekventiellt inom varje fas.

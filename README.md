@@ -30,7 +30,12 @@ python -m src.cli.main batch input_folder/ output/
 
 ### Windows Desktop App
 
-För slutanvändare finns en fristående Windows-applikation (ingen Python-installation krävs). Se `docs/deployment.md` för detaljer om hur man bygger eller installerar den.
+För slutanvändare finns en fristående Windows-applikation med PySide6 GUI (ingen Python-installation krävs). Se `DEPLOYMENT.md` för detaljer om hur man bygger eller installerar den.
+
+```bash
+# Kör GUI lokalt (utvecklare)
+python run_gui.py
+```
 
 ---
 
@@ -46,6 +51,7 @@ För slutanvändare finns en fristående Windows-applikation (ingen Python-insta
 - **Excel-export**: Strukturerad tabell med en rad per produktrad
 - **Review-rapporter**: PDF-kopior och metadata för manuell granskning
 - **Traceability**: Spårbarhet tillbaka till PDF (sida, position)
+- **Desktop GUI**: PySide6-baserad grafisk användargränssnitt för enkel användning
 - **Offline-first**: Ingen internetuppkoppling krävs för grundläggande funktionalitet
 
 ### 📊 Prestanda
@@ -140,6 +146,7 @@ invoice-parser-app/
 - **pdfplumber**: PDF-läsning och text-extraktion
 - **pandas**: Datahantering
 - **openpyxl**: Excel-generering
+- **PySide6**: Desktop GUI (Qt-baserad)
 - **pytest**: Testing
 
 ### Pipeline-översikt
@@ -176,14 +183,16 @@ Systemet använder en 12-stegs pipeline:
 - ValidationResult och status
 - Excel-export med validering
 
-### ✅ Phase 4: Cleanup
-- Renodling av projektet mot Windows Desktop och CLI
-- Borttagning av legacy web-komponenter
+### ✅ Phase 4: Web UI (Komplett)
+- Streamlit web UI (arkiverad i legacy)
+- FastAPI REST API (arkiverad i legacy)
+- **Notera:** Web-komponenter togs bort till förmån för desktop GUI
 
-### 🚧 Phase 5: Windows Desktop (Pågående)
-- Standalone .exe
-- Lokal GUI (utan webbläsare)
+### ✅ Desktop GUI (PySide6)
+- Standalone .exe med PySide6 GUI
+- Lokal desktop-applikation (ingen webbläsare)
 - Offline-first
+- Drag & drop support
 
 ---
 
@@ -250,3 +259,5 @@ Projektet använder GSD (Guided Software Development) system:
 
 **Senast uppdaterad:** 2026-01-24
 **Version:** 1.0.1
+
+> **Notera:** Dokumentationen har uppdaterats för att reflektera nuvarande implementation (PySide6 desktop GUI). Web-komponenter (Streamlit/FastAPI) som planerades i Phase 4 är arkiverade i `docs/legacy/deployment_legacy.md`.
