@@ -373,7 +373,38 @@ Varje task följer strikt format:
 
 ---
 
-## Fas 4: Windows Desktop (Offline-first)
+## Fas 4: Cleanup (Remove non-target deployment types)
+
+### [U0] Cleanup: Remove non-target deployment modes
+
+**Input**: Repo med flera deploymentspår (Streamlit/FastAPI/Docker/Cloud)
+
+**Output**: Repo med endast Windows Desktop (production) + CLI (advanced) + Dev setup
+
+**Files**:
+- `docs/deployment.md` (Uppdatera: endast Desktop/CLI/Dev/Optional AI)
+- `README.md` (Uppdatera: endast Desktop/CLI)
+- `docs/legacy/deployment_legacy.md` (Ny: flytta gammal info om ni vill behålla)
+- `pyproject.toml` (Rensa dependencies)
+- (Delete or move to legacy):
+  - `run_streamlit.py`
+  - `run_api.py`
+  - `src/api/`
+  - `Dockerfile.*`
+  - `docker-compose.yml`
+  - cloud-specifika filer/scripts (om finns)
+
+**DoD**:
+- [ ] “Production target” i docs/README är endast Windows Desktop
+- [ ] CLI är dokumenterad som secondary/advanced
+- [ ] Inga Streamlit/FastAPI/Docker/Cloud instruktioner i primär dokumentation
+- [ ] Streamlit/FastAPI/Docker-relaterade dependencies borttagna ur `pyproject.toml` (om ej använda)
+- [ ] Tester passerar
+- [ ] Repo-struktur har tydlig `docs/legacy/` för bortplockat material (om ni behåller historik)
+
+---
+
+## Fas 5: Windows Desktop (Offline-first)
 
 **Mål**: Appen ska kunna installeras och köras lokalt på en Windows-dator utan webbberoende. AI ska kunna anslutas som ett valfritt (opt-in) nätverkssteg.
 
