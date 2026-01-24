@@ -38,6 +38,7 @@ from ..config import get_default_output_dir, get_output_subdirs, get_ai_enabled,
 from ..run_summary import RunSummary
 from ..ai.client import AIClient, AIClientError, AIConnectionError, AIAPIError, create_ai_diff, save_ai_artifacts
 from ..ai.schemas import AIInvoiceRequest, AIInvoiceLineRequest
+from ..debug.artifact_index import create_manifest_for_run
 
 
 class InvoiceProcessingError(Exception):
@@ -889,6 +890,21 @@ def process_batch(
     else:
         results["errors_path"] = None
         
+    # Create artifact manifest
+    try:
+        if run_artifacts_dir.exists():
+            manifest = create_manifest_for_run(
+                run_artifacts_dir, 
+                summary.run_id,
+                output_dir=output_dir_obj
+            )
+            if verbose:
+                print(f"Artifact manifest created with {len(manifest.artifacts)} artifacts")
+    except Exception as e:
+        # Log warning but don't fail the run
+        if verbose:
+            print(f"Warning: Failed to create artifact manifest: {e}")
+    
     # Save run summary
     summary.complete(status="FAILED" if summary.failed_count > 0 else "COMPLETED")
     summary_path = output_dir_obj / "run_summary.json"

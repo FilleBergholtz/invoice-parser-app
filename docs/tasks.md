@@ -515,14 +515,14 @@ Syftet är att höja **observability, produktvärde, robusthet och förvaltbarhe
 - `tests/test_artifact_manifest.py`
 
 **DoD**:
-- [ ] Varje körning genererar `artifact_manifest.json`
-- [ ] Manifest listar alla artifacts med:
+- [x] Varje körning genererar `artifact_manifest.json`
+- [x] Manifest listar alla artifacts med:
   - filnamn
   - typ (tokens, rows, segments, ai, excel, debug)
   - pipeline-steg
   - checksum/hash
-- [ ] Manifest är maskinläsbart och versionsmärkt
-- [ ] Enhetstest verifierar komplett manifest för `sample_invoice_1.pdf`
+- [x] Manifest är maskinläsbart och versionsmärkt
+- [x] Enhetstest verifierar komplett manifest för `sample_invoice_1.pdf`
 
 ---
 
