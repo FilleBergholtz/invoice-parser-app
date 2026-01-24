@@ -73,12 +73,12 @@ Requirements for v2.0 milestone. Focus: Improved confidence scoring, manual vali
 
 ### Manual Validation & User Interaction
 
-- [ ] **VALID-UI-01**: User can click on total amount in PDF viewer to see candidate alternatives
-- [ ] **VALID-UI-02**: System displays multiple total amount candidates with confidence scores in UI
-- [ ] **VALID-UI-03**: User can select correct total amount from candidate list
-- [ ] **VALID-UI-04**: System highlights candidate totals visually in PDF viewer
-- [ ] **VALID-UI-05**: User can validate total amount with keyboard shortcuts (arrow keys, Enter)
-- [ ] **VALID-UI-06**: System collects user corrections and saves them for learning
+- [x] **VALID-UI-01**: User can click on total amount in PDF viewer to see candidate alternatives
+- [x] **VALID-UI-02**: System displays multiple total amount candidates with confidence scores in UI
+- [x] **VALID-UI-03**: User can select correct total amount from candidate list
+- [x] **VALID-UI-04**: System highlights candidate totals visually in PDF viewer
+- [x] **VALID-UI-05**: User can validate total amount with keyboard shortcuts (arrow keys, Enter)
+- [x] **VALID-UI-06**: System collects user corrections and saves them for learning
 
 ### Learning System
 
