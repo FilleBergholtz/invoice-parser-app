@@ -3,6 +3,8 @@
 import sys
 import os
 from pathlib import Path
+from typing import Optional
+
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
     QLabel, QPushButton, QFileDialog, QTextEdit, 
@@ -13,6 +15,7 @@ from PySide6.QtGui import QDragEnterEvent, QDropEvent
 
 from ..services.engine_runner import EngineRunner
 from .pdf_viewer import PDFViewer
+from .candidate_selector import CandidateSelector
 
 class MainWindow(QMainWindow):
     """Main application window."""
@@ -100,20 +103,26 @@ class MainWindow(QMainWindow):
         validation_label.setStyleSheet("font-weight: bold; font-size: 14px")
         validation_layout.addWidget(validation_label)
         
-        # Splitter for PDF viewer and candidate selector (next plan)
+        # Splitter for PDF viewer and candidate selector
         splitter = QSplitter(Qt.Orientation.Horizontal)
         
         # PDF Viewer
         self.pdf_viewer = PDFViewer()
         splitter.addWidget(self.pdf_viewer)
         
-        # Placeholder for candidate selector (will be added in plan 06-02)
-        candidate_placeholder = QLabel("Kandidatväljare kommer här (Plan 06-02)")
-        candidate_placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        splitter.addWidget(candidate_placeholder)
+        # Candidate Selector
+        self.candidate_selector = CandidateSelector()
+        splitter.addWidget(self.candidate_selector)
         
-        splitter.setSizes([600, 200])  # PDF viewer larger
+        splitter.setSizes([600, 300])  # PDF viewer larger, candidate selector wider
         validation_layout.addWidget(splitter)
+        
+        # Connect signals for bidirectional synchronization
+        self.pdf_viewer.candidate_clicked.connect(self._on_pdf_candidate_clicked)
+        self.candidate_selector.candidate_selected.connect(self._on_selector_candidate_selected)
+        
+        # State for selected candidate
+        self.selected_candidate_index: Optional[int] = None
         
         # Initially hide validation section
         self.validation_widget.setVisible(False)
@@ -216,22 +225,77 @@ class MainWindow(QMainWindow):
             self._show_validation_ui()
     
     def _show_validation_ui(self):
-        """Show validation UI with PDF viewer."""
+        """Show validation UI with PDF viewer and candidate selector."""
         try:
             # Load PDF
             self.pdf_viewer.load_pdf(self.input_path)
             
-            # TODO: Load candidates from processing result
-            # For now, we'll need to read from artifacts or review reports
-            # This will be enhanced when we have better integration
-            # For plan 06-01, just show PDF viewer
+            # Load candidates from processing result
+            # For now, we'll try to load from artifacts or use mock data
+            # In future, we'll have better integration with processing results
+            candidates = self._load_candidates_from_result()
+            
+            if candidates:
+                # Set candidates in selector
+                self.candidate_selector.set_candidates(candidates)
+                
+                # Set candidates in PDF viewer (for highlighting)
+                # We need traceability for PDF highlighting - for now, use first candidate's traceability
+                # This will be enhanced when we have full InvoiceHeader data
+                traceability = None  # TODO: Load from processing result
+                self.pdf_viewer.set_candidates(candidates, traceability)
+            else:
+                self.log("Inga kandidater hittades - validering kan inte utföras")
             
             # Show validation section
             self.validation_widget.setVisible(True)
-            self.log("Valideringsläge aktiverat - klicka på totalsumma i PDF för att se kandidater")
+            self.log("Valideringsläge aktiverat - välj korrekt totalsumma från listan")
+            
+            # Set focus to candidate selector for keyboard navigation
+            self.candidate_selector.setFocus()
             
         except Exception as e:
             self.log_error(f"Kunde inte ladda PDF för validering: {e}")
+    
+    def _load_candidates_from_result(self) -> list:
+        """Load candidates from processing result.
+        
+        Returns:
+            List of candidate dicts, or empty list if not available
+        """
+        # TODO: Load from actual processing result (artifacts, review reports, etc.)
+        # For now, return empty list - this will be enhanced when we have
+        # better integration with processing pipeline
+        
+        # In a real scenario, we would:
+        # 1. Load InvoiceHeader from artifacts or review package
+        # 2. Extract total_candidates from InvoiceHeader
+        # 3. Extract total_traceability for PDF highlighting
+        
+        return []
+    
+    def _on_pdf_candidate_clicked(self, candidate_index: int) -> None:
+        """Handle candidate click in PDF viewer.
+        
+        Args:
+            candidate_index: Index of clicked candidate
+        """
+        # Select in candidate selector
+        self.candidate_selector.select_candidate(candidate_index)
+        self.selected_candidate_index = candidate_index
+        self.log(f"Kandidat {candidate_index} klickad i PDF")
+    
+    def _on_selector_candidate_selected(self, candidate_index: int, amount: float) -> None:
+        """Handle candidate selection in selector.
+        
+        Args:
+            candidate_index: Index of selected candidate
+            amount: Selected amount
+        """
+        # Highlight in PDF viewer
+        self.pdf_viewer.highlight_candidate(candidate_index)
+        self.selected_candidate_index = candidate_index
+        self.log(f"Kandidat {candidate_index} vald: SEK {amount:,.2f}")
 
     def log(self, message):
         self.log_area.append(message)
