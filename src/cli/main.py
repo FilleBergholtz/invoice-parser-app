@@ -665,12 +665,14 @@ def process_batch(
     # Create run summary
     summary = RunSummary.create(input_path, output_dir)
     
-    # Set profile name in summary
+    # Set profile name and pipeline version in summary
     try:
         profile = get_profile()
         summary.profile_name = profile.name
     except Exception:
         summary.profile_name = "default"
+    
+    summary.pipeline_version = get_app_version()
     
     # Determine input files
     input_path_obj = Path(input_path)
@@ -964,6 +966,20 @@ def process_batch(
         # Log warning but don't fail the run
         if verbose:
             print(f"Warning: Failed to create artifact manifest: {e}")
+    
+    # Check backward compatibility of existing artifacts (if any)
+    try:
+        compatibility_results = check_artifacts_compatibility(run_artifacts_dir)
+        for artifact_type, result in compatibility_results.items():
+            if result.status == CompatibilityStatus.INCOMPATIBLE:
+                print(f"WARNING: {artifact_type} is incompatible: {result.message}")
+            elif result.status == CompatibilityStatus.WARNING:
+                if verbose:
+                    print(f"INFO: {artifact_type} compatibility warning: {result.message}")
+    except Exception as e:
+        # Log warning but don't fail the run
+        if verbose:
+            print(f"Warning: Failed to check artifact compatibility: {e}")
     
     # Save run summary
     summary.complete(status="FAILED" if summary.failed_count > 0 else "COMPLETED")

@@ -626,11 +626,11 @@ Syftet är att höja **observability, produktvärde, robusthet och förvaltbarhe
 - `tests/test_backward_compat.py`
 
 **DoD**:
-- [ ] Pipeline-version sparas i `run_summary.json`
-- [ ] Appen identifierar äldre artifacts
-- [ ] Varning visas vid inkompatibla versioner
-- [ ] Dokumenterad backward-compat policy
-- [ ] Enhetstester verifierar versionslogik
+- [x] Pipeline-version sparas i `run_summary.json`
+- [x] Appen identifierar äldre artifacts
+- [x] Varning visas vid inkompatibla versioner
+- [x] Dokumenterad backward-compat policy (i compat.py docstrings)
+- [x] Enhetstester verifierar versionslogik
 
 ---
 
