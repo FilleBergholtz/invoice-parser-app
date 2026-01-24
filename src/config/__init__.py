@@ -21,6 +21,8 @@ get_ai_endpoint = config_module.get_ai_endpoint
 get_ai_key = config_module.get_ai_key
 get_calibration_enabled = config_module.get_calibration_enabled
 get_calibration_model_path = config_module.get_calibration_model_path
+get_learning_enabled = config_module.get_learning_enabled
+get_learning_db_path = config_module.get_learning_db_path
 
 __all__ = [
     'get_app_name',
@@ -32,4 +34,6 @@ __all__ = [
     'get_ai_key',
     'get_calibration_enabled',
     'get_calibration_model_path',
+    'get_learning_enabled',
+    'get_learning_db_path',
 ]

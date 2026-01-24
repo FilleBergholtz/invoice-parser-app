@@ -116,3 +116,26 @@ def get_calibration_model_path() -> Path:
     if env_path:
         return Path(env_path)
     return Path(__file__).parent.parent / "configs" / "calibration_model.joblib"
+
+
+def get_learning_enabled() -> bool:
+    """Check if learning system is enabled.
+    
+    Returns:
+        True if LEARNING_ENABLED environment variable is set to 'true' (case-insensitive),
+        defaults to True if not set
+    """
+    env_value = os.getenv('LEARNING_ENABLED', 'true')
+    return env_value.lower() == 'true'
+
+
+def get_learning_db_path() -> Path:
+    """Get path to learning database file.
+    
+    Returns:
+        Path to learning database file (default: data/learning.db)
+    """
+    env_path = os.getenv('LEARNING_DB_PATH')
+    if env_path:
+        return Path(env_path)
+    return Path(__file__).parent.parent / "data" / "learning.db"

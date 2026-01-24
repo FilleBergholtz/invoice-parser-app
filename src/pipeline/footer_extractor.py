@@ -5,7 +5,12 @@ import re
 from pathlib import Path
 from typing import List, Optional
 
-from ..config import get_calibration_enabled, get_calibration_model_path
+from ..config import (
+    get_calibration_enabled,
+    get_calibration_model_path,
+    get_learning_enabled,
+    get_learning_db_path
+)
 from ..models.invoice_header import InvoiceHeader
 from ..models.invoice_line import InvoiceLine
 from ..models.segment import Segment
@@ -18,6 +23,10 @@ logger = logging.getLogger(__name__)
 # Cache for loaded calibration model (load once, reuse)
 _calibration_model_cache: Optional[CalibrationModel] = None
 _calibration_model_path: Optional[Path] = None
+
+# Cache for learning database (load once, reuse)
+_learning_database_cache = None
+_learning_db_path: Optional[Path] = None
 
 
 def _load_calibration_model() -> Optional[CalibrationModel]:
@@ -56,6 +65,112 @@ def _load_calibration_model() -> Optional[CalibrationModel]:
     logger.debug(f"Loaded calibration model from {model_path}")
     
     return model
+
+
+def _load_learning_database():
+    """Load learning database (with caching).
+    
+    Returns:
+        LearningDatabase instance if learning enabled, None otherwise
+    """
+    global _learning_database_cache, _learning_db_path
+    
+    if not get_learning_enabled():
+        return None
+    
+    db_path = get_learning_db_path()
+    
+    # Check if cache is still valid
+    if (_learning_database_cache is not None and 
+        _learning_db_path == db_path):
+        return _learning_database_cache
+    
+    # Try to load database
+    try:
+        from ..learning.database import LearningDatabase
+        _learning_database_cache = LearningDatabase(db_path)
+        _learning_db_path = db_path
+        logger.debug(f"Loaded learning database from {db_path}")
+    except Exception as e:
+        logger.warning(f"Failed to load learning database: {e}")
+        _learning_database_cache = None
+    
+    return _learning_database_cache
+
+
+def _apply_pattern_boosts(
+    scored_candidates: List[dict],
+    invoice_header: InvoiceHeader
+) -> None:
+    """Apply pattern matching boosts to candidate scores.
+    
+    Args:
+        scored_candidates: List of candidate dicts with scores
+        invoice_header: InvoiceHeader with supplier and traceability info
+    """
+    database = _load_learning_database()
+    if not database:
+        return
+    
+    if not invoice_header.supplier_name:
+        logger.debug("No supplier name for pattern matching")
+        return
+    
+    try:
+        from ..learning.pattern_matcher import PatternMatcher
+        from ..learning.pattern_extractor import PatternExtractor
+        
+        # Calculate layout hash
+        layout_hash = PatternExtractor.calculate_layout_hash(invoice_header.supplier_name)
+        
+        # Get position from traceability if available
+        position = None
+        if invoice_header.total_traceability:
+            bbox = invoice_header.total_traceability.evidence.get('bbox')
+            if bbox and len(bbox) == 4:
+                position = {
+                    'x': bbox[0],
+                    'y': bbox[1],
+                    'width': bbox[2],
+                    'height': bbox[3]
+                }
+        
+        # Match patterns
+        matcher = PatternMatcher(database)
+        matched_patterns = matcher.match_patterns(
+            invoice_header.supplier_name,
+            layout_hash=layout_hash,
+            position=position,
+            similarity_threshold=0.5
+        )
+        
+        if not matched_patterns:
+            logger.debug(f"No patterns matched for supplier {invoice_header.supplier_name}")
+            return
+        
+        # Apply boost to candidates that match patterns
+        # For now, boost all candidates if any pattern matches (simplified)
+        # Future: Can match specific candidates to patterns based on amount
+        best_pattern = matched_patterns[0]  # Highest similarity
+        boost = best_pattern.get('confidence_boost', 0.1)
+        
+        # Apply boost to all candidates (they all benefit from pattern match)
+        for candidate in scored_candidates:
+            candidate['score'] = min(1.0, candidate['score'] + boost)
+        
+        # Update pattern usage
+        pattern_id = best_pattern.get('id')
+        if pattern_id:
+            database.update_pattern_usage(pattern_id)
+        
+        logger.debug(
+            f"Applied pattern boost {boost:.2f} to candidates "
+            f"(pattern similarity: {best_pattern.get('similarity', 0):.2f})"
+        )
+        
+    except Exception as e:
+        logger.warning(f"Failed to apply pattern boosts: {e}")
+        # Continue without boost - don't break extraction
 
 
 def extract_total_amount(
@@ -355,7 +470,13 @@ def extract_total_amount(
     
     scored_candidates.sort(key=sort_key, reverse=True)
     
-    # Step 3: Apply calibration to all candidate scores (if model exists)
+    # Step 3: Apply pattern matching boost (if learning enabled)
+    if get_learning_enabled():
+        _apply_pattern_boosts(scored_candidates, invoice_header)
+        # Re-sort after pattern boosts (scores may have changed)
+        scored_candidates.sort(key=sort_key, reverse=True)
+    
+    # Step 4: Apply calibration to all candidate scores (if model exists)
     calibration_model = _load_calibration_model()
     if calibration_model:
         for candidate in scored_candidates:
@@ -363,7 +484,7 @@ def extract_total_amount(
         # Re-sort after calibration (scores may have changed)
         scored_candidates.sort(key=sort_key, reverse=True)
     
-    # Step 4: Store top 5 candidates for UI display
+    # Step 5: Store top 5 candidates for UI display
     top_5_candidates = []
     for candidate in scored_candidates[:5]:  # Top 5 only
         top_5_candidates.append({
