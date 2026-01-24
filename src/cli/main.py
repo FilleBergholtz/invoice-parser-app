@@ -1094,6 +1094,18 @@ def main():
     )
     
     parser.add_argument(
+        "--query",
+        type=str,
+        help="Natural language query about invoice data (requires --excel-path)"
+    )
+    
+    parser.add_argument(
+        "--excel-path",
+        type=str,
+        help="Path to Excel file with invoice data (for --query command)"
+    )
+    
+    parser.add_argument(
         "--supplier",
         type=str,
         help="Limit pattern operations to specific supplier name"
@@ -1206,6 +1218,66 @@ def main():
         
     except Exception as e:
         print(f"Error: {str(e)}", file=sys.stderr)
+        sys.exit(1)
+
+
+def _handle_query(args: argparse.Namespace) -> None:
+    """Handle query CLI command.
+    
+    Args:
+        args: Parsed command-line arguments
+    """
+    from pathlib import Path
+    from ..analysis.data_loader import load_invoices_from_excel
+    from ..analysis.query_processor import parse_query
+    from ..analysis.query_executor import execute_query, format_results
+    from ..config import get_default_output_dir
+    
+    # Get Excel path
+    excel_path = args.excel_path
+    if not excel_path:
+        # Try to find latest Excel file in output directory
+        output_dir = Path(get_default_output_dir())
+        excel_dir = output_dir / 'excel'
+        if excel_dir.exists():
+            excel_files = sorted(excel_dir.glob('*.xlsx'), key=lambda p: p.stat().st_mtime, reverse=True)
+            if excel_files:
+                excel_path = str(excel_files[0])
+                print(f"Using latest Excel file: {excel_path}")
+            else:
+                print("Error: No Excel files found. Use --excel-path to specify a file.", file=sys.stderr)
+                sys.exit(1)
+        else:
+            print("Error: Excel directory not found. Use --excel-path to specify a file.", file=sys.stderr)
+            sys.exit(1)
+    
+    try:
+        # Load invoices from Excel
+        print(f"Loading invoices from {excel_path}...")
+        data_store = load_invoices_from_excel(excel_path)
+        print(f"Loaded {data_store.count()} invoices")
+        
+        # Parse query
+        print(f"\nParsing query: {args.query}")
+        query_intent = parse_query(args.query)
+        
+        # Execute query
+        results = execute_query(query_intent, data_store)
+        
+        # Format and print results
+        output = format_results(results, query_intent)
+        print(f"\n{output}")
+        
+    except FileNotFoundError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+    except ValueError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
 
 
