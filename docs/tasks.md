@@ -441,12 +441,12 @@ Varje task följer strikt format:
 - `docs/deployment_windows_desktop.md` (Ny: bygginstruktioner)
 
 **DoD**:
-- [ ] `dist/invoice_engine.exe` byggs deterministiskt
-- [ ] Kör: `invoice_engine.exe input.pdf --out outdir --artifacts artifactsdir`
-- [ ] Skapar Excel + `run_summary.json` enligt U1
-- [ ] Kör på ren Windows-maskin utan Python (verifierat)
-- [ ] Build-instruktion dokumenterad
-- [ ] (Valfritt) Code signing placeholder dokumenterad
+- [x] `dist/invoice_engine.exe` byggs deterministiskt
+- [x] Kör: `invoice_engine.exe input.pdf --out outdir --artifacts artifactsdir`
+- [x] Skapar Excel + `run_summary.json` enligt U1
+- [x] Kör på ren Windows-maskin utan Python (verifierat)
+- [x] Build-instruktion dokumenterad
+- [x] (Valfritt) Code signing placeholder dokumenterad
 
 ---
 
