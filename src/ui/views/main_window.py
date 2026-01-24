@@ -40,6 +40,7 @@ class MainWindow(QMainWindow):
         self.processing_result = None  # Store processing result for validation
         
         # UI Setup
+        self.setup_menu_bar()
         self.setup_ui()
     
     def setup_menu_bar(self):

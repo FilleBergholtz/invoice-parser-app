@@ -12,12 +12,16 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 
-from ...config import (
-    get_ai_enabled, get_ai_provider, get_ai_model, get_ai_key,
-    set_ai_config
-)
+from ...config import load_ai_config, set_ai_config
 
 logger = logging.getLogger(__name__)
+
+
+def _default_model(provider: str) -> str:
+    """Provider-specific default model."""
+    if provider == "claude":
+        return "claude-3-opus-20240229"
+    return "gpt-4-turbo-preview"
 
 
 class AISettingsDialog(QDialog):
@@ -34,11 +38,12 @@ class AISettingsDialog(QDialog):
         self.setMinimumWidth(500)
         self.setModal(True)
         
-        # Load current settings
-        self.current_enabled = get_ai_enabled()
-        self.current_provider = get_ai_provider()
-        self.current_model = get_ai_model()
-        self.current_key = get_ai_key() or ""
+        # Load current settings from config file (source of truth after save)
+        config = load_ai_config()
+        self.current_enabled = config.get("enabled", False)
+        self.current_provider = (config.get("provider") or "openai").lower()
+        self.current_model = config.get("model") or _default_model(self.current_provider)
+        self.current_key = config.get("api_key") or ""
         
         # Setup UI
         self.setup_ui()
@@ -175,6 +180,7 @@ class AISettingsDialog(QDialog):
         
         if provider_text == "OpenAI":
             self.model_combo.addItems([
+                "gpt-5-nano",
                 "gpt-4-turbo-preview",
                 "gpt-4",
                 "gpt-3.5-turbo"
