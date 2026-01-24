@@ -92,13 +92,13 @@ Requirements for v2.0 milestone. Focus: Improved confidence scoring, manual vali
 
 ### AI Integration
 
-- [ ] **AI-01**: System activates AI fallback when total amount confidence < 0.95
-- [ ] **AI-02**: System uses AI (OpenAI/Claude) to extract total amount when heuristics fail
-- [ ] **AI-03**: System uses structured outputs (Pydantic) for AI responses
-- [ ] **AI-04**: System handles AI errors gracefully (timeouts, API errors, invalid responses)
-- [ ] **AI-05**: System validates AI responses before using them
-- [ ] **AI-06**: System can boost confidence score if AI validation succeeds
-- [ ] **AI-07**: System abstracts AI provider (can switch between OpenAI/Claude)
+- [x] **AI-01**: System activates AI fallback when total amount confidence < 0.95
+- [x] **AI-02**: System uses AI (OpenAI/Claude) to extract total amount when heuristics fail
+- [x] **AI-03**: System uses structured outputs (Pydantic) for AI responses
+- [x] **AI-04**: System handles AI errors gracefully (timeouts, API errors, invalid responses)
+- [x] **AI-05**: System validates AI responses before using them
+- [x] **AI-06**: System can boost confidence score if AI validation succeeds
+- [x] **AI-07**: System abstracts AI provider (can switch between OpenAI/Claude)
 
 ### AI Data Analysis (Optional - v2.1+)
 
