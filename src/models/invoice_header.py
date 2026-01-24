@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 if TYPE_CHECKING:
     from .segment import Segment
@@ -44,6 +44,7 @@ class InvoiceHeader:
     total_amount: Optional[float] = None
     total_confidence: float = 0.0
     total_traceability: Optional[Traceability] = None
+    total_candidates: Optional[List[Dict[str, Any]]] = None
     
     def __post_init__(self):
         """Validate InvoiceHeader fields."""

@@ -259,18 +259,12 @@ def extract_total_amount(
         invoice_header.total_confidence = 0.0
         invoice_header.total_amount = None
         invoice_header.total_traceability = None
+        invoice_header.total_candidates = None
         return
     
-    # Step 2: Score each candidate (limit based on strategy)
-    # Adjust candidate limit based on strategy
-    candidate_limit = 10
-    if strategy == 'aggressive':
-        candidate_limit = 20  # Check more candidates
-    elif strategy == 'conservative':
-        candidate_limit = 5  # Check fewer, higher quality candidates
-    
+    # Step 2: Score ALL candidates independently (no limit)
     scored_candidates = []
-    for candidate in candidates[:candidate_limit]:
+    for candidate in candidates:  # Score all candidates, not just top 10
         score = score_total_amount_candidate(
             candidate['amount'],
             candidate['row'],
@@ -313,7 +307,19 @@ def extract_total_amount(
     
     scored_candidates.sort(key=sort_key, reverse=True)
     
-    # Step 3: Select final value
+    # Step 3: Store top 5 candidates for UI display
+    top_5_candidates = []
+    for candidate in scored_candidates[:5]:  # Top 5 only
+        top_5_candidates.append({
+            'amount': candidate['amount'],
+            'score': candidate['score'],
+            'row_index': candidate['row_index'],
+            'keyword_type': candidate.get('keyword_type')
+        })
+    
+    invoice_header.total_candidates = top_5_candidates if top_5_candidates else None
+    
+    # Step 4: Select final value
     if not scored_candidates:
         invoice_header.total_confidence = 0.0
         invoice_header.total_amount = None
@@ -402,3 +408,4 @@ def extract_total_amount(
     invoice_header.total_amount = final_amount
     invoice_header.total_confidence = final_score
     invoice_header.total_traceability = traceability
+    # total_candidates already set in Step 3

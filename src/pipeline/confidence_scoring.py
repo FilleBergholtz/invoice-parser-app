@@ -28,15 +28,19 @@ def score_total_amount_candidate(
     Returns:
         Confidence score (0.0-1.0)
         
-    Score components:
-    - Keyword match (0.35 weight): "Att betala" strongest, "Total/Totalt" next
-    - Position (0.20 weight): Footer zone + right-aligned
-    - Mathematical validation (0.35 weight): If subtotal + VAT + rounding ≈ total → full score
-    - Relative size (0.10 weight): Total should be largest amount in summation rows
+    Score components (sums to 1.0):
+    - Keyword match (0.32 weight): "Att betala" strongest, "Total/Totalt" next
+    - Position (0.18 weight): Footer zone + right-aligned
+    - Mathematical validation (0.32 weight): If subtotal + VAT + rounding ≈ total → full score
+    - Relative size (0.08 weight): Total should be largest amount in summation rows
+    - Font size/weight (0.05 weight): Larger/bolder font increases confidence
+    - VAT proximity (0.05 weight): Near VAT breakdown rows increases confidence
+    - Currency symbol (0.03 weight): SEK/kr/:- symbols increase confidence
+    - Row isolation (0.02 weight): Isolated row or in box increases confidence
     """
     score = 0.0
     
-    # Keyword match (0.35 weight)
+    # Keyword match (0.32 weight, reduced from 0.35)
     # Prioritize "with VAT" keywords (what customer actually pays)
     # Check in order of priority (most specific first)
     row_lower = row.text.lower()
@@ -76,33 +80,33 @@ def score_total_amount_candidate(
     keyword_found = False
     for keyword in high_priority_keywords:
         if keyword in row_lower:
-            score += 0.35
+            score += 0.32  # Reduced from 0.35
             keyword_found = True
             break
     
     if not keyword_found:
         for keyword in medium_priority_keywords:
             if keyword in row_lower:
-                score += 0.30
+                score += 0.28  # Reduced from 0.30
                 keyword_found = True
                 break
     
     if not keyword_found:
         for keyword in low_priority_keywords:
             if keyword in row_lower:
-                score += 0.20
+                score += 0.18  # Reduced from 0.20
                 break
     
-    # Position (0.20 weight)
+    # Position (0.18 weight, reduced from 0.20)
     # Footer zone is typically bottom 20-30% of page
     if row.y > 0.7 * page.height:  # Bottom 30% of page
-        score += 0.20
+        score += 0.18
     elif row.y > 0.6 * page.height:  # Bottom 40% of page (still likely footer)
-        score += 0.15  # Partial score
+        score += 0.13  # Partial score (reduced proportionally)
     
-    # Mathematical validation (0.35 weight)
+    # Mathematical validation (0.32 weight, reduced from 0.35)
     if validate_total_against_line_items(candidate, line_items, tolerance=1.0):
-        score += 0.35  # Perfect match - full score
+        score += 0.32  # Perfect match - full score
     elif line_items:
         # Partial scoring based on how close the match is
         lines_sum = sum(line.total_amount for line in line_items)
@@ -113,31 +117,31 @@ def score_total_amount_candidate(
             # For larger amounts, VAT/shipping can cause larger absolute differences
             percentage_diff = (diff / candidate) * 100
             if percentage_diff <= 0.5:  # Within 0.5% - very likely correct (VAT/rounding)
-                score += 0.32  # Very high partial score (almost full)
+                score += 0.30  # Very high partial score (almost full)
             elif percentage_diff <= 1.0:  # Within 1% - likely VAT/shipping
-                score += 0.28  # High partial score
+                score += 0.26  # High partial score
             elif percentage_diff <= 2.0:  # Within 2% - likely VAT/shipping
-                score += 0.22  # Medium-high partial score
+                score += 0.20  # Medium-high partial score
             elif percentage_diff <= 5.0:  # Within 5% - might be VAT/shipping
-                score += 0.15  # Medium partial score
+                score += 0.14  # Medium partial score
             elif percentage_diff <= 10.0:  # Within 10% - questionable
-                score += 0.08  # Low partial score
+                score += 0.07  # Low partial score
             else:
                 score += 0.03  # Very low partial score - likely wrong
         else:
             # For smaller amounts, use fixed thresholds
             if diff <= 2.0:  # Within 2 SEK - very likely correct with small rounding
-                score += 0.30  # Very high partial score
+                score += 0.28  # Very high partial score
             elif diff <= 5.0:  # Within 5 SEK - likely correct with small rounding/VAT differences
-                score += 0.25  # High partial score
+                score += 0.23  # High partial score
             elif diff <= 20.0:  # Within 20 SEK - might be VAT or shipping
-                score += 0.18  # Medium partial score
+                score += 0.16  # Medium partial score
             elif diff <= 50.0:  # Within 50 SEK - questionable
-                score += 0.10  # Low-medium partial score
+                score += 0.09  # Low-medium partial score
             else:
                 score += 0.05  # Low partial score - likely wrong
     
-    # Relative size (0.10 weight)
+    # Relative size (0.08 weight, reduced from 0.10)
     if footer_rows:
         # Find largest amount in footer rows
         amounts_in_footer = []
@@ -157,9 +161,78 @@ def score_total_amount_candidate(
         if amounts_in_footer:
             max_amount = max(amounts_in_footer)
             if candidate >= max_amount * 0.98:  # Candidate is largest or very close to largest
-                score += 0.10  # Full score
+                score += 0.08  # Full score (reduced from 0.10)
             elif candidate >= max_amount * 0.90:  # Candidate is close to largest
-                score += 0.07  # Partial score
+                score += 0.05  # Partial score (reduced proportionally)
+    
+    # Font size/weight signal (0.05 weight) - NEW
+    if row.tokens:
+        # Calculate average font size for candidate row
+        candidate_font_sizes = [t.font_size for t in row.tokens if t.font_size is not None]
+        if candidate_font_sizes:
+            avg_candidate_font = sum(candidate_font_sizes) / len(candidate_font_sizes)
+            # Calculate average font size for all footer rows
+            all_footer_font_sizes = []
+            for footer_row in footer_rows:
+                if footer_row.tokens:
+                    footer_font_sizes = [t.font_size for t in footer_row.tokens if t.font_size is not None]
+                    if footer_font_sizes:
+                        all_footer_font_sizes.extend(footer_font_sizes)
+            
+            if all_footer_font_sizes:
+                avg_footer_font = sum(all_footer_font_sizes) / len(all_footer_font_sizes)
+                if avg_candidate_font > avg_footer_font * 1.1:  # 10% larger
+                    score += 0.05  # Larger font - full score
+                elif avg_candidate_font > avg_footer_font * 0.95:  # Similar size
+                    score += 0.02  # Average font - partial score
+                # Smaller font gets 0.0
+    
+    # VAT proximity signal (0.05 weight) - NEW
+    # Check if candidate row is within 2-3 rows of VAT amount (look for "moms" keywords)
+    row_index = None
+    for idx, footer_row in enumerate(footer_rows):
+        if footer_row == row:
+            row_index = idx
+            break
+    
+    if row_index is not None:
+        # Look for VAT keywords in nearby rows
+        moms_keywords = ['moms', 'vat', 'mervärdesskatt']
+        for offset in [-2, -1, 1, 2]:  # Check 2 rows before and after
+            check_idx = row_index + offset
+            if 0 <= check_idx < len(footer_rows):
+                check_row = footer_rows[check_idx]
+                check_row_lower = check_row.text.lower()
+                if any(keyword in check_row_lower for keyword in moms_keywords):
+                    if abs(offset) <= 1:  # Within 1 row (2 rows total)
+                        score += 0.05  # Full score
+                    elif abs(offset) == 2:  # Within 2 rows (3 rows total)
+                        score += 0.03  # Partial score
+                    break
+    
+    # Currency symbol signal (0.03 weight) - NEW
+    currency_symbols = ['sek', 'kr', ':-', '€', '$']
+    row_lower = row.text.lower()
+    if any(symbol in row_lower for symbol in currency_symbols):
+        score += 0.03  # Currency symbol present
+    
+    # Row isolation signal (0.02 weight) - NEW
+    # Check if row is separated by blank lines or in visual box
+    # Simple heuristic: check if row has significant vertical spacing from adjacent rows
+    if row_index is not None and len(footer_rows) > 1:
+        # Check spacing to previous row
+        if row_index > 0:
+            prev_row = footer_rows[row_index - 1]
+            spacing = row.y - (prev_row.y + max((t.height for t in prev_row.tokens), default=12.0))
+            # If spacing is > 1.5x average row height, consider isolated
+            if spacing > 18.0:  # Rough threshold (1.5x typical row height)
+                score += 0.02  # Isolated row
+        # Check spacing to next row
+        if row_index < len(footer_rows) - 1:
+            next_row = footer_rows[row_index + 1]
+            spacing = next_row.y - (row.y + max((t.height for t in row.tokens), default=12.0))
+            if spacing > 18.0:  # Rough threshold
+                score += 0.02  # Isolated row (only add once, so this is fine)
     
     return min(score, 1.0)  # Normalize to 0.0-1.0
 
