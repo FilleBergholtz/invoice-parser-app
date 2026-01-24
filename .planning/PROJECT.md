@@ -8,24 +8,45 @@ Ett system som automatiskt läser, förstår och strukturerar svenska PDF-faktur
 
 **100% korrekt på fakturanummer och totalsumma, eller tydlig REVIEW-status.** Allt som systemet exporterar som OK är garanterat korrekt. Osäkra fall går alltid till REVIEW (ingen tyst gissning).
 
+## Current Milestone: v2.0 Features
+
+**Goal:** Förbättra totalsumma-confidence, lägga till manuell validering med inlärning, och integrera AI för att minska REVIEW-status och hantera ovanliga mönster.
+
+**Target features:**
+- Förbättrad confidence-scoring för totalsumma (färre REVIEW-status)
+- Manuell validering i GUI: användare kan klicka på totalsumma i PDF och välja rätt alternativ
+- Inlärning/databas: systemet lär sig från manuella valideringar för framtida förbättringar
+- AI-integration: AI aktiveras när confidence < 0.95 för att förbättra extraktion
+- AI för ovanliga mönster: ställa frågor om fakturdata, hämta och presentera information
+
 ## Requirements
 
 ### Validated
 
-(None yet — ship to validate)
+**v1.0 Requirements (shipped 2026-01-17):**
+
+- [x] PDF → Excel pipeline: Transformera PDF-fakturor (1–n sidor) till Excel-tabell med en rad per produktrad
+- [x] Hard gates på fakturanummer och totalsumma: Ingen export som OK om inte båda är 100% säkra
+- [x] Fakturanummer-extraktion: Extrahera flera kandidater, välj med scoring (position i header, närhet till "Faktura…", unikhet). Exakt ett finalt värde med hög confidence, eller REVIEW om osäkerhet
+- [x] Totalsumma-extraktion: Hitta "Att betala / Total / Summa att betala / Totalt", validera mot summa exkl + moms (+ avrundning). Måste passera matematisk kontroll, annars REVIEW
+- [x] Produktrad-extraktion: Best effort extraktion av produktrader med beskrivning, kvantitet, enhetspris, totalt belopp
+- [x] Summa-validering: Beräkna lines_sum = SUM(radbelopp), diff = total - lines_sum, klassificera som OK (diff inom ±1,00 SEK tolerans), PARTIAL (diff större men header säker), eller REVIEW (diff stor eller radbelopp saknas)
+- [x] Status-hantering: Sätt status OK/PARTIAL/REVIEW baserat på fakturanummer, totalsumma och summa-validering
+- [x] Spårbarhet: För fakturanummer och totalsumma spara sida, rad-index (eller bbox), källtext (kort utdrag) för klickbar navigering till PDF-markering
+- [x] Excel-export med kontrollkolumner: Fakturanummer, Totalsumma, LinesSum, Diff, Status, InvoiceNoConfidence, TotalConfidence
+- [x] Review-rapport: Skapa review-mapp med PDF + markeringar/metadata och enkel JSON/CSV-rapport med sida + bbox + textutdrag för felsökning
+- [x] Desktop GUI (PySide6) för enkel användning
+- [x] CLI för batch-bearbetning
 
 ### Active
 
-- [ ] PDF → Excel pipeline: Transformera PDF-fakturor (1–n sidor) till Excel-tabell med en rad per produktrad
-- [ ] Hard gates på fakturanummer och totalsumma: Ingen export som OK om inte båda är 100% säkra
-- [ ] Fakturanummer-extraktion: Extrahera flera kandidater (OCR + AI), välj med scoring (position i header, närhet till "Faktura…", unikhet). Exakt ett finalt värde med hög confidence, eller REVIEW om osäkerhet
-- [ ] Totalsumma-extraktion: Hitta "Att betala / Total / Summa att betala / Totalt", validera mot summa exkl + moms (+ avrundning). Måste passera matematisk kontroll, annars REVIEW
-- [ ] Produktrad-extraktion: Best effort extraktion av produktrader med beskrivning, kvantitet, enhetspris, totalt belopp
-- [ ] Summa-validering: Beräkna lines_sum = SUM(radbelopp), diff = total - lines_sum, klassificera som OK (diff inom ±1,00 SEK tolerans), PARTIAL (diff större men header säker), eller REVIEW (diff stor eller radbelopp saknas)
-- [ ] Status-hantering: Sätt status OK/PARTIAL/REVIEW baserat på fakturanummer, totalsumma och summa-validering
-- [ ] Spårbarhet: För fakturanummer och totalsumma spara sida, rad-index (eller bbox), källtext (kort utdrag) för klickbar navigering till PDF-markering
-- [ ] Excel-export med kontrollkolumner: Fakturanummer, Totalsumma, LinesSum, Diff, Status, InvoiceNoConfidence, TotalConfidence (eller HeaderConfidence om kombinerad)
-- [ ] Review-rapport: Skapa review-mapp med PDF + markeringar/metadata och enkel JSON/CSV-rapport med sida + bbox + textutdrag för felsökning
+**v2.0 Requirements (to be defined):**
+
+- [ ] Förbättrad confidence-scoring för totalsumma
+- [ ] Manuell validering i GUI med alternativ
+- [ ] Inlärning/databas från manuella valideringar
+- [ ] AI-integration för confidence-förbättring och fallback
+- [ ] AI för ovanliga mönster och dataanalys
 
 ### Out of Scope
 
@@ -42,7 +63,7 @@ Ett system som automatiskt läser, förstår och strukturerar svenska PDF-faktur
 
 **Befintlig dokumentation:** Projektet har redan dokumentation i `docs/` med roadmap, tasks, datamodell, heuristiker, valideringsregler och test-korpus. Specifikation för 12-stegs pipeline finns i `specs/invoice_pipeline_v1.md`. Systemet ska starta med befintliga fakturor (test-korpus) för snabb stabilitet, men ska samtidigt tåla okända format.
 
-**Teknisk kontext:** Python 3.11+, pdfplumber för PDF-parsing, pandas för datahantering, pytest för testning. Pipeline genomgår Document → Page → Tokens → Rows → Segments → Zoner → Header → Specifikation → InvoiceLine → Reconciliation → Validation → Export.
+**Teknisk kontext:** Python 3.11+, pdfplumber för PDF-parsing, pandas för datahantering, pytest för testning, PySide6 för GUI. Pipeline genomgår Document → Page → Tokens → Rows → Segments → InvoiceLine → Header → Footer → Validation → Export (10 steg, se `specs/invoice_pipeline_v1.md`).
 
 ## Constraints
 
@@ -62,5 +83,15 @@ Ett system som automatiskt läser, förstår och strukturerar svenska PDF-faktur
 | Spårbarhet för kritiska fält | Möjliggör klickbar navigering till PDF-markering för fakturanummer och totalsumma, vilket är grunden för 100% korrekthet i praktiken. | — Pending |
 | CLI för v1, web-UI senare | Fokuserar på core-funktionalitet först, lägger till UI senare när grundflödet är stabilt. | — Pending |
 
+## Milestone History
+
+### v1.0: Invoice Parser App (Completed 2026-01-17)
+- PDF-bearbetning (sökbara och skannade)
+- Fakturanummer och totalsumma-extraktion med konfidensscoring
+- Matematisk validering och status-tilldelning
+- Excel-export med kontrollkolumner
+- Desktop GUI (PySide6) och CLI
+- 96.7% korrekt extraktion för vanliga fakturor
+
 ---
-*Last updated: 2025-01-27 after initialization*
+*Last updated: 2026-01-24 — Started v2.0 milestone*
