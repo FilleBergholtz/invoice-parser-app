@@ -151,20 +151,20 @@ invoice-parser-app/
 
 ### Pipeline-översikt
 
-Systemet använder en 12-stegs pipeline:
+Systemet använder en 10-stegs pipeline:
 
 1. **PDF → Document**: Läs PDF-fil
 2. **Document → Page**: Extrahera sidor
 3. **Page → Tokens**: OCR/tokenisering med positioner
 4. **Tokens → Rows**: Gruppera tokens i rader
 5. **Rows → Segments**: Identifiera logiska segment (header, items, footer)
-6. **Segments → Zoner**: Spatial zonering för kontext
-7. **Zoner → Header**: Identifiera fakturahuvud
-8. **Header → Specifikation**: Extrahera metadata (datum, nummer, leverantör)
-9. **Segments → InvoiceLine**: Identifiera produktrader
-10. **InvoiceLine → Reconciliation**: Beräkna totalsummor och validera
-11. **Reconciliation → Validation**: Kvalitetskontroll (OK/Warning/Review)
-12. **Validation → Export**: Generera slutlig tabell (CSV/Excel)
+6. **Segments → InvoiceLine**: Identifiera produktrader
+7. **Segments → Header**: Extrahera header-fält (fakturanummer, datum, leverantör)
+8. **Segments → Footer**: Extrahera totalsumma från footer
+9. **InvoiceHeader + InvoiceLines → Validation**: Kvalitetskontroll och reconciliation (OK/PARTIAL/REVIEW)
+10. **Validation → Export**: Generera slutlig Excel-tabell med kontrollkolumner
+
+Se `specs/invoice_pipeline_v1.md` för detaljerad specifikation.
 
 ---
 
