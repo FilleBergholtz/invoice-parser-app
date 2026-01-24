@@ -606,13 +606,13 @@ Syftet är att höja **observability, produktvärde, robusthet och förvaltbarhe
 - `tests/test_profile_loader.py`
 
 **DoD**:
-- [ ] Profiler kan styra:
+- [x] Profiler kan styra:
   - header-nyckelord
   - zon-procent (header/items/footer)
   - belopps- och toleransregler
-- [ ] CLI-flagga: `--profile <profile_name>`
-- [ ] Default-profil ger exakt samma beteende som idag
-- [ ] Profilval sparas i `run_summary.json`
+- [x] CLI-flagga: `--profile <profile_name>`
+- [x] Default-profil ger exakt samma beteende som idag
+- [x] Profilval sparas i `run_summary.json`
 
 ---
 

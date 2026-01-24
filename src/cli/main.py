@@ -36,6 +36,7 @@ from ..export.excel_export import export_to_excel
 from ..export.review_report import create_review_report
 from ..review.review_package import create_review_package
 from ..config import get_default_output_dir, get_output_subdirs, get_ai_enabled, get_ai_endpoint, get_ai_key
+from ..config.profile_manager import set_profile, get_profile
 from ..run_summary import RunSummary
 from ..ai.client import AIClient, AIClientError, AIConnectionError, AIAPIError, create_ai_diff, save_ai_artifacts
 from ..ai.schemas import AIInvoiceRequest, AIInvoiceLineRequest
@@ -664,6 +665,13 @@ def process_batch(
     # Create run summary
     summary = RunSummary.create(input_path, output_dir)
     
+    # Set profile name in summary
+    try:
+        profile = get_profile()
+        summary.profile_name = profile.name
+    except Exception:
+        summary.profile_name = "default"
+    
     # Determine input files
     input_path_obj = Path(input_path)
     
@@ -1012,6 +1020,13 @@ def main():
         "--verbose",
         action="store_true",
         help="Enable verbose debug output"
+    )
+    
+    parser.add_argument(
+        "--profile",
+        type=str,
+        default="default",
+        help="Configuration profile name (default: default)"
     )
     
     args = parser.parse_args()

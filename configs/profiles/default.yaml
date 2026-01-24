@@ -1,0 +1,116 @@
+# Default profile - matches current behavior exactly
+name: default
+description: Standard configuration matching current pipeline behavior
+
+# Header extraction keywords
+header:
+  invoice_number_keywords:
+    - fakturanummer
+    - faktura nr
+    - faktura-nr
+    - fakt.nr
+    - faktnr
+    - fakt nr
+    - fakturanr
+    - invoice number
+    - invoice no
+    - inv no
+    - inv#
+  
+  date_keywords:
+    - datum
+    - date
+    - fakturadatum
+    - invoice date
+  
+  address_keywords:
+    - väg
+    - gata
+    - street
+    - road
+    - box
+    - post
+    - postnummer
+  
+  skip_keywords:
+    - org.nr
+    - organisationsnummer
+    - vat
+    - moms
+    - momsreg.nr
+
+# Footer extraction keywords
+footer:
+  total_with_vat_keywords:
+    - att betala
+    - att betala inkl
+    - att betala inkl.
+    - att betala inkl moms
+    - att betala inkl. moms
+    - totalt att betala
+    - totalt att betala inkl
+    - totalt att betala inkl.
+    - totalt att betala inkl moms
+    - totalt att betala inkl. moms
+    - inkl moms
+    - inkl. moms
+    - inklusive moms
+    - inklusive moms
+    - inkl mervärdesskatt
+    - inkl. mervärdesskatt
+    - inkl mervardesskatt
+    - inkl. mervardesskatt
+    - total inkl moms
+    - total inkl. moms
+    - totalt inkl moms
+    - totalt inkl. moms
+    - summa att betala
+    - summa att betala inkl
+    - summa att betala inkl.
+    - summa att betala inkl moms
+    - summa att betala inkl. moms
+    - to pay
+    - total to pay
+    - total including vat
+    - total including tax
+  
+  total_without_vat_keywords:
+    - exkl moms
+    - exkl. moms
+    - exklusive moms
+    - exkl mervärdesskatt
+    - exkl. mervärdesskatt
+    - exkl mervardesskatt
+    - exkl. mervardesskatt
+    - total exkl moms
+    - total exkl. moms
+    - totalt exkl moms
+    - totalt exkl. moms
+    - excluding vat
+    - excluding tax
+    - net total
+    - net amount
+  
+  generic_total_keywords:
+    - total
+    - totalt
+    - summa
+    - belopp
+    - amount
+    - sum
+
+# Zone percentages (as fractions of page height)
+zones:
+  header_zone_top: 0.0      # Start of header zone (top of page)
+  header_zone_bottom: 0.3    # End of header zone (30% from top)
+  footer_zone_top: 0.7       # Start of footer zone (70% from top)
+  footer_zone_bottom: 1.0    # End of footer zone (bottom of page)
+  items_zone_top: 0.3        # Start of items zone
+  items_zone_bottom: 0.7     # End of items zone
+
+# Validation tolerances (in SEK)
+tolerances:
+  validation_tolerance: 1.0      # Main validation tolerance
+  line_item_tolerance: 0.01      # Line item validation tolerance
+  row_grouping_tolerance: 5.0   # Row grouping Y-tolerance (points or 2% of page height)
+  wrap_detection_tolerance: 0.02 # Wrap detection X-tolerance (2% of page width)
