@@ -463,12 +463,12 @@ Varje task följer strikt format:
 - `tests/test_ui_smoke.py` (Smoke test, om möjligt)
 
 **DoD**:
-- [ ] UI kan välja PDF och starta bearbetning
-- [ ] Visar status (Running/Done/Failed) och valideringsstatus (OK/Warning/Review)
-- [ ] Visar output paths (Excel + artifacts) och kan öppna output-mapp
-- [ ] Ingen webbläsare/localhost används
-- [ ] Appen fungerar offline (utan nät)
-- [ ] Minst ett manuellt test på Windows med `sample_invoice_1.pdf`
+- [x] UI kan välja PDF och starta bearbetning
+- [x] Visar status (Running/Done/Failed) och valideringsstatus (OK/Warning/Review)
+- [x] Visar output paths (Excel + artifacts) och kan öppna output-mapp
+- [x] Ingen webbläsare/localhost används
+- [x] Appen fungerar offline (utan nät)
+- [x] Minst ett manuellt test på Windows med `sample_invoice_1.pdf`
 
 ---
 
