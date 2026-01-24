@@ -86,6 +86,39 @@ def get_ai_endpoint() -> Optional[str]:
     return os.getenv('AI_ENDPOINT')
 
 
+def get_ai_provider() -> str:
+    """Get AI provider name.
+    
+    Returns:
+        Provider name ("openai" or "claude"), default "openai"
+    """
+    provider = os.getenv('AI_PROVIDER', 'openai').lower()
+    if provider not in ['openai', 'claude']:
+        logger.warning(f"Invalid AI provider: {provider}, using 'openai'")
+        return 'openai'
+    return provider
+
+
+def get_ai_model() -> str:
+    """Get AI model name.
+    
+    Returns:
+        Model name (provider-specific default if not set)
+    """
+    model = os.getenv('AI_MODEL')
+    if model:
+        return model
+    
+    # Use provider-specific defaults
+    provider = get_ai_provider()
+    if provider == 'openai':
+        return 'gpt-4-turbo-preview'
+    elif provider == 'claude':
+        return 'claude-3-opus-20240229'
+    
+    return 'gpt-4-turbo-preview'  # Default fallback
+
+
 def get_ai_key() -> Optional[str]:
     """Get AI service API key.
     
