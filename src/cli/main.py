@@ -35,7 +35,14 @@ from ..pipeline.invoice_boundary_detection import detect_invoice_boundaries
 from ..export.excel_export import export_to_excel
 from ..export.review_report import create_review_report
 from ..review.review_package import create_review_package
-from ..config import get_default_output_dir, get_output_subdirs, get_ai_enabled, get_ai_endpoint, get_ai_key, get_app_version
+from ..config import get_default_output_dir, get_output_subdirs, get_ai_enabled, get_ai_endpoint, get_ai_key, get_app_version, get_calibration_model_path
+from ..pipeline.confidence_calibration import (
+    CalibrationModel,
+    load_ground_truth_data,
+    train_calibration_model,
+    validate_calibration,
+    format_validation_report
+)
 from ..config.profile_manager import set_profile, get_profile
 from ..run_summary import RunSummary
 from ..ai.client import AIClient, AIClientError, AIConnectionError, AIAPIError, create_ai_diff, save_ai_artifacts
@@ -1002,8 +1009,8 @@ def main():
     
     parser.add_argument(
         "--input",
-        required=True,
-        help="Input directory or PDF file path"
+        required=False,
+        help="Input directory or PDF file path (required unless --validate-confidence)"
     )
     
     parser.add_argument(
@@ -1049,7 +1056,34 @@ def main():
         help="Configuration profile name (default: default)"
     )
     
+    parser.add_argument(
+        "--validate-confidence",
+        action="store_true",
+        help="Validate confidence calibration against ground truth data"
+    )
+    
+    parser.add_argument(
+        "--ground-truth",
+        type=str,
+        help="Path to ground truth data file (JSON or CSV). Required with --validate-confidence if not using default path"
+    )
+    
+    parser.add_argument(
+        "--train",
+        action="store_true",
+        help="Train new calibration model from ground truth data (use with --validate-confidence)"
+    )
+    
     args = parser.parse_args()
+    
+    # Handle --validate-confidence command
+    if args.validate_confidence:
+        _handle_validate_confidence(args)
+        return
+    
+    # Require --input for normal processing
+    if not args.input:
+        parser.error("--input is required (unless using --validate-confidence)")
     
     # Use default output directory if not specified
     output_dir = args.output
@@ -1142,6 +1176,93 @@ def main():
         
     except Exception as e:
         print(f"Error: {str(e)}", file=sys.stderr)
+        sys.exit(1)
+
+
+def _handle_validate_confidence(args: argparse.Namespace) -> None:
+    """Handle --validate-confidence CLI command.
+    
+    Args:
+        args: Parsed command-line arguments
+    """
+    # Determine ground truth data path
+    ground_truth_path = args.ground_truth
+    if not ground_truth_path:
+        # Try default paths
+        default_paths = [
+            Path("data/ground_truth.json"),
+            Path("data/ground_truth.csv"),
+        ]
+        found = False
+        for path in default_paths:
+            if path.exists():
+                ground_truth_path = str(path)
+                found = True
+                break
+        
+        if not found:
+            print(
+                "Error: Ground truth data file not found.\n"
+                "Please provide --ground-truth PATH or place data in data/ground_truth.json or data/ground_truth.csv",
+                file=sys.stderr
+            )
+            sys.exit(1)
+    
+    try:
+        # Load ground truth data
+        print(f"Loading ground truth data from {ground_truth_path}...")
+        raw_scores, actual_correct = load_ground_truth_data(ground_truth_path)
+        
+        if args.train:
+            # Train new calibration model
+            print(f"Training calibration model on {len(raw_scores)} samples...")
+            model = train_calibration_model(raw_scores, actual_correct)
+            
+            # Save model
+            model_path = get_calibration_model_path()
+            model.save(model_path)
+            print(f"Calibration model saved to {model_path}")
+            
+            # Validate the newly trained model
+            print("\nValidating newly trained model...")
+            report = validate_calibration(model, raw_scores, actual_correct)
+            print(format_validation_report(report))
+        else:
+            # Validate existing calibration model
+            model_path = get_calibration_model_path()
+            model = CalibrationModel.load(model_path)
+            
+            if model is None:
+                print(
+                    f"Warning: No calibration model found at {model_path}.\n"
+                    "Validating raw scores (no calibration applied).\n"
+                    "Use --train to train a new model.",
+                    file=sys.stderr
+                )
+            
+            print("Validating calibration...")
+            report = validate_calibration(model, raw_scores, actual_correct)
+            print(format_validation_report(report))
+            
+            if report['suggest_recalibration']:
+                print(
+                    "\n💡 Tip: Run with --train flag to recalibrate the model",
+                    file=sys.stderr
+                )
+                sys.exit(1)  # Exit with error code if recalibration needed
+        
+        sys.exit(0)
+        
+    except FileNotFoundError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+    except ValueError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"Unexpected error: {e}", file=sys.stderr)
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
 
 
