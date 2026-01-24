@@ -1,16 +1,14 @@
 ---
-status: investigating
+status: verified
 trigger: "när appen är installerad så får vi fel meddelande och den kraschar"
 created: 2025-01-27T00:00:00Z
-updated: 2025-01-27T00:00:00Z
+updated: 2026-01-24T23:02:00Z
 ---
 
 ## Current Focus
 
-hypothesis: Streamlit Runtime instance already exists - either multiple instances running or previous instance not properly cleaned up
-test: Check for running Streamlit processes, examine run_streamlit.py for potential issues
-expecting: Either find running process or identify why Runtime is being created multiple times
-next_action: Investigate RuntimeError cause and check for running Streamlit instances
+hypothesis: (legacy) Streamlit Runtime instance already exists
+next_action: N/A – Streamlit-variant borttagen; nuvarande app är PySide6 (run_gui.py)
 
 ## Symptoms
 
@@ -45,8 +43,16 @@ root_cause: Three issues: 1) run_streamlit.py uses stcli.main() directly which c
 
 fix: 1) Changed run_streamlit.py to use subprocess.run() instead of stcli.main() to avoid Runtime conflicts. 2) Changed all relative imports in src/web/app.py to absolute imports (from ..cli.main to from src.cli.main) so they work when the file is run directly by Streamlit. 3) Set PYTHONPATH and cwd in subprocess for proper environment.
 
-verification: [pending - need to test after fix]
-files_changed: ['run_streamlit.py', 'src/web/app.py', 'src/pipeline/confidence_scoring.py']
+verification: [done 2026-01-24] Se "## Verification (2026-01-24)" nedan.
+files_changed: ['run_streamlit.py', 'src/web/app.py', 'src/pipeline/confidence_scoring.py']  # run_streamlit + src/web finns ej i repo längre
+
+## Verification (2026-01-24)
+
+- **Original repro:** `python -m streamlit run run_streamlit.py` – kan inte köras; `run_streamlit.py` och `src/web/` finns inte i kodbasen. Nuvarande app är **PySide6** (`run_gui.py` → `src.ui.app`).
+- **Nuvarande app:** `python run_gui.py`
+  - **Utan fulla deps** (t.ex. venv utan `pip install -e .`): kraschar med `ImportError: pymupdf (fitz) is required for PDF viewer`. pymupdf finns i pyproject.toml men var inte installerat i venv.
+  - **Efter `pip install -e .`:** GUI startar utan fel, processen lever >5 s. **Verifierat OK.**
+- **Rekommendation:** Säkerställ `pip install -e .` (eller `pip install .`) före `run_gui.py`. Överväg att nämna detta i README/setup-instructions.
 
 ## Additional Fix: Confidence Scoring Too Strict
 
