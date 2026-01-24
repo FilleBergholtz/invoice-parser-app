@@ -38,6 +38,8 @@ Progress: ██████████████ 100% (9/9 phases complete) 
 | 5. Improved Confidence Scoring | 3 | ~75min | ~25min |
 | 6. Manual Validation UI | 3 | ~90min | ~30min |
 | 7. Learning System | 3 | ~95min | ~32min |
+| 8. AI Integration | 3 | ~90min | ~30min |
+| 9. AI Data Analysis | 3 | ~105min | ~35min |
 
 **Recent Trend:**
 - Last 4 plans: 03-01 (20min), 03-02 (15min), 03-03 (15min), 03-04 (15min)
