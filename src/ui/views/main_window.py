@@ -3,6 +3,7 @@
 import sys
 import os
 from pathlib import Path
+import logging
 from typing import Optional
 
 from PySide6.QtWidgets import (
@@ -13,9 +14,12 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QThread
 from PySide6.QtGui import QDragEnterEvent, QDropEvent
 
+logger = logging.getLogger(__name__)
+
 from ..services.engine_runner import EngineRunner
 from .pdf_viewer import PDFViewer
 from .candidate_selector import CandidateSelector
+from ...learning.correction_collector import save_correction
 
 class MainWindow(QMainWindow):
     """Main application window."""
@@ -117,12 +121,37 @@ class MainWindow(QMainWindow):
         splitter.setSizes([600, 300])  # PDF viewer larger, candidate selector wider
         validation_layout.addWidget(splitter)
         
+        # Action buttons
+        action_layout = QHBoxLayout()
+        
+        self.confirm_btn = QPushButton("Bekräfta val")
+        self.confirm_btn.setMinimumHeight(40)
+        self.confirm_btn.setEnabled(False)
+        self.confirm_btn.clicked.connect(self._confirm_correction)
+        action_layout.addWidget(self.confirm_btn)
+        
+        skip_btn = QPushButton("Hoppa över")
+        skip_btn.setMinimumHeight(40)
+        skip_btn.clicked.connect(self._skip_validation)
+        action_layout.addWidget(skip_btn)
+        
+        validation_layout.addLayout(action_layout)
+        
+        # Status message for corrections
+        self.correction_status = QLabel("")
+        self.correction_status.setStyleSheet("color: green; font-weight: bold")
+        self.correction_status.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        validation_layout.addWidget(self.correction_status)
+        
         # Connect signals for bidirectional synchronization
         self.pdf_viewer.candidate_clicked.connect(self._on_pdf_candidate_clicked)
         self.candidate_selector.candidate_selected.connect(self._on_selector_candidate_selected)
         
-        # State for selected candidate
+        # State for selected candidate and correction
         self.selected_candidate_index: Optional[int] = None
+        self.selected_candidate_amount: Optional[float] = None
+        self.correction_saved: bool = False
+        self.current_invoice_header = None  # Will store InvoiceHeader when available
         
         # Initially hide validation section
         self.validation_widget.setVisible(False)
@@ -295,7 +324,83 @@ class MainWindow(QMainWindow):
         # Highlight in PDF viewer
         self.pdf_viewer.highlight_candidate(candidate_index)
         self.selected_candidate_index = candidate_index
+        self.selected_candidate_amount = amount
+        
+        # Enable confirm button
+        self.confirm_btn.setEnabled(True)
+        
+        # Clear previous status
+        self.correction_status.setText("")
+        
         self.log(f"Kandidat {candidate_index} vald: SEK {amount:,.2f}")
+    
+    def _confirm_correction(self) -> None:
+        """Confirm and save correction."""
+        if self.selected_candidate_index is None or self.selected_candidate_amount is None:
+            self.log_error("Ingen kandidat vald - kan inte spara korrigering")
+            return
+        
+        if self.correction_saved:
+            self.log("Korrigering redan sparad för denna faktura")
+            return
+        
+        try:
+            # Generate invoice ID from filename
+            invoice_id = Path(self.input_path).stem if self.input_path else "unknown"
+            
+            # For now, we don't have InvoiceHeader loaded from processing result
+            # Create a minimal mock InvoiceHeader for correction saving
+            # In future, we'll load actual InvoiceHeader from artifacts/review reports
+            from ...models.invoice_header import InvoiceHeader
+            from ...models.segment import Segment
+            from ...models.page import Page
+            from ...models.document import Document
+            
+            # Create minimal InvoiceHeader if not available
+            if self.current_invoice_header is None:
+                # Create minimal structure for correction saving
+                # This is a workaround until we have full integration
+                doc = Document(filename=Path(self.input_path).name, filepath=self.input_path)
+                page = Page(document=doc, page_number=1)
+                segment = Segment(page=page, rows=[])
+                
+                self.current_invoice_header = InvoiceHeader(
+                    segment=segment,
+                    total_amount=None,  # Will be set from processing result
+                    total_confidence=0.0,
+                    supplier_name=None
+                )
+            
+            # Get candidate score
+            candidate_score = None
+            if self.current_invoice_header.total_candidates:
+                if self.selected_candidate_index < len(self.current_invoice_header.total_candidates):
+                    candidate = self.current_invoice_header.total_candidates[self.selected_candidate_index]
+                    candidate_score = candidate.get('score', 0.0)
+            
+            # Save correction
+            correction = save_correction(
+                invoice_id=invoice_id,
+                invoice_header=self.current_invoice_header,
+                selected_amount=self.selected_candidate_amount,
+                selected_index=self.selected_candidate_index,
+                candidate_score=candidate_score
+            )
+            
+            self.correction_saved = True
+            self.confirm_btn.setEnabled(False)
+            self.correction_status.setText(f"✓ Korrigering sparad: SEK {self.selected_candidate_amount:,.2f}")
+            self.log(f"Korrigering sparad för faktura {invoice_id}")
+            
+        except Exception as e:
+            self.log_error(f"Kunde inte spara korrigering: {e}")
+            logger.error(f"Failed to save correction: {e}", exc_info=True)
+    
+    def _skip_validation(self) -> None:
+        """Skip validation without saving correction."""
+        self.validation_widget.setVisible(False)
+        self.correction_status.setText("")
+        self.log("Validering hoppades över")
 
     def log(self, message):
         self.log_area.append(message)
