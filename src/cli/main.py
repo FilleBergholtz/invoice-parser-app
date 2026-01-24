@@ -943,6 +943,12 @@ def main():
     )
     
     parser.add_argument(
+        "--batch",
+        action="store_true",
+        help="Batch processing mode: process all PDFs in input directory with isolated artifacts per PDF"
+    )
+    
+    parser.add_argument(
         "--output",
         required=False,
         help="Output directory for Excel files (default: Documents/EPG PDF Extraherare/output)"
@@ -981,13 +987,58 @@ def main():
         print(f"Using default output directory: {output_dir}")
     
     try:
-        results = process_batch(
-            args.input,
-            output_dir,
-            fail_fast=args.fail_fast,
-            verbose=args.verbose,
-            artifacts_dir=args.artifacts_dir
-        )
+        # Check if batch mode
+        if args.batch:
+            # Import here to avoid circular import
+            from ..batch.runner import run_batch
+            from ..batch.batch_summary import create_batch_summary
+            
+            # Batch processing mode: isolated execution per PDF
+            input_path = Path(args.input)
+            if not input_path.is_dir():
+                raise ValueError(f"Batch mode requires a directory, got: {args.input}")
+            
+            output_path = Path(output_dir)
+            batch_results = run_batch(
+                input_path,
+                output_path,
+                fail_fast=args.fail_fast,
+                verbose=args.verbose
+            )
+            
+            # Create batch_summary.xlsx
+            batch_summary_path = create_batch_summary(
+                batch_results["results"],
+                output_path
+            )
+            
+            # Print summary
+            print(f"\nBatch processing complete:")
+            print(f"  Total files: {batch_results['total_files']}")
+            print(f"  Processed: {batch_results['processed']}")
+            print(f"  OK: {batch_results['ok']}")
+            print(f"  PARTIAL: {batch_results['partial']}")
+            print(f"  REVIEW: {batch_results['review']}")
+            print(f"  Failed: {batch_results['failed']}")
+            print(f"\nBatch summary: {batch_summary_path}")
+            
+            # Exit code
+            exit_code = 0
+            if batch_results["failed"] > 0:
+                exit_code = 1
+            elif args.strict and (batch_results["review"] > 0 or batch_results["partial"] > 0):
+                exit_code = 1
+            
+            sys.exit(exit_code)
+        else:
+            # Regular batch processing (existing behavior)
+            results = process_batch(
+                args.input,
+                output_dir,
+                fail_fast=args.fail_fast,
+                verbose=args.verbose,
+                artifacts_dir=args.artifacts_dir
+            )
         
         # Final summary with validation statistics
         review_count = results.get("review", 0)

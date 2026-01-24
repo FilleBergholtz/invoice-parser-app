@@ -559,16 +559,16 @@ Syftet är att höja **observability, produktvärde, robusthet och förvaltbarhe
 - `tests/test_batch_runner.py`
 
 **DoD**:
-- [ ] CLI-stöd:  
+- [x] CLI-stöd:  
   `invoice_engine.exe --batch <input_dir> --out <output_dir>`
-- [ ] Varje PDF körs isolerat (egen artifacts-mapp)
-- [ ] `batch_summary.xlsx` skapas med:
+- [x] Varje PDF körs isolerat (egen artifacts-mapp)
+- [x] `batch_summary.xlsx` skapas med:
   - filnamn
   - validation status
   - quality score
   - output path
-- [ ] Fel i en PDF stoppar inte batch-körningen
-- [ ] Enhetstest för batch-logik passerar
+- [x] Fel i en PDF stoppar inte batch-körningen
+- [x] Enhetstest för batch-logik passerar
 
 ---
 
