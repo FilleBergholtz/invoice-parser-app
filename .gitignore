@@ -50,6 +50,9 @@ tmp/
 # Test output directories (now in tests/)
 tests/output*/
 
+# Configuration files with sensitive data
+configs/ai_config.json
+
 # OS
 .DS_Store
 Thumbs.db
