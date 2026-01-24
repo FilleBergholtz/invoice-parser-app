@@ -183,7 +183,12 @@ Plans:
 6. System collects user corrections and saves them for learning
 7. Average validation time is <10 seconds per invoice
 
-**Plans**: TBD (to be planned)
+**Plans**: 3 plans
+
+Plans:
+- [ ] 06-01: PDF Viewer Component - Create clickable PDF viewer with PyMuPDF, click detection, and candidate highlighting
+- [ ] 06-02: Candidate Selector - Create candidate selector widget with keyboard shortcuts and bidirectional synchronization with PDF viewer
+- [ ] 06-03: Correction Collection - Implement correction collector to save user corrections to JSON for learning system
 
 ---
 
@@ -204,7 +209,12 @@ Plans:
 6. System performs regular cleanup of old or conflicting patterns
 7. System accuracy improves over time as more corrections are collected (measurable improvement)
 
-**Plans**: TBD (to be planned)
+**Plans**: 3 plans
+
+Plans:
+- [ ] 06-01: PDF Viewer Component - Create clickable PDF viewer with PyMuPDF, click detection, and candidate highlighting
+- [ ] 06-02: Candidate Selector - Create candidate selector widget with keyboard shortcuts and bidirectional synchronization with PDF viewer
+- [ ] 06-03: Correction Collection - Implement correction collector to save user corrections to JSON for learning system
 
 ---
 
@@ -226,7 +236,12 @@ Plans:
 7. System abstracts AI provider (can switch between OpenAI/Claude)
 8. AI usage is <20% of invoices (most handled by improved heuristics)
 
-**Plans**: TBD (to be planned)
+**Plans**: 3 plans
+
+Plans:
+- [ ] 06-01: PDF Viewer Component - Create clickable PDF viewer with PyMuPDF, click detection, and candidate highlighting
+- [ ] 06-02: Candidate Selector - Create candidate selector widget with keyboard shortcuts and bidirectional synchronization with PDF viewer
+- [ ] 06-03: Correction Collection - Implement correction collector to save user corrections to JSON for learning system
 
 ---
 
@@ -244,7 +259,12 @@ Plans:
 3. System presents query results in structured format
 4. System can summarize invoice data according to user requests
 
-**Plans**: TBD (to be planned)
+**Plans**: 3 plans
+
+Plans:
+- [ ] 06-01: PDF Viewer Component - Create clickable PDF viewer with PyMuPDF, click detection, and candidate highlighting
+- [ ] 06-02: Candidate Selector - Create candidate selector widget with keyboard shortcuts and bidirectional synchronization with PDF viewer
+- [ ] 06-03: Correction Collection - Implement correction collector to save user corrections to JSON for learning system
 
 **Note:** This phase is optional and can be deferred to v3.0 if not critical.
 
@@ -262,7 +282,7 @@ Phases execute in numeric order: 5 → 6 → 7 → 8 → 9
 | 3. Validation | v1.0 | 4/4 | Complete | 2026-01-17 |
 | 4. Web UI | v1.0 | 3/3 | Complete | 2026-01-17 |
 | 5. Improved Confidence Scoring | v2.0 | 3/3 | Complete | 2026-01-24 |
-| 6. Manual Validation UI | v2.0 | 0/TBD | Not started | - |
+| 6. Manual Validation UI | v2.0 | 0/3 | Not started | - |
 | 7. Learning System | v2.0 | 0/TBD | Not started | - |
 | 8. AI Integration | v2.0 | 0/TBD | Not started | - |
 | 9. AI Data Analysis | v2.0 | 0/TBD | Not started | - |
