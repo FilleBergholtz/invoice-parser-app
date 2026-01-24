@@ -2,22 +2,23 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2025-01-27)
+See: .planning/PROJECT.md (updated 2026-01-24)
 
 **Core value:** 100% korrekt på fakturanummer och totalsumma, eller tydlig REVIEW-status. Allt som systemet exporterar som OK är garanterat korrekt. Osäkra fall går alltid till REVIEW (ingen tyst gissning).
 
-**Current focus:** Phase 4: Web UI (Planning Complete, Ready to Execute)
+**Current focus:** v2.0 Features - Phase 5: Improved Confidence Scoring (Ready to plan)
 
 ## Current Position
 
-Phase: 4 of 4 (Web UI)
-Plan: 3 of 3 in current phase
-Status: **✅ COMPLETE** - All plans implemented
-Last activity: 2026-01-17 — Plan 04-03 implemented (API Endpoints), Phase 4 complete!
+Milestone: v2.0 Features
+Phase: 5 of 9 (Improved Confidence Scoring)
+Plan: 0/TBD in current phase
+Status: **Ready to plan** - Roadmap created, ready for phase planning
+Last activity: 2026-01-24 — v2.0 roadmap created with 5 phases
 
-Progress: ████████████ 100% (4/4 phases complete) ✅
+Progress: ████████░░░░ 44% (4/9 phases complete) — v1.0 complete, v2.0 planned
 
-**Projektstatus:** Phase 1-3 kompletta. Phase 4 (Web UI) planerad och redo för implementation.
+**Projektstatus:** v1.0 komplett. v2.0 roadmap skapad med 5 faser (Phase 5-9). Ready for planning.
 
 ## Performance Metrics
 
@@ -33,12 +34,13 @@ Progress: ████████████ 100% (4/4 phases complete) ✅
 | 1. Document Normalization | 5 | ~1.5h | ~17min |
 | 2. Header + Wrap | 5 | ~0.5h | ~11min |
 | 3. Validation | 4 | ~1h | ~15min |
+| 4. Web UI | 3 | ~1h | ~20min |
 
 **Recent Trend:**
 - Last 4 plans: 03-01 (20min), 03-02 (15min), 03-03 (15min), 03-04 (15min)
-- Trend: Consistent execution pace in Phase 3, all plans completed successfully
+- Trend: Consistent execution pace, all v1.0 plans completed successfully
 
-*Updated after Phase 3 completion - 2026-01-17*
+*Updated after v2.0 roadmap creation - 2026-01-24*
 
 ## Accumulated Context
 
@@ -47,9 +49,10 @@ Progress: ████████████ 100% (4/4 phases complete) ✅
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- [Initialization]: Hard gates on invoice number + total — OK status only when both are certain (≥0.95 confidence), otherwise REVIEW
-- [Initialization]: Layout-driven line item extraction (tokens→rows→segments), not table-extractor-driven
-- [Initialization]: OCR abstraction layer allows switching engines without pipeline changes
+- [v2.0]: AI fallback pattern — AI only when confidence < 0.95 (avoid over-reliance)
+- [v2.0]: Learning system — SQLite database, supplier-specific patterns, local storage
+- [v2.0]: Manual validation — Clickable PDF with candidate selection, one-click workflow
+- [v2.0]: Confidence calibration — Map confidence to actual accuracy from start
 
 ### Pending Todos
 
@@ -65,6 +68,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-17
-Stopped at: Phase 2 execution completed, ready for Phase 3 (Validation)
+Last session: 2026-01-24
+Stopped at: v2.0 roadmap created, ready for Phase 5 planning
 Resume file: None

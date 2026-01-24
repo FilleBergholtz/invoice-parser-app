@@ -2,7 +2,12 @@
 
 ## Overview
 
-This roadmap delivers a Swedish invoice parsing system that transforms PDF invoices into structured Excel tables with 100% accuracy on critical fields (invoice number and total) or explicit REVIEW status. The journey progresses through three phases: first establishing a stable document representation with full traceability, then extracting critical fields with confidence scoring, and finally validating and exporting with hard gates that guarantee correctness.
+This roadmap delivers a Swedish invoice parsing system that transforms PDF invoices into structured Excel tables with 100% accuracy on critical fields (invoice number and total) or explicit REVIEW status. v1.0 established the core pipeline. v2.0 focuses on improving confidence scoring, adding manual validation with learning, and integrating AI to reduce REVIEW status and handle unusual patterns.
+
+## Milestones
+
+- ✅ **v1.0 MVP** - Phases 1-4 (shipped 2026-01-17)
+- 📋 **v2.0 Features** - Phases 5-9 (planned)
 
 ## Phases
 
@@ -10,12 +15,30 @@ This roadmap delivers a Swedish invoice parsing system that transforms PDF invoi
 - Integer phases (1, 2, 3): Planned milestone work
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
+<details>
+<summary>✅ v1.0 MVP (Phases 1-4) - SHIPPED 2026-01-17</summary>
+
 - [x] **Phase 1: Document Normalization** - Establish stable PDF representation with spatial traceability
 - [x] **Phase 2: Header + Wrap** - Extract critical fields (invoice number, total) with confidence scoring and handle multi-line items
 - [x] **Phase 3: Validation** - Mathematical validation, hard gates, and Excel export with status columns
 - [x] **Phase 4: Web UI** - Web-based interface for invoice processing, review workflow, and API integration
 
+</details>
+
+### 📋 v2.0 Features (Planned)
+
+**Milestone Goal:** Förbättra totalsumma-confidence, lägga till manuell validering med inlärning, och integrera AI för att minska REVIEW-status och hantera ovanliga mönster.
+
+- [ ] **Phase 5: Improved Confidence Scoring** - Enhanced multi-factor confidence scoring for total amount to reduce REVIEW status
+- [ ] **Phase 6: Manual Validation UI** - Clickable PDF viewer with candidate selection for user corrections
+- [ ] **Phase 7: Learning System** - SQLite database and pattern matching to learn from user corrections
+- [ ] **Phase 8: AI Integration** - AI fallback when confidence < 0.95 to improve extraction for edge cases
+- [ ] **Phase 9: AI Data Analysis** (Optional) - Natural language queries and data analysis over processed invoices
+
 ## Phase Details
+
+<details>
+<summary>✅ v1.0 MVP Phases (1-4) - SHIPPED 2026-01-17</summary>
 
 ### Phase 1: Document Normalization
 
@@ -114,16 +137,129 @@ Plans:
 - [x] 04-02: Streamlit MVP - Detaljvy och Review Workflow
 - [x] 04-03: API Endpoints för Extern Integration
 
+</details>
+
+### 📋 v2.0 Features Phases
+
+### Phase 5: Improved Confidence Scoring
+
+**Goal**: System has improved confidence scoring for total amount extraction, resulting in fewer invoices with REVIEW status due to low confidence.
+
+**Depends on**: Phase 4 (v1.0 complete)
+
+**Requirements**: CONF-01, CONF-02, CONF-03, CONF-04, CONF-05
+
+**Success Criteria** (what must be TRUE):
+1. System uses enhanced multi-factor confidence scoring with additional signals beyond current implementation
+2. System calibrates confidence scores against actual accuracy (confidence 0.95 = 95% correct in validation)
+3. System extracts multiple total amount candidates and scores each independently
+4. System displays improved confidence scores clearly in UI
+5. System validates confidence calibration regularly against ground truth data
+6. Fewer invoices receive REVIEW status due to low confidence (measurable improvement)
+
+**Plans**: TBD (to be planned)
+
+---
+
+### Phase 6: Manual Validation UI
+
+**Goal**: Users can manually validate total amount when confidence is low by clicking on PDF and selecting correct candidate from alternatives.
+
+**Depends on**: Phase 5
+
+**Requirements**: VALID-UI-01, VALID-UI-02, VALID-UI-03, VALID-UI-04, VALID-UI-05, VALID-UI-06
+
+**Success Criteria** (what must be TRUE):
+1. User can click on total amount in PDF viewer to see candidate alternatives
+2. System displays multiple total amount candidates with confidence scores in UI
+3. User can select correct total amount from candidate list (one-click selection)
+4. System highlights candidate totals visually in PDF viewer
+5. User can validate total amount with keyboard shortcuts (arrow keys, Enter)
+6. System collects user corrections and saves them for learning
+7. Average validation time is <10 seconds per invoice
+
+**Plans**: TBD (to be planned)
+
+---
+
+### Phase 7: Learning System
+
+**Goal**: System learns from user corrections and uses learned patterns to improve confidence scoring for similar invoices in the future.
+
+**Depends on**: Phase 6
+
+**Requirements**: LEARN-01, LEARN-02, LEARN-03, LEARN-04, LEARN-05, LEARN-06, LEARN-07
+
+**Success Criteria** (what must be TRUE):
+1. System stores user corrections in SQLite learning database
+2. System extracts patterns from corrected invoices (supplier, layout, position)
+3. System matches new invoices to learned patterns (supplier-specific matching only)
+4. System uses learned patterns to improve confidence scoring for similar invoices
+5. System consolidates similar patterns to prevent database bloat
+6. System performs regular cleanup of old or conflicting patterns
+7. System accuracy improves over time as more corrections are collected (measurable improvement)
+
+**Plans**: TBD (to be planned)
+
+---
+
+### Phase 8: AI Integration
+
+**Goal**: System uses AI as fallback when confidence < 0.95 to improve total amount extraction for edge cases, reducing REVIEW status further.
+
+**Depends on**: Phase 5 (can partially parallel with Phase 7)
+
+**Requirements**: AI-01, AI-02, AI-03, AI-04, AI-05, AI-06, AI-07
+
+**Success Criteria** (what must be TRUE):
+1. System activates AI fallback when total amount confidence < 0.95
+2. System uses AI (OpenAI/Claude) to extract total amount when heuristics fail
+3. System uses structured outputs (Pydantic) for AI responses
+4. System handles AI errors gracefully (timeouts, API errors, invalid responses)
+5. System validates AI responses before using them
+6. System can boost confidence score if AI validation succeeds
+7. System abstracts AI provider (can switch between OpenAI/Claude)
+8. AI usage is <20% of invoices (most handled by improved heuristics)
+
+**Plans**: TBD (to be planned)
+
+---
+
+### Phase 9: AI Data Analysis (Optional)
+
+**Goal**: Users can ask natural language questions about processed invoice data and receive structured answers.
+
+**Depends on**: Phase 8
+
+**Requirements**: ANALYSIS-01, ANALYSIS-02, ANALYSIS-03, ANALYSIS-04
+
+**Success Criteria** (what must be TRUE):
+1. User can ask natural language questions about processed invoice data
+2. System retrieves relevant invoice information based on queries
+3. System presents query results in structured format
+4. System can summarize invoice data according to user requests
+
+**Plans**: TBD (to be planned)
+
+**Note:** This phase is optional and can be deferred to v3.0 if not critical.
+
+---
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3
+Phases execute in numeric order: 5 → 6 → 7 → 8 → 9
 
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 1. Document Normalization | 5/5 | Complete | 2026-01-17 |
-| 2. Header + Wrap | 5/5 | Complete | 2026-01-17 |
-| 3. Validation | 4/4 | Complete | 2026-01-17 |
-| 4. Web UI | 3/3 | Complete | 2026-01-17 |
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|-----------|----------------|--------|-----------|
+| 1. Document Normalization | v1.0 | 5/5 | Complete | 2026-01-17 |
+| 2. Header + Wrap | v1.0 | 5/5 | Complete | 2026-01-17 |
+| 3. Validation | v1.0 | 4/4 | Complete | 2026-01-17 |
+| 4. Web UI | v1.0 | 3/3 | Complete | 2026-01-17 |
+| 5. Improved Confidence Scoring | v2.0 | 0/TBD | Not started | - |
+| 6. Manual Validation UI | v2.0 | 0/TBD | Not started | - |
+| 7. Learning System | v2.0 | 0/TBD | Not started | - |
+| 8. AI Integration | v2.0 | 0/TBD | Not started | - |
+| 9. AI Data Analysis | v2.0 | 0/TBD | Not started | - |
 
-**Note:** All phases are complete! Project is ready for production use.
+**Note:** v1.0 phases complete. v2.0 phases ready for planning.

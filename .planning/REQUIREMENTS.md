@@ -146,6 +146,8 @@ Explicitly excluded. Documented to prevent scope creep.
 
 Which phases cover which requirements. Updated during roadmap creation.
 
+### v1.0 Requirements (Complete)
+
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | DOC-01 | Phase 1 | Complete |
@@ -167,24 +169,58 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LINES-02 | Phase 2 | Complete |
 | LINES-03 | Phase 1 | Complete |
 | LINES-04 | Phase 1 | Complete |
-| VALID-01 | Phase 3 | Pending |
-| VALID-02 | Phase 3 | Pending |
+| VALID-01 | Phase 3 | Complete |
+| VALID-02 | Phase 3 | Complete |
 | VALID-03 | Phase 2 | Complete |
-| VALID-04 | Phase 3 | Pending |
-| VALID-05 | Phase 3 | Pending |
+| VALID-04 | Phase 3 | Complete |
+| VALID-05 | Phase 3 | Complete |
 | EXPORT-01 | Phase 1 | Complete |
 | EXPORT-02 | Phase 1 | Complete |
-| EXPORT-03 | Phase 3 | Pending |
-| EXPORT-04 | Phase 3 | Pending |
+| EXPORT-03 | Phase 3 | Complete |
+| EXPORT-04 | Phase 3 | Complete |
 | CLI-01 | Phase 1 | Complete |
 | CLI-02 | Phase 1 | Complete |
 | CLI-03 | Phase 1 | Complete |
 
+### v2.0 Requirements
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| CONF-01 | Phase 5 | Pending |
+| CONF-02 | Phase 5 | Pending |
+| CONF-03 | Phase 5 | Pending |
+| CONF-04 | Phase 5 | Pending |
+| CONF-05 | Phase 5 | Pending |
+| VALID-UI-01 | Phase 6 | Pending |
+| VALID-UI-02 | Phase 6 | Pending |
+| VALID-UI-03 | Phase 6 | Pending |
+| VALID-UI-04 | Phase 6 | Pending |
+| VALID-UI-05 | Phase 6 | Pending |
+| VALID-UI-06 | Phase 6 | Pending |
+| LEARN-01 | Phase 7 | Pending |
+| LEARN-02 | Phase 7 | Pending |
+| LEARN-03 | Phase 7 | Pending |
+| LEARN-04 | Phase 7 | Pending |
+| LEARN-05 | Phase 7 | Pending |
+| LEARN-06 | Phase 7 | Pending |
+| LEARN-07 | Phase 7 | Pending |
+| AI-01 | Phase 8 | Pending |
+| AI-02 | Phase 8 | Pending |
+| AI-03 | Phase 8 | Pending |
+| AI-04 | Phase 8 | Pending |
+| AI-05 | Phase 8 | Pending |
+| AI-06 | Phase 8 | Pending |
+| AI-07 | Phase 8 | Pending |
+| ANALYSIS-01 | Phase 9 | Pending |
+| ANALYSIS-02 | Phase 9 | Pending |
+| ANALYSIS-03 | Phase 9 | Pending |
+| ANALYSIS-04 | Phase 9 | Pending |
+
 **Coverage:**
 - v1 requirements: 35 total (all complete)
 - v2.0 requirements: 25 total
-- Mapped to phases: 0 (to be mapped during roadmap creation)
-- Unmapped: 25 ⚠️
+- Mapped to phases: 25
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2025-01-27*
