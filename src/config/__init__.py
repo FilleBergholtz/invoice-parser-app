@@ -25,6 +25,8 @@ get_learning_enabled = config_module.get_learning_enabled
 get_learning_db_path = config_module.get_learning_db_path
 get_ai_provider = config_module.get_ai_provider
 get_ai_model = config_module.get_ai_model
+set_ai_config = config_module.set_ai_config
+load_ai_config = config_module.load_ai_config
 
 __all__ = [
     'get_app_name',
@@ -36,6 +38,8 @@ __all__ = [
     'get_ai_key',
     'get_ai_provider',
     'get_ai_model',
+    'set_ai_config',
+    'load_ai_config',
     'get_calibration_enabled',
     'get_calibration_model_path',
     'get_learning_enabled',

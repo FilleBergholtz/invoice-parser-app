@@ -9,7 +9,7 @@ from typing import Optional
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
     QLabel, QPushButton, QFileDialog, QTextEdit, 
-    QProgressBar, QGroupBox, QLineEdit, QSplitter
+    QProgressBar, QGroupBox, QLineEdit, QSplitter, QMenuBar, QMenu
 )
 from PySide6.QtCore import Qt, QThread
 from PySide6.QtGui import QDragEnterEvent, QDropEvent
@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 from ..services.engine_runner import EngineRunner
 from .pdf_viewer import PDFViewer
 from .candidate_selector import CandidateSelector
+from .ai_settings_dialog import AISettingsDialog
 from ...learning.correction_collector import save_correction
 
 class MainWindow(QMainWindow):
@@ -39,6 +40,17 @@ class MainWindow(QMainWindow):
         
         # UI Setup
         self.setup_ui()
+    
+    def setup_menu_bar(self):
+        """Setup menu bar with settings."""
+        menubar = self.menuBar()
+        
+        # Inställningar menu
+        settings_menu = menubar.addMenu("Inställningar")
+        
+        # AI-inställningar action
+        ai_settings_action = settings_menu.addAction("AI-inställningar...")
+        ai_settings_action.triggered.connect(self.open_ai_settings)
         
     def setup_ui(self):
         """Initialize UI components."""
@@ -401,6 +413,14 @@ class MainWindow(QMainWindow):
         self.validation_widget.setVisible(False)
         self.correction_status.setText("")
         self.log("Validering hoppades över")
+    
+    def open_ai_settings(self):
+        """Open AI settings dialog."""
+        dialog = AISettingsDialog(self)
+        if dialog.exec():
+            # Settings saved, update status
+            self.status_label.setText("AI-inställningar uppdaterade")
+            logger.info("AI settings updated from UI")
 
     def log(self, message):
         self.log_area.append(message)

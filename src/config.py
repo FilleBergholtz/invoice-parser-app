@@ -1,8 +1,12 @@
 """Central configuration for EPG PDF Extraherare."""
 
 import os
+import json
+import logging
 from pathlib import Path
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 
 def get_app_name() -> str:
@@ -73,8 +77,15 @@ def get_ai_enabled() -> bool:
     
     Returns:
         True if AI_ENABLED environment variable is set to 'true' (case-insensitive)
+        Also checks saved config file if env var not set
     """
-    return os.getenv('AI_ENABLED', 'false').lower() == 'true'
+    env_value = os.getenv('AI_ENABLED')
+    if env_value is not None:
+        return env_value.lower() == 'true'
+    
+    # Fallback to saved config
+    config = load_ai_config()
+    return config.get('enabled', False)
 
 
 def get_ai_endpoint() -> Optional[str]:
@@ -104,8 +115,15 @@ def get_ai_model() -> str:
     
     Returns:
         Model name (provider-specific default if not set)
+        Also checks saved config file if env var not set
     """
     model = os.getenv('AI_MODEL')
+    if model:
+        return model
+    
+    # Fallback to saved config
+    config = load_ai_config()
+    model = config.get('model')
     if model:
         return model
     
@@ -123,9 +141,15 @@ def get_ai_key() -> Optional[str]:
     """Get AI service API key.
     
     Returns:
-        API key from AI_KEY environment variable, or None
+        API key from AI_KEY environment variable, or from saved config, or None
     """
-    return os.getenv('AI_KEY')
+    key = os.getenv('AI_KEY')
+    if key:
+        return key
+    
+    # Fallback to saved config
+    config = load_ai_config()
+    return config.get('api_key')
 
 
 def get_calibration_enabled() -> bool:
@@ -172,3 +196,102 @@ def get_learning_db_path() -> Path:
     if env_path:
         return Path(env_path)
     return Path(__file__).parent.parent / "data" / "learning.db"
+
+
+def get_ai_config_path() -> Path:
+    """Get path to AI configuration file.
+    
+    Returns:
+        Path to AI config file (default: configs/ai_config.json)
+    """
+    return Path(__file__).parent.parent / "configs" / "ai_config.json"
+
+
+def load_ai_config() -> dict:
+    """Load AI configuration from file.
+    
+    Returns:
+        Dict with AI configuration (enabled, provider, model, api_key)
+    """
+    config_path = get_ai_config_path()
+    if config_path.exists():
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+                return config
+        except Exception as e:
+            logger.warning(f"Failed to load AI config: {e}")
+    
+    return {}
+
+
+def save_ai_config(config: dict) -> None:
+    """Save AI configuration to file.
+    
+    Args:
+        config: Dict with AI configuration (enabled, provider, model, api_key)
+    """
+    config_path = get_ai_config_path()
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    try:
+        with open(config_path, 'w', encoding='utf-8') as f:
+            json.dump(config, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        logger.error(f"Failed to save AI config: {e}")
+        raise
+
+
+def set_ai_config(
+    enabled: bool,
+    provider: str,
+    model: str,
+    api_key: Optional[str] = None
+) -> None:
+    """Set AI configuration and save to file.
+    
+    Args:
+        enabled: Whether AI is enabled
+        provider: AI provider ("openai" or "claude")
+        model: Model name
+        api_key: Optional API key (if None, keeps existing key)
+    """
+    config = load_ai_config()
+    
+    config['enabled'] = enabled
+    config['provider'] = provider
+    config['model'] = model
+    
+    # Only update API key if provided
+    if api_key is not None:
+        config['api_key'] = api_key
+    # If api_key is None and no existing key, don't set it
+    
+    save_ai_config(config)
+    
+    # Also set environment variables for current session
+    os.environ['AI_ENABLED'] = 'true' if enabled else 'false'
+    os.environ['AI_PROVIDER'] = provider
+    os.environ['AI_MODEL'] = model
+    if api_key:
+        os.environ['AI_KEY'] = api_key
+
+
+def _load_ai_config_from_file() -> None:
+    """Load AI config from file and set environment variables.
+    Called at module import to initialize from saved config.
+    """
+    config = load_ai_config()
+    
+    if 'enabled' in config:
+        os.environ['AI_ENABLED'] = 'true' if config['enabled'] else 'false'
+    if 'provider' in config:
+        os.environ['AI_PROVIDER'] = config['provider']
+    if 'model' in config:
+        os.environ['AI_MODEL'] = config['model']
+    if 'api_key' in config:
+        os.environ['AI_KEY'] = config['api_key']
+
+
+# Load saved config at module import
+_load_ai_config_from_file()
