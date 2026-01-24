@@ -35,6 +35,7 @@ class RunSummary:
     durations: Dict[str, float] = field(default_factory=dict)  # Stage durations
     quality_scores: List[Dict[str, Any]] = field(default_factory=list)  # Quality scores per invoice
     profile_name: Optional[str] = None  # Configuration profile used
+    validation: Optional[Dict[str, Any]] = None  # Candidates + traceability for GUI (single-PDF REVIEW)
     
     @classmethod
     def create(cls, input_path: str, output_dir: str) -> 'RunSummary':

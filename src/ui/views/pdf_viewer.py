@@ -12,7 +12,7 @@ except ImportError:
     fitz = None
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QMouseEvent, QPixmap
+from PySide6.QtGui import QMouseEvent, QPixmap, QWheelEvent
 from PySide6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QGraphicsRectItem
 
 if TYPE_CHECKING:
@@ -67,10 +67,15 @@ class PDFViewer(QGraphicsView):
         self.page_width = 0.0
         self.page_height = 0.0
         
+        # User zoom (relative to fit-to-view); clamped 0.5–4
+        self._zoom_level = 1.0
+        self._fit_scale = 1.0
+        
         # Setup view
         self.setDragMode(QGraphicsView.DragMode.NoDrag)
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
+        self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
     
     def load_pdf(self, path: str) -> None:
         """Load PDF file and render first page.
@@ -149,6 +154,8 @@ class PDFViewer(QGraphicsView):
         
         # Fit to view
         self.fitInView(pixmap_item, Qt.AspectRatioMode.KeepAspectRatio)
+        self._fit_scale = self.transform().m11()
+        self._zoom_level = 1.0
         
         # Re-apply highlighting if candidates set
         if self.candidates and self.traceability:
@@ -278,6 +285,20 @@ class PDFViewer(QGraphicsView):
         
         # If no candidate clicked, pass event to parent
         super().mousePressEvent(event)
+    
+    def wheelEvent(self, event: QWheelEvent) -> None:
+        """Zoom with Ctrl+scroll. Clamp 0.5x–4x relative to fit-to-view."""
+        if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+            delta = event.angleDelta().y()
+            step = 1.1 if delta > 0 else 1.0 / 1.1
+            new_zoom = self._zoom_level * step
+            lo, hi = 0.5, 4.0
+            if lo <= new_zoom <= hi:
+                self._zoom_level = new_zoom
+                self.scale(step, step)
+            event.accept()
+            return
+        super().wheelEvent(event)
     
     def closeEvent(self, event) -> None:
         """Clean up when viewer is closed.

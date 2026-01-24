@@ -992,6 +992,26 @@ def process_batch(
         if verbose:
             print(f"Warning: Failed to check artifact compatibility: {e}")
     
+    # Validation payload for GUI (single-PDF, first REVIEW)
+    if len(pdf_files) == 1 and invoice_results:
+        for ir in invoice_results:
+            if ir["validation_result"].status == "REVIEW":
+                header = ir["invoice_header"]
+                candidates = header.total_candidates or []
+                summary.validation = {
+                    "candidates": [
+                        {
+                            "amount": c.get("amount", 0.0),
+                            "score": c.get("score", 0.0),
+                            "row_index": c.get("row_index", -1),
+                            "keyword_type": c.get("keyword_type", "unknown"),
+                        }
+                        for c in candidates
+                    ],
+                    "traceability": header.total_traceability.to_dict() if header.total_traceability else None,
+                }
+                break
+    
     # Save run summary
     summary.complete(status="FAILED" if summary.failed_count > 0 else "COMPLETED")
     summary_path = output_dir_obj / "run_summary.json"

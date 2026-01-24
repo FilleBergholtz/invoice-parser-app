@@ -3,8 +3,9 @@
 import sys
 import os
 from pathlib import Path
+from types import SimpleNamespace
 import logging
-from typing import Optional
+from typing import Optional, Tuple, List, Any
 
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
@@ -271,19 +272,12 @@ class MainWindow(QMainWindow):
             # Load PDF
             self.pdf_viewer.load_pdf(self.input_path)
             
-            # Load candidates from processing result
-            # For now, we'll try to load from artifacts or use mock data
-            # In future, we'll have better integration with processing results
-            candidates = self._load_candidates_from_result()
+            # Load candidates and traceability from processing result (run_summary.validation)
+            candidates, traceability = self._load_candidates_from_result()
             
             if candidates:
                 # Set candidates in selector
                 self.candidate_selector.set_candidates(candidates)
-                
-                # Set candidates in PDF viewer (for highlighting)
-                # We need traceability for PDF highlighting - for now, use first candidate's traceability
-                # This will be enhanced when we have full InvoiceHeader data
-                traceability = None  # TODO: Load from processing result
                 self.pdf_viewer.set_candidates(candidates, traceability)
             else:
                 self.log("Inga kandidater hittades - validering kan inte utföras")
@@ -298,22 +292,56 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.log_error(f"Kunde inte ladda PDF för validering: {e}")
     
-    def _load_candidates_from_result(self) -> list:
-        """Load candidates from processing result.
+    def _load_candidates_from_result(self) -> Tuple[List[dict], Any]:
+        """Load candidates and traceability from processing result (run_summary.validation).
         
         Returns:
-            List of candidate dicts, or empty list if not available
+            (candidates, traceability_for_viewer). candidates is list of dicts;
+            traceability_for_viewer has .evidence for PDF highlighting, or None.
         """
-        # TODO: Load from actual processing result (artifacts, review reports, etc.)
-        # For now, return empty list - this will be enhanced when we have
-        # better integration with processing pipeline
+        candidates: List[dict] = []
+        traceability_for_viewer = None
         
-        # In a real scenario, we would:
-        # 1. Load InvoiceHeader from artifacts or review package
-        # 2. Extract total_candidates from InvoiceHeader
-        # 3. Extract total_traceability for PDF highlighting
+        if not self.processing_result:
+            return candidates, traceability_for_viewer
         
-        return []
+        validation = self.processing_result.get("validation") or {}
+        raw = validation.get("candidates") or []
+        if not raw:
+            return candidates, traceability_for_viewer
+        
+        candidates = [
+            {
+                "amount": c.get("amount", 0.0),
+                "score": c.get("score", 0.0),
+                "row_index": c.get("row_index", -1),
+                "keyword_type": c.get("keyword_type", "unknown"),
+            }
+            for c in raw
+        ]
+        
+        tr = validation.get("traceability")
+        if isinstance(tr, dict) and "evidence" in tr:
+            traceability_for_viewer = SimpleNamespace(evidence=tr["evidence"])
+        
+        # Minimal InvoiceHeader for correction saving (with total_candidates)
+        from ...models.invoice_header import InvoiceHeader
+        from ...models.segment import Segment
+        from ...models.page import Page
+        from ...models.document import Document
+        
+        doc = Document(filename=Path(self.input_path).name, filepath=self.input_path)
+        page = Page(document=doc, page_number=1)
+        segment = Segment(page=page, rows=[])
+        self.current_invoice_header = InvoiceHeader(
+            segment=segment,
+            total_amount=None,
+            total_confidence=0.0,
+            supplier_name=None,
+            total_candidates=candidates,
+        )
+        
+        return candidates, traceability_for_viewer
     
     def _on_pdf_candidate_clicked(self, candidate_index: int) -> None:
         """Handle candidate click in PDF viewer.
@@ -324,6 +352,7 @@ class MainWindow(QMainWindow):
         # Select in candidate selector
         self.candidate_selector.select_candidate(candidate_index)
         self.selected_candidate_index = candidate_index
+        self.candidate_selector.setFocus()
         self.log(f"Kandidat {candidate_index} klickad i PDF")
     
     def _on_selector_candidate_selected(self, candidate_index: int, amount: float) -> None:
