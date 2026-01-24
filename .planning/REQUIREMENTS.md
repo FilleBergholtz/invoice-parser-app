@@ -82,13 +82,13 @@ Requirements for v2.0 milestone. Focus: Improved confidence scoring, manual vali
 
 ### Learning System
 
-- [ ] **LEARN-01**: System stores user corrections in SQLite learning database
-- [ ] **LEARN-02**: System extracts patterns from corrected invoices (supplier, layout, position)
-- [ ] **LEARN-03**: System matches new invoices to learned patterns (supplier-specific matching)
-- [ ] **LEARN-04**: System uses learned patterns to improve confidence scoring for similar invoices
-- [ ] **LEARN-05**: System consolidates similar patterns to prevent database bloat
-- [ ] **LEARN-06**: System performs regular cleanup of old or conflicting patterns
-- [ ] **LEARN-07**: System isolates patterns by supplier (no cross-supplier pattern matching)
+- [x] **LEARN-01**: System stores user corrections in SQLite learning database
+- [x] **LEARN-02**: System extracts patterns from corrected invoices (supplier, layout, position)
+- [x] **LEARN-03**: System matches new invoices to learned patterns (supplier-specific matching)
+- [x] **LEARN-04**: System uses learned patterns to improve confidence scoring for similar invoices
+- [x] **LEARN-05**: System consolidates similar patterns to prevent database bloat
+- [x] **LEARN-06**: System performs regular cleanup of old or conflicting patterns
+- [x] **LEARN-07**: System isolates patterns by supplier (no cross-supplier pattern matching)
 
 ### AI Integration
 
