@@ -1,7 +1,7 @@
 # Phase 6: Manual Validation UI - Context
 
 **Gathered:** 2026-01-24
-**Status:** Ready for planning
+**Status:** In progress (Plan 06-01 complete, 06-02 and 06-03 planned)
 
 <domain>
 ## Phase Boundary
@@ -86,12 +86,16 @@ Add manual validation UI to PySide6 GUI where users can click on total amount in
 - Log display
 - Result summary
 
-**Missing:**
-- PDF viewer
-- Candidate display
-- Click detection
-- Validation workflow
-- Correction collection
+**Completed:**
+- ✅ PDF viewer (Plan 06-01)
+- ✅ Click detection (Plan 06-01)
+- ✅ Visual highlighting (Plan 06-01)
+
+**Remaining:**
+- ⏳ Candidate display (Plan 06-02)
+- ⏳ Keyboard shortcuts (Plan 06-02)
+- ⏳ Validation workflow (Plan 06-02)
+- ⏳ Correction collection (Plan 06-03)
 
 </current_state>
 
