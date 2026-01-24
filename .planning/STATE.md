@@ -6,7 +6,7 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 
 **Core value:** 100% korrekt på fakturanummer och totalsumma, eller tydlig REVIEW-status. Allt som systemet exporterar som OK är garanterat korrekt. Osäkra fall går alltid till REVIEW (ingen tyst gissning).
 
-**Current focus:** v2.0 Features - Phase 5: Improved Confidence Scoring (Ready to plan)
+**Current focus:** v2.0 Features - Phase 6: Manual Validation UI (In progress)
 
 ## Current Position
 
@@ -18,7 +18,7 @@ Last activity: 2026-01-24 — Plan 06-01 completed (PDF viewer with click detect
 
 Progress: ██████████░░ 56% (5/9 phases complete, 1 plan in progress) — Phase 6 started
 
-**Projektstatus:** v1.0 komplett. v2.0 roadmap skapad med 5 faser (Phase 5-9). Ready for planning.
+**Projektstatus:** v1.0 komplett. Phase 5 komplett. Phase 6 pågår (Plan 06-01 klar).
 
 ## Performance Metrics
 
@@ -35,7 +35,8 @@ Progress: ██████████░░ 56% (5/9 phases complete, 1 plan 
 | 2. Header + Wrap | 5 | ~0.5h | ~11min |
 | 3. Validation | 4 | ~1h | ~15min |
 | 4. Web UI | 3 | ~1h | ~20min |
-| 5. Improved Confidence Scoring | 2 | ~45min | ~22min |
+| 5. Improved Confidence Scoring | 3 | ~75min | ~25min |
+| 6. Manual Validation UI | 1 | ~35min | ~35min |
 
 **Recent Trend:**
 - Last 4 plans: 03-01 (20min), 03-02 (15min), 03-03 (15min), 03-04 (15min)
@@ -70,5 +71,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-01-24
-Stopped at: v2.0 roadmap created, ready for Phase 5 planning
+Stopped at: Phase 6 Plan 01 completed, ready for Plan 06-02
 Resume file: None
