@@ -49,6 +49,7 @@ temp/
 tmp/
 # Test output directories (now in tests/)
 tests/output*/
+out/
 
 # Configuration files with sensitive data
 configs/ai_config.json
