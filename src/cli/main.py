@@ -35,13 +35,14 @@ from ..pipeline.invoice_boundary_detection import detect_invoice_boundaries
 from ..export.excel_export import export_to_excel
 from ..export.review_report import create_review_report
 from ..review.review_package import create_review_package
-from ..config import get_default_output_dir, get_output_subdirs, get_ai_enabled, get_ai_endpoint, get_ai_key
+from ..config import get_default_output_dir, get_output_subdirs, get_ai_enabled, get_ai_endpoint, get_ai_key, get_app_version
 from ..config.profile_manager import set_profile, get_profile
 from ..run_summary import RunSummary
 from ..ai.client import AIClient, AIClientError, AIConnectionError, AIAPIError, create_ai_diff, save_ai_artifacts
 from ..ai.schemas import AIInvoiceRequest, AIInvoiceLineRequest
 from ..debug.artifact_index import create_manifest_for_run
 from ..quality.score import calculate_quality_score
+from ..versioning.compat import check_artifacts_compatibility, CompatibilityStatus
 
 
 class InvoiceProcessingError(Exception):
@@ -802,20 +803,23 @@ def process_batch(
                     })
                     
                     # Save AI artifacts if AI was attempted
-                    if hasattr(virtual_result, 'ai_request') and virtual_result.ai_request:
+                    # Check if ai_request exists and is not None (avoid MagicMock auto-creation)
+                    ai_request = getattr(virtual_result, 'ai_request', None)
+                    if ai_request is not None:
                         invoice_artifacts_dir = run_artifacts_dir / virtual_result.virtual_invoice_id
                         invoice_artifacts_dir.mkdir(parents=True, exist_ok=True)
                         
                         ai_diff = None
-                        if virtual_result.ai_response:
-                            ai_diff = create_ai_diff(virtual_result.ai_request, virtual_result.ai_response)
+                        ai_response = getattr(virtual_result, 'ai_response', None)
+                        if ai_response:
+                            ai_diff = create_ai_diff(ai_request, ai_response)
                         
                         save_ai_artifacts(
                             invoice_artifacts_dir,
-                            virtual_result.ai_request,
-                            virtual_result.ai_response if hasattr(virtual_result, 'ai_response') else None,
+                            ai_request,
+                            ai_response,
                             ai_diff,
-                            virtual_result.ai_error if hasattr(virtual_result, 'ai_error') else None
+                            getattr(virtual_result, 'ai_error', None)
                         )
                     
                     # Create review report and package if REVIEW status

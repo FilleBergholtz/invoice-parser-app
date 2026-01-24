@@ -64,12 +64,36 @@ def test_process_batch_creates_summary(mock_process_pdf, temp_input_dir, temp_ou
     mock_result.virtual_invoice_id = "test__1"
     mock_result.virtual_invoice_index = 1
     mock_result.invoice_header = MagicMock()
+    mock_result.invoice_header.invoice_number = "INV-123"
+    mock_result.invoice_header.invoice_date = None  # Will be set if needed
+    mock_result.invoice_header.total_amount = 100.0
+    mock_result.invoice_header.supplier_name = "Test Supplier"
+    mock_result.invoice_header.customer_name = None
+    mock_result.invoice_header.invoice_number_confidence = 0.95
+    mock_result.invoice_header.total_confidence = 0.90
     mock_result.validation_result = MagicMock()
     mock_result.validation_result.status = "OK"
     mock_result.validation_result.diff = 0.0
     mock_result.validation_result.lines_sum = 100.0
-    mock_result.invoice_lines = []
-    mock_result.line_count = 0
+    mock_result.validation_result.hard_gate_passed = True
+    # Create mock invoice lines with all required attributes
+    # Using a simple object with real values instead of MagicMock to avoid serialization issues
+    from types import SimpleNamespace
+    mock_line = SimpleNamespace()
+    mock_line.rows = []  # Empty list for rows
+    mock_line.description = "Test Product"
+    mock_line.quantity = 1.0
+    mock_line.unit = "st"
+    mock_line.unit_price = 100.0
+    mock_line.discount = None
+    mock_line.total_amount = 100.0
+    mock_line.vat_rate = None
+    mock_line.line_number = 1
+    mock_line.segment = None
+    mock_result.invoice_lines = [mock_line]
+    mock_result.line_count = 1  # Match number of invoice_lines
+    # Explicitly set ai_request to None to avoid MagicMock auto-creation
+    mock_result.ai_request = None
     
     # Needs to return a list of virtual results
     mock_process_pdf.return_value = [mock_result]
