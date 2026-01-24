@@ -282,3 +282,55 @@ class LearningDatabase:
             """, (datetime.now().isoformat(), pattern_id))
             
             conn.commit()
+    
+    def delete_pattern(self, pattern_id: int) -> None:
+        """Delete pattern by ID.
+        
+        Args:
+            pattern_id: Pattern ID to delete
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            
+            cursor.execute("DELETE FROM patterns WHERE id = ?", (pattern_id,))
+            conn.commit()
+            
+            logger.debug(f"Deleted pattern {pattern_id}")
+    
+    def update_pattern(self, pattern_id: int, updates: Dict[str, Any]) -> None:
+        """Update pattern fields.
+        
+        Args:
+            pattern_id: Pattern ID to update
+            updates: Dict of fields to update
+        """
+        if not updates:
+            return
+        
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Build UPDATE query dynamically
+            set_clauses = []
+            values = []
+            
+            allowed_fields = [
+                'usage_count', 'last_used', 'confidence_boost',
+                'position_x', 'position_y', 'position_width', 'position_height'
+            ]
+            
+            for field, value in updates.items():
+                if field in allowed_fields:
+                    set_clauses.append(f"{field} = ?")
+                    values.append(value)
+            
+            if not set_clauses:
+                return
+            
+            values.append(pattern_id)
+            
+            query = f"UPDATE patterns SET {', '.join(set_clauses)} WHERE id = ?"
+            cursor.execute(query, values)
+            conn.commit()
+            
+            logger.debug(f"Updated pattern {pattern_id}")

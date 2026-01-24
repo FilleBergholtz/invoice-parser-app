@@ -1074,6 +1074,31 @@ def main():
         help="Train new calibration model from ground truth data (use with --validate-confidence)"
     )
     
+    parser.add_argument(
+        "--consolidate-patterns",
+        action="store_true",
+        help="Consolidate similar patterns in learning database"
+    )
+    
+    parser.add_argument(
+        "--cleanup-patterns",
+        action="store_true",
+        help="Clean up old and unused patterns from learning database"
+    )
+    
+    parser.add_argument(
+        "--max-age-days",
+        type=int,
+        default=90,
+        help="Maximum age in days for pattern cleanup (default: 90)"
+    )
+    
+    parser.add_argument(
+        "--supplier",
+        type=str,
+        help="Limit pattern operations to specific supplier name"
+    )
+    
     args = parser.parse_args()
     
     # Handle --validate-confidence command
@@ -1081,9 +1106,14 @@ def main():
         _handle_validate_confidence(args)
         return
     
+    # Handle pattern maintenance commands
+    if args.consolidate_patterns or args.cleanup_patterns:
+        _handle_pattern_maintenance(args)
+        return
+    
     # Require --input for normal processing
     if not args.input:
-        parser.error("--input is required (unless using --validate-confidence)")
+        parser.error("--input is required (unless using --validate-confidence or pattern maintenance commands)")
     
     # Use default output directory if not specified
     output_dir = args.output
@@ -1177,6 +1207,62 @@ def main():
     except Exception as e:
         print(f"Error: {str(e)}", file=sys.stderr)
         sys.exit(1)
+
+
+def _handle_pattern_maintenance(args: argparse.Namespace) -> None:
+    """Handle pattern maintenance CLI commands.
+    
+    Args:
+        args: Parsed command-line arguments
+    """
+    from ..learning.database import LearningDatabase
+    from ..learning.pattern_consolidator import (
+        consolidate_patterns,
+        cleanup_patterns,
+        PatternConsolidator
+    )
+    from ..config import get_learning_db_path
+    
+    # Initialize database
+    db_path = get_learning_db_path()
+    database = LearningDatabase(db_path)
+    
+    consolidator = PatternConsolidator(database)
+    
+    total_consolidated = 0
+    total_removed = 0
+    
+    # Consolidate patterns
+    if args.consolidate_patterns:
+        print("Consolidating similar patterns...")
+        consolidated = consolidator.consolidate_patterns(supplier=args.supplier)
+        total_consolidated = consolidated
+        print(f"✓ Consolidated {consolidated} patterns")
+    
+    # Cleanup patterns
+    if args.cleanup_patterns:
+        print(f"Cleaning up patterns (max age: {args.max_age_days} days)...")
+        removed = consolidator.cleanup_patterns(
+            max_age_days=args.max_age_days,
+            supplier=args.supplier
+        )
+        total_removed = removed
+        print(f"✓ Removed {removed} old/unused patterns")
+    
+    # Remove conflicting patterns (always run if doing maintenance)
+    if args.consolidate_patterns or args.cleanup_patterns:
+        print("Removing conflicting patterns...")
+        conflicts_removed = consolidator.remove_conflicting_patterns(supplier=args.supplier)
+        total_removed += conflicts_removed
+        print(f"✓ Removed {conflicts_removed} conflicting patterns")
+    
+    # Summary
+    print("\n" + "=" * 60)
+    print("Pattern Maintenance Summary")
+    print("=" * 60)
+    print(f"Patterns consolidated: {total_consolidated}")
+    print(f"Patterns removed: {total_removed}")
+    print("=" * 60)
 
 
 def _handle_validate_confidence(args: argparse.Namespace) -> None:
