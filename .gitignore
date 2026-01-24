@@ -54,3 +54,10 @@ tests/output*/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Build artifacts - large binaries should not be in git
+*.exe
+*.zip
+installer/*.exe
+package/*.exe
+package/*.zip
