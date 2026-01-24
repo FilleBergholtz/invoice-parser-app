@@ -12,9 +12,9 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 
 Milestone: v2.0 Features
 Phase: 5 of 9 (Improved Confidence Scoring)
-Plan: 1/3 in current phase
-Status: **In progress** - Plan 05-01 complete, ready for 05-02
-Last activity: 2026-01-24 — Plan 05-01 completed (enhanced scoring with 4 new signals, all-candidate extraction)
+Plan: 2/3 in current phase
+Status: **In progress** - Plan 05-02 complete, ready for 05-03
+Last activity: 2026-01-24 — Plan 05-02 completed (confidence calibration with isotonic regression)
 
 Progress: ████████░░░░ 44% (4/9 phases complete) — v1.0 complete, v2.0 planned
 
@@ -35,7 +35,7 @@ Progress: ████████░░░░ 44% (4/9 phases complete) — v1.
 | 2. Header + Wrap | 5 | ~0.5h | ~11min |
 | 3. Validation | 4 | ~1h | ~15min |
 | 4. Web UI | 3 | ~1h | ~20min |
-| 5. Improved Confidence Scoring | 1 | ~20min | ~20min |
+| 5. Improved Confidence Scoring | 2 | ~45min | ~22min |
 
 **Recent Trend:**
 - Last 4 plans: 03-01 (20min), 03-02 (15min), 03-03 (15min), 03-04 (15min)
