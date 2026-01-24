@@ -93,3 +93,26 @@ def get_ai_key() -> Optional[str]:
         API key from AI_KEY environment variable, or None
     """
     return os.getenv('AI_KEY')
+
+
+def get_calibration_enabled() -> bool:
+    """Check if confidence calibration is enabled.
+    
+    Returns:
+        True if CALIBRATION_ENABLED environment variable is set to 'true' (case-insensitive),
+        defaults to True if not set
+    """
+    env_value = os.getenv('CALIBRATION_ENABLED', 'true')
+    return env_value.lower() == 'true'
+
+
+def get_calibration_model_path() -> Path:
+    """Get path to calibration model file.
+    
+    Returns:
+        Path to calibration model file (default: configs/calibration_model.joblib)
+    """
+    env_path = os.getenv('CALIBRATION_MODEL_PATH')
+    if env_path:
+        return Path(env_path)
+    return Path(__file__).parent.parent / "configs" / "calibration_model.joblib"

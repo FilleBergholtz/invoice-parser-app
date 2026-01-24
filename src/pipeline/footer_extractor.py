@@ -1,13 +1,61 @@
 """Footer extraction for total amount with confidence scoring."""
 
+import logging
 import re
+from pathlib import Path
 from typing import List, Optional
 
+from ..config import get_calibration_enabled, get_calibration_model_path
 from ..models.invoice_header import InvoiceHeader
 from ..models.invoice_line import InvoiceLine
 from ..models.segment import Segment
 from ..models.traceability import Traceability
+from ..pipeline.confidence_calibration import CalibrationModel, calibrate_confidence
 from ..pipeline.confidence_scoring import score_total_amount_candidate, validate_total_against_line_items
+
+logger = logging.getLogger(__name__)
+
+# Cache for loaded calibration model (load once, reuse)
+_calibration_model_cache: Optional[CalibrationModel] = None
+_calibration_model_path: Optional[Path] = None
+
+
+def _load_calibration_model() -> Optional[CalibrationModel]:
+    """Load calibration model from file (with caching).
+    
+    Returns:
+        CalibrationModel if found and valid, None otherwise
+    """
+    global _calibration_model_cache, _calibration_model_path
+    
+    # Check if calibration is enabled
+    if not get_calibration_enabled():
+        return None
+    
+    model_path = get_calibration_model_path()
+    
+    # Check cache first
+    if _calibration_model_cache is not None and _calibration_model_path == model_path:
+        return _calibration_model_cache
+    
+    # Try to load model
+    model = CalibrationModel.load(model_path)
+    
+    if model is None:
+        # Only log warning once (not for every invoice)
+        if _calibration_model_cache is None:
+            logger.debug(
+                f"Calibration model not found at {model_path}. "
+                "Using raw confidence scores (no calibration)."
+            )
+        return None
+    
+    # Cache the model
+    _calibration_model_cache = model
+    _calibration_model_path = model_path
+    logger.debug(f"Loaded calibration model from {model_path}")
+    
+    return model
 
 
 def extract_total_amount(
@@ -307,7 +355,15 @@ def extract_total_amount(
     
     scored_candidates.sort(key=sort_key, reverse=True)
     
-    # Step 3: Store top 5 candidates for UI display
+    # Step 3: Apply calibration to all candidate scores (if model exists)
+    calibration_model = _load_calibration_model()
+    if calibration_model:
+        for candidate in scored_candidates:
+            candidate['score'] = calibrate_confidence(candidate['score'], calibration_model)
+        # Re-sort after calibration (scores may have changed)
+        scored_candidates.sort(key=sort_key, reverse=True)
+    
+    # Step 4: Store top 5 candidates for UI display
     top_5_candidates = []
     for candidate in scored_candidates[:5]:  # Top 5 only
         top_5_candidates.append({
@@ -319,7 +375,7 @@ def extract_total_amount(
     
     invoice_header.total_candidates = top_5_candidates if top_5_candidates else None
     
-    # Step 4: Select final value
+    # Step 5: Select final value
     if not scored_candidates:
         invoice_header.total_confidence = 0.0
         invoice_header.total_amount = None
@@ -404,7 +460,7 @@ def extract_total_amount(
         evidence=evidence
     )
     
-    # Step 5: Update InvoiceHeader
+    # Step 7: Update InvoiceHeader
     invoice_header.total_amount = final_amount
     invoice_header.total_confidence = final_score
     invoice_header.total_traceability = traceability

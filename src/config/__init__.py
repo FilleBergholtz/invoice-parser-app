@@ -19,6 +19,8 @@ get_output_subdirs = config_module.get_output_subdirs
 get_ai_enabled = config_module.get_ai_enabled
 get_ai_endpoint = config_module.get_ai_endpoint
 get_ai_key = config_module.get_ai_key
+get_calibration_enabled = config_module.get_calibration_enabled
+get_calibration_model_path = config_module.get_calibration_model_path
 
 __all__ = [
     'get_app_name',
@@ -28,4 +30,6 @@ __all__ = [
     'get_ai_enabled',
     'get_ai_endpoint',
     'get_ai_key',
+    'get_calibration_enabled',
+    'get_calibration_model_path',
 ]
