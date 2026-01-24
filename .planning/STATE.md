@@ -12,9 +12,9 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 
 Milestone: v2.0 Features
 Phase: 6 of 9 (Manual Validation UI)
-Plan: 1/3 in current phase
-Status: **In progress** - Plan 06-01 complete, ready for 06-02
-Last activity: 2026-01-24 — Plan 06-01 completed (PDF viewer with click detection)
+Plan: 2/3 in current phase
+Status: **In progress** - Plan 06-02 complete, ready for 06-03
+Last activity: 2026-01-24 — Plan 06-02 completed (candidate selector with keyboard shortcuts)
 
 Progress: ██████████░░ 56% (5/9 phases complete, 1 plan in progress) — Phase 6 started
 
@@ -36,7 +36,7 @@ Progress: ██████████░░ 56% (5/9 phases complete, 1 plan 
 | 3. Validation | 4 | ~1h | ~15min |
 | 4. Web UI | 3 | ~1h | ~20min |
 | 5. Improved Confidence Scoring | 3 | ~75min | ~25min |
-| 6. Manual Validation UI | 1 | ~35min | ~35min |
+| 6. Manual Validation UI | 2 | ~65min | ~32min |
 
 **Recent Trend:**
 - Last 4 plans: 03-01 (20min), 03-02 (15min), 03-03 (15min), 03-04 (15min)
