@@ -3,13 +3,14 @@
 import logging
 import re
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from ..config import (
     get_calibration_enabled,
     get_calibration_model_path,
     get_learning_enabled,
-    get_learning_db_path
+    get_learning_db_path,
+    get_ai_enabled
 )
 from ..models.invoice_header import InvoiceHeader
 from ..models.invoice_line import InvoiceLine
@@ -96,6 +97,48 @@ def _load_learning_database():
         _learning_database_cache = None
     
     return _learning_database_cache
+
+
+def _try_ai_fallback(
+    footer_segment: Segment,
+    line_items: List[InvoiceLine],
+    invoice_header: InvoiceHeader
+) -> Optional[Dict[str, Any]]:
+    """Try AI fallback for total amount extraction.
+    
+    Args:
+        footer_segment: Footer segment with text
+        line_items: Line items for validation
+        invoice_header: InvoiceHeader for context
+        
+    Returns:
+        AI result dict with total_amount, confidence, reasoning, validation_passed, or None if fails
+    """
+    try:
+        from ..ai.fallback import extract_total_with_ai
+        
+        # Get footer text
+        footer_text = footer_segment.raw_text if footer_segment.raw_text else " ".join(
+            row.text for row in footer_segment.rows
+        )
+        
+        # Calculate line items sum for validation
+        line_items_sum = sum(line.total_amount for line in line_items) if line_items else None
+        
+        # Call AI fallback
+        ai_result = extract_total_with_ai(footer_text, line_items_sum)
+        
+        if ai_result:
+            logger.debug(
+                f"AI extracted total: {ai_result.get('total_amount')}, "
+                f"confidence: {ai_result.get('confidence'):.2f}"
+            )
+        
+        return ai_result
+        
+    except Exception as e:
+        logger.warning(f"AI fallback failed: {e}")
+        return None
 
 
 def _apply_pattern_boosts(
@@ -496,7 +539,45 @@ def extract_total_amount(
     
     invoice_header.total_candidates = top_5_candidates if top_5_candidates else None
     
-    # Step 5: Select final value
+    # Step 5: Try AI fallback if confidence is low
+    ai_result = None
+    if get_ai_enabled() and scored_candidates:
+        top_heuristic_score = scored_candidates[0]['score']
+        if top_heuristic_score < 0.95:
+            # Try AI fallback
+            ai_result = _try_ai_fallback(footer_segment, line_items, invoice_header)
+            if ai_result:
+                # Compare AI result with heuristic
+                ai_confidence = ai_result.get('confidence', 0.0)
+                if ai_confidence > top_heuristic_score:
+                    # Use AI result - add as top candidate
+                    logger.info(
+                        f"AI fallback succeeded: confidence {ai_confidence:.2f} > "
+                        f"heuristic {top_heuristic_score:.2f}"
+                    )
+                    # Add AI result as new top candidate
+                    ai_candidate = {
+                        'amount': ai_result['total_amount'],
+                        'score': ai_confidence,
+                        'row_index': -1,  # AI result, no row
+                        'keyword_type': 'ai_extracted',
+                        'row': None  # No row for AI result
+                    }
+                    scored_candidates.insert(0, ai_candidate)
+                    # Re-sort
+                    scored_candidates.sort(key=sort_key, reverse=True)
+                    # Update top 5 candidates
+                    top_5_candidates = []
+                    for candidate in scored_candidates[:5]:
+                        top_5_candidates.append({
+                            'amount': candidate['amount'],
+                            'score': candidate['score'],
+                            'row_index': candidate['row_index'],
+                            'keyword_type': candidate.get('keyword_type')
+                        })
+                    invoice_header.total_candidates = top_5_candidates if top_5_candidates else None
+    
+    # Step 6: Select final value
     if not scored_candidates:
         invoice_header.total_confidence = 0.0
         invoice_header.total_amount = None
@@ -581,7 +662,7 @@ def extract_total_amount(
         evidence=evidence
     )
     
-    # Step 7: Update InvoiceHeader
+    # Step 8: Update InvoiceHeader
     invoice_header.total_amount = final_amount
     invoice_header.total_confidence = final_score
     invoice_header.total_traceability = traceability
