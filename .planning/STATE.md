@@ -6,7 +6,7 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 
 **Core value:** 100% korrekt på fakturanummer och totalsumma, eller tydlig REVIEW-status. Allt som systemet exporterar som OK är garanterat korrekt. Osäkra fall går alltid till REVIEW (ingen tyst gissning).
 
-**Current focus:** v2.0 Features - Phase 6: Manual Validation UI (In progress)
+**Current focus:** v2.0 Features - Phase 7: Learning System (Complete)
 
 ## Current Position
 
