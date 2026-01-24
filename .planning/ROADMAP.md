@@ -186,9 +186,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 06-01: PDF Viewer Component - Create clickable PDF viewer with PyMuPDF, click detection, and candidate highlighting
-- [ ] 06-02: Candidate Selector - Create candidate selector widget with keyboard shortcuts and bidirectional synchronization with PDF viewer
-- [ ] 06-03: Correction Collection - Implement correction collector to save user corrections to JSON for learning system
+- [ ] 07-01: SQLite Database & Pattern Extraction - Create SQLite learning database, import corrections from JSON, extract supplier-specific patterns
+- [ ] 07-02: Pattern Matching & Confidence Boosting - Implement pattern matching for new invoices, integrate confidence score boosting
+- [ ] 07-03: Pattern Consolidation & Cleanup - Implement pattern consolidation, cleanup of old/conflicting patterns, CLI commands
 
 ---
 
@@ -212,9 +212,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 06-01: PDF Viewer Component - Create clickable PDF viewer with PyMuPDF, click detection, and candidate highlighting
-- [ ] 06-02: Candidate Selector - Create candidate selector widget with keyboard shortcuts and bidirectional synchronization with PDF viewer
-- [ ] 06-03: Correction Collection - Implement correction collector to save user corrections to JSON for learning system
+- [ ] 07-01: SQLite Database & Pattern Extraction - Create SQLite learning database, import corrections from JSON, extract supplier-specific patterns
+- [ ] 07-02: Pattern Matching & Confidence Boosting - Implement pattern matching for new invoices, integrate confidence score boosting
+- [ ] 07-03: Pattern Consolidation & Cleanup - Implement pattern consolidation, cleanup of old/conflicting patterns, CLI commands
 
 ---
 
@@ -239,9 +239,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 06-01: PDF Viewer Component - Create clickable PDF viewer with PyMuPDF, click detection, and candidate highlighting
-- [ ] 06-02: Candidate Selector - Create candidate selector widget with keyboard shortcuts and bidirectional synchronization with PDF viewer
-- [ ] 06-03: Correction Collection - Implement correction collector to save user corrections to JSON for learning system
+- [ ] 07-01: SQLite Database & Pattern Extraction - Create SQLite learning database, import corrections from JSON, extract supplier-specific patterns
+- [ ] 07-02: Pattern Matching & Confidence Boosting - Implement pattern matching for new invoices, integrate confidence score boosting
+- [ ] 07-03: Pattern Consolidation & Cleanup - Implement pattern consolidation, cleanup of old/conflicting patterns, CLI commands
 
 ---
 
@@ -262,9 +262,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 06-01: PDF Viewer Component - Create clickable PDF viewer with PyMuPDF, click detection, and candidate highlighting
-- [ ] 06-02: Candidate Selector - Create candidate selector widget with keyboard shortcuts and bidirectional synchronization with PDF viewer
-- [ ] 06-03: Correction Collection - Implement correction collector to save user corrections to JSON for learning system
+- [ ] 07-01: SQLite Database & Pattern Extraction - Create SQLite learning database, import corrections from JSON, extract supplier-specific patterns
+- [ ] 07-02: Pattern Matching & Confidence Boosting - Implement pattern matching for new invoices, integrate confidence score boosting
+- [ ] 07-03: Pattern Consolidation & Cleanup - Implement pattern consolidation, cleanup of old/conflicting patterns, CLI commands
 
 **Note:** This phase is optional and can be deferred to v3.0 if not critical.
 
@@ -283,7 +283,7 @@ Phases execute in numeric order: 5 → 6 → 7 → 8 → 9
 | 4. Web UI | v1.0 | 3/3 | Complete | 2026-01-17 |
 | 5. Improved Confidence Scoring | v2.0 | 3/3 | Complete | 2026-01-24 |
 | 6. Manual Validation UI | v2.0 | 3/3 | Complete | - |
-| 7. Learning System | v2.0 | 0/TBD | Not started | - |
+| 7. Learning System | v2.0 | 0/3 | Not started | - |
 | 8. AI Integration | v2.0 | 0/TBD | Not started | - |
 | 9. AI Data Analysis | v2.0 | 0/TBD | Not started | - |
 
