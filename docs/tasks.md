@@ -485,11 +485,11 @@ Varje task följer strikt format:
 - `tests/test_ai_client.py` (Unit tests med mocked HTTP)
 
 **DoD**:
-- [ ] AI är opt-in: default `AI_ENABLED=false`
-- [ ] Vid offline/nätfel: pipeline fortsätter utan AI och loggar warning
-- [ ] AI request/response sparas i artifacts (`ai_request.json`, `ai_response.json`, `ai_diff.json`)
-- [ ] Unit tests passerar (mockad server)
-- [ ] Inga secrets hårdkodas (endast env/config)
+- [x] AI är opt-in: default `AI_ENABLED=false`
+- [x] Vid offline/nätfel: pipeline fortsätter utan AI och loggar warning
+- [x] AI request/response sparas i artifacts (`ai_request.json`, `ai_response.json`, `ai_diff.json`)
+- [x] Unit tests passerar (mockad server)
+- [x] Inga secrets hårdkodas (endast env/config)
 
 ---
 

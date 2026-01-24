@@ -34,8 +34,10 @@ from ..pipeline.validation import validate_invoice
 from ..pipeline.invoice_boundary_detection import detect_invoice_boundaries
 from ..export.excel_export import export_to_excel
 from ..export.review_report import create_review_report
-from ..config import get_default_output_dir, get_output_subdirs
+from ..config import get_default_output_dir, get_output_subdirs, get_ai_enabled, get_ai_endpoint, get_ai_key
 from ..run_summary import RunSummary
+from ..ai.client import AIClient, AIClientError, AIConnectionError, AIAPIError, create_ai_diff, save_ai_artifacts
+from ..ai.schemas import AIInvoiceRequest, AIInvoiceLineRequest
 
 
 class InvoiceProcessingError(Exception):
@@ -210,6 +212,82 @@ def process_invoice(
                     max_attempts=5
                 )
         
+        # Step 7.5: Optional AI enrichment
+        ai_enriched = False
+        if get_ai_enabled() and invoice_header:
+            ai_endpoint = get_ai_endpoint()
+            if ai_endpoint:
+                try:
+                    ai_client = AIClient(ai_endpoint, get_ai_key())
+                    
+                    # Create AI request
+                    ai_request = AIInvoiceRequest(
+                        invoice_number=invoice_header.invoice_number,
+                        invoice_date=invoice_header.invoice_date.isoformat() if invoice_header.invoice_date else None,
+                        supplier_name=invoice_header.supplier_name,
+                        customer_name=invoice_header.customer_name,
+                        total_amount=invoice_header.total_amount,
+                        line_items=[
+                            AIInvoiceLineRequest(
+                                description=line.description,
+                                quantity=line.quantity,
+                                unit=line.unit,
+                                unit_price=line.unit_price,
+                                discount=line.discount,
+                                total_amount=line.total_amount,
+                                line_number=line.line_number
+                            )
+                            for line in all_invoice_lines
+                        ]
+                    )
+                    
+                    # Call AI service
+                    if verbose:
+                        print("  Calling AI enrichment service...")
+                    ai_response = ai_client.enrich_invoice(ai_request)
+                    ai_enriched = True
+                    
+                    # Apply AI enrichments (update invoice_header and invoice_lines)
+                    if ai_response.invoice_number and ai_response.invoice_number != invoice_header.invoice_number:
+                        invoice_header.invoice_number = ai_response.invoice_number
+                    if ai_response.supplier_name and ai_response.supplier_name != invoice_header.supplier_name:
+                        invoice_header.supplier_name = ai_response.supplier_name
+                    if ai_response.total_amount and ai_response.total_amount != invoice_header.total_amount:
+                        invoice_header.total_amount = ai_response.total_amount
+                    
+                    # Update line items
+                    for i, (line, ai_line) in enumerate(zip(all_invoice_lines, ai_response.line_items)):
+                        if ai_line.description and ai_line.description != line.description:
+                            line.description = ai_line.description
+                        if ai_line.quantity is not None and ai_line.quantity != line.quantity:
+                            line.quantity = ai_line.quantity
+                        if ai_line.unit_price is not None and ai_line.unit_price != line.unit_price:
+                            line.unit_price = ai_line.unit_price
+                        if ai_line.total_amount is not None and ai_line.total_amount != line.total_amount:
+                            line.total_amount = ai_line.total_amount
+                    
+                    # Create diff
+                    ai_diff = create_ai_diff(ai_request, ai_response)
+                    
+                    # Save artifacts (if artifacts_dir is available via progress_callback context)
+                    # Note: artifacts_dir will be saved later in process_batch
+                    if verbose:
+                        print("  AI enrichment completed successfully")
+                        
+                except (AIConnectionError, AIAPIError) as e:
+                    # Log warning but continue without AI
+                    if verbose:
+                        print(f"  Warning: AI enrichment failed: {e}")
+                    # Save error artifact if artifacts_dir available
+                    # (handled in process_batch)
+                except Exception as e:
+                    # Unexpected error - log but continue
+                    if verbose:
+                        print(f"  Warning: Unexpected AI error: {e}")
+            else:
+                if verbose:
+                    print("  Warning: AI_ENABLED=true but AI_ENDPOINT not set")
+        
         # Step 8: Run validation
         validation_result = None
         if invoice_header:
@@ -226,7 +304,8 @@ def process_invoice(
             "invoice_lines": all_invoice_lines,
             "invoice_header": invoice_header,
             "validation_result": validation_result,
-            "error": None
+            "error": None,
+            "ai_enriched": ai_enriched
         }
         
     except PDFReadError as e:
@@ -378,7 +457,84 @@ def process_virtual_invoice(
                     max_attempts=5
                 )
         
-        # Run validation
+        # Step 7.5: Optional AI enrichment
+        ai_enriched = False
+        ai_request_data = None
+        ai_response_data = None
+        ai_error = None
+        
+        if get_ai_enabled() and invoice_header:
+            ai_endpoint = get_ai_endpoint()
+            if ai_endpoint:
+                try:
+                    ai_client = AIClient(ai_endpoint, get_ai_key())
+                    
+                    # Create AI request
+                    ai_request = AIInvoiceRequest(
+                        invoice_number=invoice_header.invoice_number,
+                        invoice_date=invoice_header.invoice_date.isoformat() if invoice_header.invoice_date else None,
+                        supplier_name=invoice_header.supplier_name,
+                        customer_name=invoice_header.customer_name,
+                        total_amount=invoice_header.total_amount,
+                        line_items=[
+                            AIInvoiceLineRequest(
+                                description=line.description,
+                                quantity=line.quantity,
+                                unit=line.unit,
+                                unit_price=line.unit_price,
+                                discount=line.discount,
+                                total_amount=line.total_amount,
+                                line_number=line.line_number
+                            )
+                            for line in all_invoice_lines
+                        ]
+                    )
+                    ai_request_data = ai_request
+                    
+                    # Call AI service
+                    if verbose:
+                        print("  Calling AI enrichment service...")
+                    ai_response = ai_client.enrich_invoice(ai_request)
+                    ai_response_data = ai_response
+                    ai_enriched = True
+                    
+                    # Apply AI enrichments (update invoice_header and invoice_lines)
+                    if ai_response.invoice_number and ai_response.invoice_number != invoice_header.invoice_number:
+                        invoice_header.invoice_number = ai_response.invoice_number
+                    if ai_response.supplier_name and ai_response.supplier_name != invoice_header.supplier_name:
+                        invoice_header.supplier_name = ai_response.supplier_name
+                    if ai_response.total_amount and ai_response.total_amount != invoice_header.total_amount:
+                        invoice_header.total_amount = ai_response.total_amount
+                    
+                    # Update line items
+                    for i, (line, ai_line) in enumerate(zip(all_invoice_lines, ai_response.line_items)):
+                        if ai_line.description and ai_line.description != line.description:
+                            line.description = ai_line.description
+                        if ai_line.quantity is not None and ai_line.quantity != line.quantity:
+                            line.quantity = ai_line.quantity
+                        if ai_line.unit_price is not None and ai_line.unit_price != line.unit_price:
+                            line.unit_price = ai_line.unit_price
+                        if ai_line.total_amount is not None and ai_line.total_amount != line.total_amount:
+                            line.total_amount = ai_line.total_amount
+                    
+                    if verbose:
+                        print("  AI enrichment completed successfully")
+                        
+                except (AIConnectionError, AIAPIError) as e:
+                    # Log warning but continue without AI
+                    ai_error = str(e)
+                    if verbose:
+                        print(f"  Warning: AI enrichment failed: {e}")
+                except Exception as e:
+                    # Unexpected error - log but continue
+                    ai_error = str(e)
+                    if verbose:
+                        print(f"  Warning: Unexpected AI error: {e}")
+            else:
+                if verbose:
+                    print("  Warning: AI_ENABLED=true but AI_ENDPOINT not set")
+        
+        # Step 8: Run validation
         validation_result = None
         if invoice_header:
             validation_result = validate_invoice(invoice_header, all_invoice_lines)
@@ -386,7 +542,7 @@ def process_virtual_invoice(
         else:
             status = "REVIEW"
         
-        return VirtualInvoiceResult(
+        result = VirtualInvoiceResult(
             virtual_invoice_id=virtual_invoice_id,
             source_pdf=doc.filename,
             virtual_invoice_index=virtual_invoice_index,
@@ -398,6 +554,13 @@ def process_virtual_invoice(
             validation_result=validation_result,
             error=None
         )
+        
+        # Store AI data for later artifact saving
+        result.ai_request = ai_request_data
+        result.ai_response = ai_response_data
+        result.ai_error = ai_error
+        
+        return result
         
     except Exception as e:
         return VirtualInvoiceResult(
@@ -609,6 +772,23 @@ def process_batch(
                         "filename": pdf_file.name,
                         "virtual_invoice_id": virtual_result.virtual_invoice_id,
                     })
+                    
+                    # Save AI artifacts if AI was attempted
+                    if hasattr(virtual_result, 'ai_request') and virtual_result.ai_request:
+                        invoice_artifacts_dir = run_artifacts_dir / virtual_result.virtual_invoice_id
+                        invoice_artifacts_dir.mkdir(parents=True, exist_ok=True)
+                        
+                        ai_diff = None
+                        if virtual_result.ai_response:
+                            ai_diff = create_ai_diff(virtual_result.ai_request, virtual_result.ai_response)
+                        
+                        save_ai_artifacts(
+                            invoice_artifacts_dir,
+                            virtual_result.ai_request,
+                            virtual_result.ai_response if hasattr(virtual_result, 'ai_response') else None,
+                            ai_diff,
+                            virtual_result.ai_error if hasattr(virtual_result, 'ai_error') else None
+                        )
                     
                     # Create review report if REVIEW status
                     if virtual_result.validation_result.status == "REVIEW":

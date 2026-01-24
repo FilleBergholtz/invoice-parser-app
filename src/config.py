@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+from typing import Optional
 
 
 def get_app_name() -> str:
@@ -65,3 +66,30 @@ def get_output_subdirs(base_output_dir: Path) -> dict:
         subdir.mkdir(parents=True, exist_ok=True)
     
     return subdirs
+
+
+def get_ai_enabled() -> bool:
+    """Check if AI enrichment is enabled.
+    
+    Returns:
+        True if AI_ENABLED environment variable is set to 'true' (case-insensitive)
+    """
+    return os.getenv('AI_ENABLED', 'false').lower() == 'true'
+
+
+def get_ai_endpoint() -> Optional[str]:
+    """Get AI service endpoint URL.
+    
+    Returns:
+        AI endpoint URL from AI_ENDPOINT environment variable, or None
+    """
+    return os.getenv('AI_ENDPOINT')
+
+
+def get_ai_key() -> Optional[str]:
+    """Get AI service API key.
+    
+    Returns:
+        API key from AI_KEY environment variable, or None
+    """
+    return os.getenv('AI_KEY')
