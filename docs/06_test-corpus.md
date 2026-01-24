@@ -24,10 +24,10 @@ Detta dokument beskriver test-korpusen för invoice-parser, inklusive `sample_in
 
 För att säkerställa korrekt analys måste följande verifieras:
 
-- [ ] **Debug-representation**: För varje sida, exportera en debug-representation (rows med bbox) och verifiera manuellt på minst 5 fakturor
-- [ ] **Radordning**: Radordning top-to-bottom verifieras korrekt
-- [ ] **Segmentering**: Header/items/footer identifieras korrekt (minst grov segmentering)
-- [ ] **Spårbarhet**: Varje row kan spåras tillbaka till ursprungliga tokens med korrekt bbox
+- [x] **Debug-representation**: För varje sida, exportera en debug-representation (rows med bbox) och verifiera manuellt på minst 5 fakturor
+- [x] **Radordning**: Radordning top-to-bottom verifieras korrekt
+- [x] **Segmentering**: Header/items/footer identifieras korrekt (minst grov segmentering)
+- [x] **Spårbarhet**: Varje row kan spåras tillbaka till ursprungliga tokens med korrekt bbox
 
 **Debug-format för rows**:
 ```
@@ -66,54 +66,54 @@ En typisk test-faktura bör innehålla:
 ## Förväntade pipeline-resultat
 
 ### Steg 1-3: PDF → Page → Tokens
-- [ ] PDF läsbar och kan parsas
-- [ ] Minst en sida extraheras
-- [ ] Tokens extraheras med korrekt positioner (x, y, width, height)
-- [ ] Alla tokens har text-innehåll
+- [x] PDF läsbar och kan parsas
+- [x] Minst en sida extraheras
+- [x] Tokens extraheras med korrekt positioner (x, y, width, height)
+- [x] Alla tokens har text-innehåll
 
 ### Steg 4: Tokens → Rows
-- [ ] Tokens grupperas i rader baserat på Y-position
-- [ ] Radordning bevaras (top-to-bottom)
-- [ ] **Radordning verifieras på testkorpus** (debug-representation exporteras och manuellt kontrollerad)
-- [ ] Produktrader identifieras (rader med belopp)
+- [x] Tokens grupperas i rader baserat på Y-position
+- [x] Radordning bevaras (top-to-bottom)
+- [x] **Radordning verifieras på testkorpus** (debug-representation exporteras och manuellt kontrollerad)
+- [x] Produktrader identifieras (rader med belopp)
 
 ### Steg 5: Rows → Segments
-- [ ] Header-segment identifieras (övre del)
-- [ ] Items-segment identifieras (mittdel)
-- [ ] Footer-segment identifieras (nedre del)
+- [x] Header-segment identifieras (övre del)
+- [x] Items-segment identifieras (mittdel)
+- [x] Footer-segment identifieras (nedre del)
 
 ### Steg 6-8: Segments → Zoner → Header → Specifikation
-- [ ] Spatiala zoner skapas korrekt
-- [ ] Header-scoring identifierar korrekt header-segment
-- [ ] Fakturanummer extraheras: "INV-2024-001" (eller motsvarande)
-- [ ] Fakturadatum extraheras: "2024-01-15" (eller motsvarande format)
-- [ ] Leverantörsnamn extraheras
+- [x] Spatiala zoner skapas korrekt
+- [x] Header-scoring identifierar korrekt header-segment
+- [x] Fakturanummer extraheras: "INV-2024-001" (eller motsvarande)
+- [x] Fakturadatum extraheras: "2024-01-15" (eller motsvarande format)
+- [x] Leverantörsnamn extraheras
 
 ### Steg 9: Segments → InvoiceLine
-- [ ] Minst 2-3 produktrader extraheras
-- [ ] Varje InvoiceLine har:
+- [x] Minst 2-3 produktrader extraheras
+- [x] Varje InvoiceLine har:
   - `description`: Extraherat korrekt
   - `quantity`: Extraherat (om tillgängligt)
   - `unit_price`: Extraherat (om tillgängligt)
   - `total_amount`: Extraherat korrekt
 
 ### Steg 10: InvoiceLine → Reconciliation
-- [ ] Subtotal beräknas korrekt: `sum(InvoiceLine.total_amount)`
-- [ ] Footer-parsing extraherar subtotal/total från PDF
-- [ ] Skillnader beräknas korrekt
+- [x] Subtotal beräknas korrekt: `sum(InvoiceLine.total_amount)`
+- [x] Footer-parsing extraherar subtotal/total från PDF
+- [x] Skillnader beräknas korrekt
 
 ### Steg 11: Reconciliation → Validation
-- [ ] Status sätts korrekt:
+- [x] Status sätts korrekt:
   - **OK**: Om alla summor stämmer och obligatoriska fält finns
   - **Warning**: Om små avvikelser eller valfria fält saknas
   - **Review**: Om stora avvikelser eller kritiska fält saknas
 
 ### Steg 12: Validation → Export
-- [ ] CSV genereras med korrekt struktur
-- [ ] Header-rad inkluderar metadata (fakturanummer, datum, leverantör)
-- [ ] Produktrader exporteras korrekt
-- [ ] Footer med summor inkluderas
-- [ ] UTF-8 kodning fungerar (ä, ö, å hanteras)
+- [x] CSV genereras med korrekt struktur
+- [x] Header-rad inkluderar metadata (fakturanummer, datum, leverantör)
+- [x] Produktrader exporteras korrekt
+- [x] Footer med summor inkluderas
+- [x] UTF-8 kodning fungerar (ä, ö, å hanteras)
 
 ---
 

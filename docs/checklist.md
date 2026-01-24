@@ -12,12 +12,12 @@ Denna gate säkerställer att dokumentnormalisering är komplett och stabil inna
 
 ### Normaliserings-krav (måste vara klara innan semantisk parsing):
 
-- [ ] **PDF splittad till sidor**: Document → Page fungerar, alla sidor extraheras
-- [ ] **Sidbilder eller renderad sida finns**: Layout-information tillgänglig för varje sida
-- [ ] **Tokens med bbox finns för varje sida**: Page → Tokens fungerar, alla tokens har position (x, y, width, height)
-- [ ] **Rader är skapade och ordning verifierad**: Tokens → Rows fungerar, radordning top-to-bottom verifierad på testkorpus
-- [ ] **Segment (header/items/footer) finns**: Rows → Segments fungerar, minst grov segmentering implementerad
-- [ ] **Spårbarhet verifierad**: Kan peka ut `page_number` + `token bbox` för valfri text i pipeline
+- [x] **PDF splittad till sidor**: Document → Page fungerar, alla sidor extraheras
+- [x] **Sidbilder eller renderad sida finns**: Layout-information tillgänglig för varje sida
+- [x] **Tokens med bbox finns för varje sida**: Page → Tokens fungerar, alla tokens har position (x, y, width, height)
+- [x] **Rader är skapade och ordning verifierad**: Tokens → Rows fungerar, radordning top-to-bottom verifierad på testkorpus
+- [x] **Segment (header/items/footer) finns**: Rows → Segments fungerar, minst grov segmentering implementerad
+- [x] **Spårbarhet verifierad**: Kan peka ut `page_number` + `token bbox` för valfri text i pipeline
 
 ### Verifiering
 
@@ -33,152 +33,152 @@ Innan du går vidare till T6 (Segments → InvoiceLine), verifiera:
 ## Allmänna krav för varje task
 
 ### Implementation
-- [ ] Kod implementerad enligt task-specifikation
-- [ ] Klasser/strukturer följer `docs/02_data-model.md` exakt
-- [ ] Type hints för alla funktioner och metoder
-- [ ] Docstrings för alla klasser och funktioner
-- [ ] Följer PEP 8 style guide
-- [ ] Kod är lättläst och välkommenterad
+- [x] Kod implementerad enligt task-specifikation
+- [x] Klasser/strukturer följer `docs/02_data-model.md` exakt
+- [x] Type hints för alla funktioner och metoder
+- [x] Docstrings för alla klasser och funktioner
+- [x] Följer PEP 8 style guide
+- [x] Kod är lättläst och välkommenterad
 
 ### Testning
-- [ ] Unit tests skapade
-- [ ] Unit tests passerar
-- [ ] Testat med `sample_invoice_1.pdf`
-- [ ] Edge cases hanterade (om tillämpligt)
+- [x] Unit tests skapade
+- [x] Unit tests passerar
+- [x] Testat med `sample_invoice_1.pdf`
+- [x] Edge cases hanterade (om tillämpligt)
 
 ### Dokumentation
-- [ ] Task DoD-kriterier uppfyllda
-- [ ] Checklista markerad (denna fil)
-- [ ] Uppdaterad om nya edge cases upptäckts
+- [x] Task DoD-kriterier uppfyllda
+- [x] Checklista markerad (denna fil)
+- [x] Uppdaterad om nya edge cases upptäckts
 
 ## Fas 1: Vertical Slice
 
 ### [T1] PDF → Document
-- [ ] Document-klass implementerad
-- [ ] PDF-läsning fungerar
-- [ ] Metadata extraheras
-- [ ] Unit tests passerar
-- [ ] Testat med sample_invoice_1.pdf
+- [x] Document-klass implementerad
+- [x] PDF-läsning fungerar
+- [x] Metadata extraheras
+- [x] Unit tests passerar
+- [x] Testat med sample_invoice_1.pdf
 
 ### [T2] Document → Page
-- [ ] Page-klass implementerad
-- [ ] Sidor extraheras korrekt
-- [ ] Sidnumrering fungerar
-- [ ] Unit tests passerar
-- [ ] Testat med sample_invoice_1.pdf
+- [x] Page-klass implementerad
+- [x] Sidor extraheras korrekt
+- [x] Sidnumrering fungerar
+- [x] Unit tests passerar
+- [x] Testat med sample_invoice_1.pdf
 
 ### [T3] Page → Tokens
-- [ ] Token-klass implementerad
-- [ ] Tokenisering med positioner fungerar
-- [ ] Spatial information korrekt
-- [ ] Unit tests passerar
-- [ ] Testat med sample_invoice_1.pdf
+- [x] Token-klass implementerad
+- [x] Tokenisering med positioner fungerar
+- [x] Spatial information korrekt
+- [x] Unit tests passerar
+- [x] Testat med sample_invoice_1.pdf
 
 ### [T4] Tokens → Rows
-- [ ] Row-klass implementerad
-- [ ] Token-gruppering fungerar
-- [ ] Y-position tolerans implementerad
-- [ ] Radordning bevaras
-- [ ] Unit tests passerar
-- [ ] Testat med sample_invoice_1.pdf
+- [x] Row-klass implementerad
+- [x] Token-gruppering fungerar
+- [x] Y-position tolerans implementerad
+- [x] Radordning bevaras
+- [x] Unit tests passerar
+- [x] Testat med sample_invoice_1.pdf
 
 ### [T5] Rows → Segments
-- [ ] Segment-klass implementerad
-- [ ] Segment-identifiering fungerar
-- [ ] Header/items/footer identifieras korrekt
-- [ ] Position-baserad identifiering fungerar
-- [ ] Unit tests passerar
-- [ ] Testat med sample_invoice_1.pdf
+- [x] Segment-klass implementerad
+- [x] Segment-identifiering fungerar
+- [x] Header/items/footer identifieras korrekt
+- [x] Position-baserad identifiering fungerar
+- [x] Unit tests passerar
+- [x] Testat med sample_invoice_1.pdf
 
 ### [T6] Segments → InvoiceLine
-- [ ] InvoiceLine-klass implementerad
-- [ ] Produktrad-parsing fungerar
-- [ ] Regel "rad med belopp = produktrad" implementerad
-- [ ] Fält extraheras korrekt
-- [ ] Unit tests passerar
-- [ ] Testat med sample_invoice_1.pdf
+- [x] InvoiceLine-klass implementerad
+- [x] Produktrad-parsing fungerar
+- [x] Regel "rad med belopp = produktrad" implementerad
+- [x] Fält extraheras korrekt
+- [x] Unit tests passerar
+- [x] Testat med sample_invoice_1.pdf
 
 ### [T7] InvoiceLine → Export (CSV)
-- [ ] CSV-export fungerar
-- [ ] Korrekt kolumnstruktur
-- [ ] UTF-8 kodning fungerar
-- [ ] CLI-entry point fungerar
-- [ ] Unit tests passerar
-- [ ] End-to-end pipeline testat
-- [ ] **Fas 1 komplett**
+- [x] CSV-export fungerar
+- [x] Korrekt kolumnstruktur
+- [x] UTF-8 kodning fungerar
+- [x] CLI-entry point fungerar
+- [x] Unit tests passerar
+- [x] End-to-end pipeline testat
+- [x] **Fas 1 komplett**
 
 ## Fas 2: Header + Wrap
 
 ### [T8] Segments → Zoner
-- [ ] Zone-klass implementerad
-- [ ] Spatial zonering fungerar
-- [ ] Zon-typer identifieras korrekt
-- [ ] Unit tests passerar
-- [ ] Testat med sample_invoice_1.pdf
+- [x] Zone-klass implementerad
+- [x] Spatial zonering fungerar
+- [x] Zon-typer identifieras korrekt
+- [x] Unit tests passerar
+- [x] Testat med sample_invoice_1.pdf
 
 ### [T9] Zoner → Header
-- [ ] InvoiceHeader-klass implementerad
-- [ ] Header-scoring fungerar
-- [ ] Header-segment identifieras korrekt
-- [ ] Konfidenspoäng beräknas
-- [ ] Unit tests passerar
-- [ ] Testat med sample_invoice_1.pdf
+- [x] InvoiceHeader-klass implementerad
+- [x] Header-scoring fungerar
+- [x] Header-segment identifieras korrekt
+- [x] Konfidenspoäng beräknas
+- [x] Unit tests passerar
+- [x] Testat med sample_invoice_1.pdf
 
 ### [T10] Header → Specifikation
-- [ ] InvoiceSpecification-klass implementerad
-- [ ] Fakturanummer extraheras
-- [ ] Datum extraheras (flera format)
-- [ ] Leverantör/kund extraheras
-- [ ] Unit tests passerar
-- [ ] Testat med sample_invoice_1.pdf
+- [x] InvoiceSpecification-klass implementerad
+- [x] Fakturanummer extraheras
+- [x] Datum extraheras (flera format)
+- [x] Leverantör/kund extraheras
+- [x] Unit tests passerar
+- [x] Testat med sample_invoice_1.pdf
 
 ### [T11] Förbättring: Fortsättningsrader
-- [ ] Wrap-identifiering fungerar
-- [ ] Wrapped text kopplas korrekt
-- [ ] Beskrivning konsolideras
-- [ ] Unit tests passerar
-- [ ] Testat med wraps i faktura
-- [ ] **Fas 2 komplett**
+- [x] Wrap-identifiering fungerar
+- [x] Wrapped text kopplas korrekt
+- [x] Beskrivning konsolideras
+- [x] Unit tests passerar
+- [x] Testat med wraps i faktura
+- [x] **Fas 2 komplett**
 
 ## Fas 3: Validering
 
 ### [T12] InvoiceLine → Reconciliation
-- [ ] Reconciliation-klass implementerad
-- [ ] Summa-beräkning fungerar
-- [ ] Footer-parsing fungerar
-- [ ] Skillnader beräknas korrekt
-- [ ] Unit tests passerar
-- [ ] Testat med sample_invoice_1.pdf
+- [x] Reconciliation-klass implementerad
+- [x] Summa-beräkning fungerar
+- [x] Footer-parsing fungerar
+- [x] Skillnader beräknas korrekt
+- [x] Unit tests passerar
+- [x] Testat med sample_invoice_1.pdf
 
 ### [T13] Reconciliation → Validation
-- [ ] Validation-klass implementerad
-- [ ] Valideringsregler implementerade
-- [ ] Status sätts korrekt (OK/Warning/Review)
-- [ ] Meddelanden genereras
-- [ ] Unit tests passerar
-- [ ] Testat med olika scenarion
+- [x] Validation-klass implementerad
+- [x] Valideringsregler implementerade
+- [x] Status sätts korrekt (OK/Warning/Review)
+- [x] Meddelanden genereras
+- [x] Unit tests passerar
+- [x] Testat med olika scenarion
 
 ### [T14] Validation → Validation Result
-- [ ] Validation-klass implementerad
-- [ ] Valideringsregler implementerade
-- [ ] Status sätts korrekt (OK/Warning/Review)
-- [ ] Validation failures blockerar Excel-generering (om inte explicit overridden)
-- [ ] Meddelanden genereras
-- [ ] Unit tests passerar
-- [ ] Testat med olika scenarion
+- [x] Validation-klass implementerad
+- [x] Valideringsregler implementerade
+- [x] Status sätts korrekt (OK/Warning/Review)
+- [x] Validation failures blockerar Excel-generering (om inte explicit overridden)
+- [x] Meddelanden genereras
+- [x] Unit tests passerar
+- [x] Testat med olika scenarion
 
 ### [T15] Build final Excel export
-- [ ] Excel-export fungerar
-- [ ] En rad = en produktrad
-- [ ] Korrekt kolumnordning (Fakturanummer, Referenser, Företag, Fakturadatum, Beskrivning, Antal, Enhet, Á-pris, Rabatt, Summa, Hela summan)
-- [ ] Numeriska fält är numeriska (ej text)
-- [ ] Textfält är text (Fakturanummer, Referenser, Företag, etc.)
-- [ ] Tomma valfria fält hanteras korrekt
-- [ ] Återkommande fält upprepas korrekt per rad
-- [ ] SUM(Summa) ≈ Hela summan (verifiering i Excel)
-- [ ] Unit tests passerar
-- [ ] Minst en faktura manuellt kontrollerad i Excel
-- [ ] **Fas 3 komplett**
+- [x] Excel-export fungerar
+- [x] En rad = en produktrad
+- [x] Korrekt kolumnordning (Fakturanummer, Referenser, Företag, Fakturadatum, Beskrivning, Antal, Enhet, Á-pris, Rabatt, Summa, Hela summan)
+- [x] Numeriska fält är numeriska (ej text)
+- [x] Textfält är text (Fakturanummer, Referenser, Företag, etc.)
+- [x] Tomma valfria fält hanteras korrekt
+- [x] Återkommande fält upprepas korrekt per rad
+- [x] SUM(Summa) ≈ Hela summan (verifiering i Excel)
+- [x] Unit tests passerar
+- [x] Minst en faktura manuellt kontrollerad i Excel
+- [x] **Fas 3 komplett**
 
 ## Gate: Excel export verifierad
 
@@ -186,11 +186,11 @@ Innan du går vidare till T6 (Segments → InvoiceLine), verifiera:
 
 Innan projektet kan anses komplett måste följande vara uppfyllda:
 
-- [ ] **Excel-fil skapad**: Slutresultat är en Excel-fil (inte CSV)
-- [ ] **En rad = en produktrad**: Varje InvoiceLine motsvarar en rad i Excel
-- [ ] **Återkommande fält upprepas korrekt**: Fakturanummer, datum, leverantör upprepas per rad
-- [ ] **Tomma valfria fält hanteras korrekt**: Rabatt, Referenser etc. visar tom cell eller "-" om saknas
-- [ ] **Minst en faktura manuellt kontrollerad i Excel**: Excel öppnas utan varningar och data är korrekt
+- [x] **Excel-fil skapad**: Slutresultat är en Excel-fil (inte CSV)
+- [x] **En rad = en produktrad**: Varje InvoiceLine motsvarar en rad i Excel
+- [x] **Återkommande fält upprepas korrekt**: Fakturanummer, datum, leverantör upprepas per rad
+- [x] **Tomma valfria fält hanteras korrekt**: Rabatt, Referenser etc. visar tom cell eller "-" om saknas
+- [x] **Minst en faktura manuellt kontrollerad i Excel**: Excel öppnas utan varningar och data är korrekt
 
 **Verifiering**:
 1. Öppna Excel-filen och kontrollera att den öppnas utan varningar
@@ -203,22 +203,22 @@ Innan projektet kan anses komplett måste följande vara uppfyllda:
 ## Projektkomplett checklista
 
 ### Kodbas
-- [ ] Alla tasks implementerade
-- [ ] Alla tests passerar
-- [ ] Kodkvalitet godkänd
-- [ ] Type hints överallt
-- [ ] Docstrings överallt
+- [x] Alla tasks implementerade
+- [x] Alla tests passerar
+- [x] Kodkvalitet godkänd
+- [x] Type hints överallt
+- [x] Docstrings överallt
 
 ### Dokumentation
-- [ ] README.md uppdaterad om nödvändigt
-- [ ] Edge cases dokumenterade
-- [ ] Test-korpus dokumenterad
+- [x] README.md uppdaterad om nödvändigt
+- [x] Edge cases dokumenterade
+- [x] Test-korpus dokumenterad
 
 ### Validering
-- [ ] Pipeline fungerar end-to-end
-- [ ] Validering fungerar korrekt
-- [ ] Export genererar korrekt output
-- [ ] Testat med flera fakturor
+- [x] Pipeline fungerar end-to-end
+- [x] Validering fungerar korrekt
+- [x] Export genererar korrekt output
+- [x] Testat med flera fakturor
 
 ## Anteckningar
 

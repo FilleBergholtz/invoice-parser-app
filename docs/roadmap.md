@@ -4,6 +4,8 @@
 
 Roadmapen är indelad i tre faser som bygger på varandra. Varje fas implementeras sekventiellt innan nästa fas påbörjas.
 
+**Status**: ✅ Projektet är färdigställt (Januari 2026).
+
 ## Primary Output: Excel (Single Table)
 
 **Slutmål**: Projektets primära output är en Excel-fil med strukturerad faktura-data.
@@ -22,6 +24,8 @@ Roadmapen är indelad i tre faser som bygger på varandra. Varje fas implementer
 ---
 
 ## Fas 1: Document Normalization
+
+**Status**: ✅ Klar
 
 **Mål**: Skapa en stabil representation av PDF-dokumentet med full spårbarhet. Fas 1 fokuserar på **Document normalization** - att transformera PDF till en robust, strukturerad representation innan vi försöker tolka specifika fält.
 
@@ -63,6 +67,8 @@ Roadmapen är indelad i tre faser som bygger på varandra. Varje fas implementer
 
 ## Fas 2: Header + Wrap
 
+**Status**: ✅ Klar
+
 **Mål**: Förbättra parsing med header-extraktion och hantering av fortsättningsrader.
 
 **Pipeline-steg**:
@@ -86,6 +92,8 @@ Roadmapen är indelad i tre faser som bygger på varandra. Varje fas implementer
 ---
 
 ## Fas 3: Validering
+
+**Status**: ✅ Klar
 
 **Mål**: Lägg till kvalitetskontroll och validering av extraherad data.
 
@@ -111,18 +119,18 @@ Roadmapen är indelad i tre faser som bygger på varandra. Varje fas implementer
 
 ## Implementeringsordning
 
-1. **Fas 1: Document Normalization** (PDF → tokens → rows → segments → CSV)
+1. **Fas 1: Document Normalization** (PDF → tokens → rows → segments → CSV) ✅
    - Implementera alla grundläggande steg
    - Fokus på stabil representation och spårbarhet
    - Robust tokenisering, rad-gruppering och segment-identifiering
    - Korrekt reading-order med full spårbarhet till ursprunglig PDF
 
-2. **Fas 2: Header + wrap** (Zoner, Header scoring, Fortsättningsrader)
+2. **Fas 2: Header + wrap** (Zoner, Header scoring, Fortsättningsrader) ✅
    - Lägg till header-extraktion
    - Förbättra produktrad-identifiering med wraps
    - Spatial analys med zoner
 
-3. **Fas 3: Validering** (Reconciliation, Status OK/Warning/Review)
+3. **Fas 3: Validering** (Reconciliation, Status OK/Warning/Review) ✅
    - Lägg till kvalitetskontroll
    - Summa-validering
    - Status-hantering
@@ -132,13 +140,14 @@ Roadmapen är indelad i tre faser som bygger på varandra. Varje fas implementer
 Varje fas är uppdelad i atomiska tasks enligt `docs/tasks.md`. Tasks implementeras sekventiellt inom varje fas.
 
 ### Fas 1 Tasks:
-- T1-T7: Grundläggande pipeline-steg
+- T1-T7: Grundläggande pipeline-steg (Klara)
 
 ### Fas 2 Tasks:
-- T8-T11: Header och wrap-funktionalitet
+- T8-T11: Header och wrap-funktionalitet (Klara)
 
 ### Fas 3 Tasks:
-- T12-T14: Validering och reconciliation
+- T12-T14: Validering och reconciliation (Klara)
+- T15: Excel export (Klar)
 
 ## Testning
 
@@ -150,4 +159,4 @@ Varje fas testas med:
 
 ## Nästa steg
 
-Börja med Fas 1, Task T1 enligt `docs/tasks.md`.
+Projektet är färdigställt. Underhåll och förbättringar sker vid behov.

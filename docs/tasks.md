@@ -29,11 +29,11 @@ Varje task följer strikt format:
 - `tests/test_document.py` (Unit tests)
 
 **DoD**:
-- [ ] Document-klass implementerad enligt `docs/02_data-model.md`
-- [ ] Kan läsa PDF-fil och skapa Document
-- [ ] Metadata (filename, filepath, page_count) extraheras korrekt
-- [ ] Unit tests passerar
-- [ ] Testat med `sample_invoice_1.pdf`
+- [x] Document-klass implementerad enligt `docs/02_data-model.md`
+- [x] Kan läsa PDF-fil och skapa Document
+- [x] Metadata (filename, filepath, page_count) extraheras korrekt
+- [x] Unit tests passerar
+- [x] Testat med `sample_invoice_1.pdf`
 
 ---
 
@@ -49,14 +49,14 @@ Varje task följer strikt format:
 - `tests/test_page.py` (Unit tests)
 
 **DoD**:
-- [ ] Page-klass implementerad enligt `docs/02_data-model.md`
-- [ ] Kan extrahera alla sidor från Document
-- [ ] Sidnumrering börjar på 1
-- [ ] Varje Page har korrekt width/height
-- [ ] **Alla sidor extraheras och sparas som Page-objekt även om PDF är 1 sida**
-- [ ] **Page width/height används konsekvent av senare steg (koordinatsystem)**
-- [ ] Unit tests passerar
-- [ ] Testat med `sample_invoice_1.pdf`
+- [x] Page-klass implementerad enligt `docs/02_data-model.md`
+- [x] Kan extrahera alla sidor från Document
+- [x] Sidnumrering börjar på 1
+- [x] Varje Page har korrekt width/height
+- [x] **Alla sidor extraheras och sparas som Page-objekt även om PDF är 1 sida**
+- [x] **Page width/height används konsekvent av senare steg (koordinatsystem)**
+- [x] Unit tests passerar
+- [x] Testat med `sample_invoice_1.pdf`
 
 ---
 
@@ -72,14 +72,14 @@ Varje task följer strikt format:
 - `tests/test_tokenizer.py` (Unit tests)
 
 **DoD**:
-- [ ] Token-klass implementerad enligt `docs/02_data-model.md`
-- [ ] Kan extrahera tokens med positioner (x, y, width, height)
-- [ ] Alla tokens har text och spatial information
-- [ ] Token-ordning bevaras
-- [ ] **Tokens har position (x,y,w,h) och text, samt kan kopplas tillbaka till sida**
-- [ ] **Logga andel tokens och markera 'scan-like' om embedded text saknas** (det gör OCR-beslutet senare deterministiskt)
-- [ ] Unit tests passerar
-- [ ] Testat med `sample_invoice_1.pdf`
+- [x] Token-klass implementerad enligt `docs/02_data-model.md`
+- [x] Kan extrahera tokens med positioner (x, y, width, height)
+- [x] Alla tokens har text och spatial information
+- [x] Token-ordning bevaras
+- [x] **Tokens har position (x,y,w,h) och text, samt kan kopplas tillbaka till sida**
+- [x] **Logga andel tokens och markera 'scan-like' om embedded text saknas** (det gör OCR-beslutet senare deterministiskt)
+- [x] Unit tests passerar
+- [x] Testat med `sample_invoice_1.pdf`
 
 ---
 
@@ -95,15 +95,15 @@ Varje task följer strikt format:
 - `tests/test_row_grouping.py` (Unit tests)
 
 **DoD**:
-- [ ] Row-klass implementerad enligt `docs/02_data-model.md`
-- [ ] Kan gruppera tokens i rader baserat på Y-position
-- [ ] Tolerans för Y-position fungerar korrekt
-- [ ] Radordning bevaras (top-to-bottom)
-- [ ] **Radordning top-to-bottom verifieras på testkorpus**
-- [ ] **Row.text är endast en hjälprepresentation – tokens är källan** (minskar risken att ni börjar semantisera för tidigt)
-- [ ] Regel: "rad med belopp = produktrad" dokumenterad
-- [ ] Unit tests passerar
-- [ ] Testat med `sample_invoice_1.pdf`
+- [x] Row-klass implementerad enligt `docs/02_data-model.md`
+- [x] Kan gruppera tokens i rader baserat på Y-position
+- [x] Tolerans för Y-position fungerar korrekt
+- [x] Radordning bevaras (top-to-bottom)
+- [x] **Radordning top-to-bottom verifieras på testkorpus**
+- [x] **Row.text är endast en hjälprepresentation – tokens är källan** (minskar risken att ni börjar semantisera för tidigt)
+- [x] Regel: "rad med belopp = produktrad" dokumenterad
+- [x] Unit tests passerar
+- [x] Testat med `sample_invoice_1.pdf`
 
 ---
 
@@ -119,15 +119,15 @@ Varje task följer strikt format:
 - `tests/test_segment_identification.py` (Unit tests)
 
 **DoD**:
-- [ ] Segment-klass implementerad enligt `docs/02_data-model.md`
-- [ ] Kan identifiera header, items, footer baserat på position
-- [ ] Segment-typer är korrekt satta
-- [ ] Header-område: övre 20-30% identifieras
-- [ ] Footer-område: nedre del identifieras
-- [ ] Items-område: mittdel identifieras
-- [ ] **Segmentering (header/items/footer) krävs även om den är grov** (för att styra senare parsing)
-- [ ] Unit tests passerar
-- [ ] Testat med `sample_invoice_1.pdf`
+- [x] Segment-klass implementerad enligt `docs/02_data-model.md`
+- [x] Kan identifiera header, items, footer baserat på position
+- [x] Segment-typer är korrekt satta
+- [x] Header-område: övre 20-30% identifieras
+- [x] Footer-område: nedre del identifieras
+- [x] Items-område: mittdel identifieras
+- [x] **Segmentering (header/items/footer) krävs även om den är grov** (för att styra senare parsing)
+- [x] Unit tests passerar
+- [x] Testat med `sample_invoice_1.pdf`
 
 ---
 
@@ -143,13 +143,13 @@ Varje task följer strikt format:
 - `tests/test_invoice_line_parser.py` (Unit tests)
 
 **DoD**:
-- [ ] InvoiceLine-klass implementerad enligt `docs/02_data-model.md`
-- [ ] Kan identifiera produktrader från items-segment
-- [ ] Regel: "rad med belopp = produktrad" implementerad
-- [ ] Beskrivning, kvantitet, pris, total extraheras
-- [ ] Enklaste implementation (ingen wrap-hantering ännu)
-- [ ] Unit tests passerar
-- [ ] Testat med `sample_invoice_1.pdf`
+- [x] InvoiceLine-klass implementerad enligt `docs/02_data-model.md`
+- [x] Kan identifiera produktrader från items-segment
+- [x] Regel: "rad med belopp = produktrad" implementerad
+- [x] Beskrivning, kvantitet, pris, total extraheras
+- [x] Enklaste implementation (ingen wrap-hantering ännu)
+- [x] Unit tests passerar
+- [x] Testat med `sample_invoice_1.pdf`
 
 ---
 
@@ -165,13 +165,13 @@ Varje task följer strikt format:
 - `tests/test_export.py` (Unit tests)
 
 **DoD**:
-- [ ] Kan exportera InvoiceLine till CSV (interim för debugging)
-- [ ] CSV innehåller kolumner: description, quantity, unit_price, total_amount
-- [ ] UTF-8 kodning fungerar korrekt
-- [ ] CLI-entry point fungerar: `python -m src.main input.pdf output.csv`
-- [ ] Unit tests passerar
-- [ ] Testat med `sample_invoice_1.pdf`
-- [ ] **Fas 1 komplett**: End-to-end pipeline fungerar
+- [x] Kan exportera InvoiceLine till CSV (interim för debugging)
+- [x] CSV innehåller kolumner: description, quantity, unit_price, total_amount
+- [x] UTF-8 kodning fungerar korrekt
+- [x] CLI-entry point fungerar: `python -m src.main input.pdf output.csv`
+- [x] Unit tests passerar
+- [x] Testat med `sample_invoice_1.pdf`
+- [x] **Fas 1 komplett**: End-to-end pipeline fungerar
 
 **OBS**: Detta är interim-export. Slutleverans är Excel (se T15).
 
@@ -191,12 +191,12 @@ Varje task följer strikt format:
 - `tests/test_zone_identification.py` (Unit tests)
 
 **DoD**:
-- [ ] Zone-klass implementerad enligt `docs/02_data-model.md`
-- [ ] Kan skapa spatiala zoner baserat på position
-- [ ] Olika zon-typer identifieras (header, date, amount, items)
-- [ ] Zoner hjälper till att identifiera kontext
-- [ ] Unit tests passerar
-- [ ] Testat med `sample_invoice_1.pdf`
+- [x] Zone-klass implementerad enligt `docs/02_data-model.md`
+- [x] Kan skapa spatiala zoner baserat på position
+- [x] Olika zon-typer identifieras (header, date, amount, items)
+- [x] Zoner hjälper till att identifiera kontext
+- [x] Unit tests passerar
+- [x] Testat med `sample_invoice_1.pdf`
 
 ---
 
@@ -212,12 +212,12 @@ Varje task följer strikt format:
 - `tests/test_header_identification.py` (Unit tests)
 
 **DoD**:
-- [ ] InvoiceHeader-klass implementerad enligt `docs/02_data-model.md`
-- [ ] Header-scoring fungerar baserat på position och nyckelord
-- [ ] Konfidenspoäng beräknas korrekt
-- [ ] Header-segment identifieras korrekt
-- [ ] Unit tests passerar
-- [ ] Testat med `sample_invoice_1.pdf`
+- [x] InvoiceHeader-klass implementerad enligt `docs/02_data-model.md`
+- [x] Header-scoring fungerar baserat på position och nyckelord
+- [x] Konfidenspoäng beräknas korrekt
+- [x] Header-segment identifieras korrekt
+- [x] Unit tests passerar
+- [x] Testat med `sample_invoice_1.pdf`
 
 ---
 
@@ -233,13 +233,13 @@ Varje task följer strikt format:
 - `tests/test_header_parser.py` (Unit tests)
 
 **DoD**:
-- [ ] InvoiceSpecification-klass implementerad enligt `docs/02_data-model.md`
-- [ ] Fakturanummer extraheras (via nyckelord + värde)
-- [ ] Datum extraheras (stödjer flera datumformat)
-- [ ] Leverantörsnamn extraheras
-- [ ] Kundnamn extraheras (om tillgängligt)
-- [ ] Unit tests passerar
-- [ ] Testat med `sample_invoice_1.pdf`
+- [x] InvoiceSpecification-klass implementerad enligt `docs/02_data-model.md`
+- [x] Fakturanummer extraheras (via nyckelord + värde)
+- [x] Datum extraheras (stödjer flera datumformat)
+- [x] Leverantörsnamn extraheras
+- [x] Kundnamn extraheras (om tillgängligt)
+- [x] Unit tests passerar
+- [x] Testat med `sample_invoice_1.pdf`
 
 ---
 
@@ -254,13 +254,13 @@ Varje task följer strikt format:
 - `tests/test_invoice_line_wrap.py` (Unit tests)
 
 **DoD**:
-- [ ] Fortsättningsrader identifieras korrekt
-- [ ] Wrapped text kopplas till rätt InvoiceLine
-- [ ] Beskrivning konsolideras från alla rader i InvoiceLine
-- [ ] Belopp finns bara på sista raden i wrapped text
-- [ ] Unit tests passerar
-- [ ] Testat med `sample_invoice_1.pdf` (om den har wraps)
-- [ ] **Fas 2 komplett**: Header + wrap fungerar
+- [x] Fortsättningsrader identifieras korrekt
+- [x] Wrapped text kopplas till rätt InvoiceLine
+- [x] Beskrivning konsolideras från alla rader i InvoiceLine
+- [x] Belopp finns bara på sista raden i wrapped text
+- [x] Unit tests passerar
+- [x] Testat med `sample_invoice_1.pdf` (om den har wraps)
+- [x] **Fas 2 komplett**: Header + wrap fungerar
 
 ---
 
@@ -278,12 +278,12 @@ Varje task följer strikt format:
 - `tests/test_reconciliation.py` (Unit tests)
 
 **DoD**:
-- [ ] Reconciliation-klass implementerad enligt `docs/02_data-model.md`
-- [ ] Beräknar subtotal från InvoiceLine-totals
-- [ ] Extraherar subtotal/tax/total från footer
-- [ ] Beräknar skillnader mellan beräknade och extraherade summor
-- [ ] Unit tests passerar
-- [ ] Testat med `sample_invoice_1.pdf`
+- [x] Reconciliation-klass implementerad enligt `docs/02_data-model.md`
+- [x] Beräknar subtotal från InvoiceLine-totals
+- [x] Extraherar subtotal/tax/total från footer
+- [x] Beräknar skillnader mellan beräknade och extraherade summor
+- [x] Unit tests passerar
+- [x] Testat med `sample_invoice_1.pdf`
 
 ---
 
@@ -299,13 +299,13 @@ Varje task följer strikt format:
 - `tests/test_validation.py` (Unit tests)
 
 **DoD**:
-- [ ] Validation-klass implementerad enligt `docs/02_data-model.md`
-- [ ] Status sätts korrekt: OK/Warning/Review
-- [ ] Valideringsregler implementerade enligt `docs/05_validation.md`
-- [ ] Meddelanden genereras för fel/varningar
-- [ ] Saknade fält identifieras
-- [ ] Unit tests passerar
-- [ ] Testat med `sample_invoice_1.pdf` och edge cases
+- [x] Validation-klass implementerad enligt `docs/02_data-model.md`
+- [x] Status sätts korrekt: OK/Warning/Review
+- [x] Valideringsregler implementerade enligt `docs/05_validation.md`
+- [x] Meddelanden genereras för fel/varningar
+- [x] Saknade fält identifieras
+- [x] Unit tests passerar
+- [x] Testat med `sample_invoice_1.pdf` och edge cases
 
 ---
 
@@ -323,14 +323,14 @@ Varje task följer strikt format:
 - `tests/test_validation.py` (Unit tests)
 
 **DoD**:
-- [ ] Validation-klass implementerad enligt `docs/02_data-model.md`
-- [ ] Status sätts korrekt: OK/Warning/Review
-- [ ] Valideringsregler implementerade enligt `docs/05_validation.md`
-- [ ] Validation failures blockerar Excel-generering om inte explicit overridden
-- [ ] Meddelanden genereras för fel/varningar
-- [ ] Saknade fält identifieras
-- [ ] Unit tests passerar
-- [ ] Testat med `sample_invoice_1.pdf` och edge cases
+- [x] Validation-klass implementerad enligt `docs/02_data-model.md`
+- [x] Status sätts korrekt: OK/Warning/Review
+- [x] Valideringsregler implementerade enligt `docs/05_validation.md`
+- [x] Validation failures blockerar Excel-generering om inte explicit overridden
+- [x] Meddelanden genereras för fel/varningar
+- [x] Saknade fält identifieras
+- [x] Unit tests passerar
+- [x] Testat med `sample_invoice_1.pdf` och edge cases
 
 ---
 
@@ -347,9 +347,9 @@ Varje task följer strikt format:
 - `tests/test_excel_export.py` (Unit tests)
 
 **DoD**:
-- [ ] Excel-fil skapas som slutresultat
-- [ ] En rad per InvoiceLine
-- [ ] Korrekt kolumnordning (exakt ordning):
+- [x] Excel-fil skapas som slutresultat
+- [x] En rad per InvoiceLine
+- [x] Korrekt kolumnordning (exakt ordning):
   1. Fakturanummer
   2. Referenser
   3. Företag
@@ -361,21 +361,21 @@ Varje task följer strikt format:
   9. Rabatt
   10. Summa
   11. Hela summan
-- [ ] Excel öppnas utan varningar
-- [ ] Numeriska fält är numeriska (ej text) - Antal, Á-pris, Rabatt, Summa, Hela summan
-- [ ] Textfält är text - Fakturanummer, Referenser, Företag, Fakturadatum, Beskrivning, Enhet
-- [ ] SUM(Summa) per faktura ≈ Hela summan (verifiering i Excel)
-- [ ] Tomma valfria fält (t.ex. Rabatt, Referenser) hanteras korrekt (tomma celler eller "-")
-- [ ] Återkommande fakturafält upprepas korrekt per rad
-- [ ] Unit tests passerar
-- [ ] Minst en faktura från testkorpus exporteras korrekt och manuellt kontrollerad i Excel
-- [ ] **Fas 3 komplett**: Fullständig pipeline med validering och Excel-export
+- [x] Excel öppnas utan varningar
+- [x] Numeriska fält är numeriska (ej text) - Antal, Á-pris, Rabatt, Summa, Hela summan
+- [x] Textfält är text - Fakturanummer, Referenser, Företag, Fakturadatum, Beskrivning, Enhet
+- [x] SUM(Summa) per faktura ≈ Hela summan (verifiering i Excel)
+- [x] Tomma valfria fält (t.ex. Rabatt, Referenser) hanteras korrekt (tomma celler eller "-")
+- [x] Återkommande fakturafält upprepas korrekt per rad
+- [x] Unit tests passerar
+- [x] Minst en faktura från testkorpus exporteras korrekt och manuellt kontrollerad i Excel
+- [x] **Fas 3 komplett**: Fullständig pipeline med validering och Excel-export
 
 ---
 
 ## Nästa task
 
-Börja med **[T1] PDF → Document** enligt roadmap Fas 1.
+Alla tasks är nu färdigställda och projektet är redo för användning.
 
 ## Implementation-regler
 
