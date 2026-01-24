@@ -186,9 +186,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 07-01: SQLite Database & Pattern Extraction - Create SQLite learning database, import corrections from JSON, extract supplier-specific patterns
-- [ ] 07-02: Pattern Matching & Confidence Boosting - Implement pattern matching for new invoices, integrate confidence score boosting
-- [ ] 07-03: Pattern Consolidation & Cleanup - Implement pattern consolidation, cleanup of old/conflicting patterns, CLI commands
+- [ ] 08-01: AI Provider Abstraction & Fallback - Create AI provider abstraction (OpenAI/Claude), structured outputs, AI fallback function
+- [ ] 08-02: AI Fallback Integration - Integrate AI fallback into footer extractor, activate when confidence < 0.95
+- [ ] 08-03: AI Validation & Confidence Boosting - Add validation of AI results, boost confidence when validation passes
 
 ---
 
@@ -212,9 +212,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 07-01: SQLite Database & Pattern Extraction - Create SQLite learning database, import corrections from JSON, extract supplier-specific patterns
-- [ ] 07-02: Pattern Matching & Confidence Boosting - Implement pattern matching for new invoices, integrate confidence score boosting
-- [ ] 07-03: Pattern Consolidation & Cleanup - Implement pattern consolidation, cleanup of old/conflicting patterns, CLI commands
+- [ ] 08-01: AI Provider Abstraction & Fallback - Create AI provider abstraction (OpenAI/Claude), structured outputs, AI fallback function
+- [ ] 08-02: AI Fallback Integration - Integrate AI fallback into footer extractor, activate when confidence < 0.95
+- [ ] 08-03: AI Validation & Confidence Boosting - Add validation of AI results, boost confidence when validation passes
 
 ---
 
@@ -239,9 +239,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 07-01: SQLite Database & Pattern Extraction - Create SQLite learning database, import corrections from JSON, extract supplier-specific patterns
-- [ ] 07-02: Pattern Matching & Confidence Boosting - Implement pattern matching for new invoices, integrate confidence score boosting
-- [ ] 07-03: Pattern Consolidation & Cleanup - Implement pattern consolidation, cleanup of old/conflicting patterns, CLI commands
+- [ ] 08-01: AI Provider Abstraction & Fallback - Create AI provider abstraction (OpenAI/Claude), structured outputs, AI fallback function
+- [ ] 08-02: AI Fallback Integration - Integrate AI fallback into footer extractor, activate when confidence < 0.95
+- [ ] 08-03: AI Validation & Confidence Boosting - Add validation of AI results, boost confidence when validation passes
 
 ---
 
@@ -262,9 +262,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 07-01: SQLite Database & Pattern Extraction - Create SQLite learning database, import corrections from JSON, extract supplier-specific patterns
-- [ ] 07-02: Pattern Matching & Confidence Boosting - Implement pattern matching for new invoices, integrate confidence score boosting
-- [ ] 07-03: Pattern Consolidation & Cleanup - Implement pattern consolidation, cleanup of old/conflicting patterns, CLI commands
+- [ ] 08-01: AI Provider Abstraction & Fallback - Create AI provider abstraction (OpenAI/Claude), structured outputs, AI fallback function
+- [ ] 08-02: AI Fallback Integration - Integrate AI fallback into footer extractor, activate when confidence < 0.95
+- [ ] 08-03: AI Validation & Confidence Boosting - Add validation of AI results, boost confidence when validation passes
 
 **Note:** This phase is optional and can be deferred to v3.0 if not critical.
 
@@ -284,7 +284,7 @@ Phases execute in numeric order: 5 → 6 → 7 → 8 → 9
 | 5. Improved Confidence Scoring | v2.0 | 3/3 | Complete | 2026-01-24 |
 | 6. Manual Validation UI | v2.0 | 3/3 | Complete | - |
 | 7. Learning System | v2.0 | 3/3 | Complete | - |
-| 8. AI Integration | v2.0 | 0/TBD | Not started | - |
+| 8. AI Integration | v2.0 | 0/3 | Not started | - |
 | 9. AI Data Analysis | v2.0 | 0/TBD | Not started | - |
 
 **Note:** v1.0 phases complete. v2.0 phases ready for planning.
