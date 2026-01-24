@@ -17,7 +17,7 @@ def sample_segment():
     doc = Document(
         filename="test.pdf",
         filepath="/path/to/test.pdf",
-        page_count=1,
+        page_count=0,
         pages=[],
         metadata={}
     )

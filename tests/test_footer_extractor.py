@@ -19,7 +19,7 @@ def sample_page():
     doc = Document(
         filename="test.pdf",
         filepath="/path/to/test.pdf",
-        page_count=1,
+        page_count=0,
         pages=[],
         metadata={}
     )
@@ -40,10 +40,10 @@ def sample_page():
 @pytest.fixture
 def sample_footer_segment(sample_page):
     """Create a sample footer segment with total amount."""
-    # Footer row with "Totalt: 1000.00"
+    # Footer row with "Totalt: 500.00"
     tokens = [
         Token(text="Totalt", x=400, y=750, width=50, height=12, page=sample_page),
-        Token(text="1000.00", x=500, y=750, width=60, height=12, page=sample_page),
+        Token(text="500.00", x=500, y=750, width=60, height=12, page=sample_page),
     ]
     
     row = Row(
@@ -51,7 +51,7 @@ def sample_footer_segment(sample_page):
         y=750,
         x_min=400,
         x_max=560,
-        text="Totalt 1000.00",
+        text="Totalt 500.00",
         page=sample_page
     )
     
@@ -75,10 +75,12 @@ def sample_invoice_lines():
 
 def test_extract_total_amount_from_footer(sample_footer_segment, sample_page):
     """Test total amount extraction from footer segment."""
-    # Create InvoiceHeader
+    # Create InvoiceHeader with dummy row
+    dummy_token = Token(text="dummy", x=0, y=0, width=10, height=10, page=sample_page)
+    dummy_row = Row(tokens=[dummy_token], text="dummy", x_min=0, x_max=0, y=0, page=sample_page)
     header_segment = Segment(
         segment_type="header",
-        rows=[],
+        rows=[dummy_row],
         y_min=0,
         y_max=100,
         page=sample_page
@@ -89,7 +91,7 @@ def test_extract_total_amount_from_footer(sample_footer_segment, sample_page):
     extract_total_amount(sample_footer_segment, [], invoice_header)
     
     # Should extract total amount
-    assert invoice_header.total_amount == 1000.00
+    assert invoice_header.total_amount == 500.00
     assert invoice_header.total_confidence > 0.0
     assert invoice_header.total_traceability is not None
 
@@ -110,9 +112,11 @@ def test_mathematical_validation(sample_page):
 
 def test_traceability_created_for_total(sample_footer_segment, sample_page):
     """Test that traceability evidence is created for total amount."""
+    dummy_token = Token(text="dummy", x=0, y=0, width=10, height=10, page=sample_page)
+    dummy_row = Row(tokens=[dummy_token], text="dummy", x_min=0, x_max=0, y=0, page=sample_page)
     header_segment = Segment(
         segment_type="header",
-        rows=[],
+        rows=[dummy_row],
         y_min=0,
         y_max=100,
         page=sample_page
@@ -132,9 +136,11 @@ def test_traceability_created_for_total(sample_footer_segment, sample_page):
 
 def test_no_footer_segment_review(sample_page):
     """Test that missing footer segment results in REVIEW (confidence = 0.0)."""
+    dummy_token = Token(text="dummy", x=0, y=0, width=10, height=10, page=sample_page)
+    dummy_row = Row(tokens=[dummy_token], text="dummy", x_min=0, x_max=0, y=0, page=sample_page)
     header_segment = Segment(
         segment_type="header",
-        rows=[],
+        rows=[dummy_row],
         y_min=0,
         y_max=100,
         page=sample_page

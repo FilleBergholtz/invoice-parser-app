@@ -4,6 +4,7 @@ import argparse
 import json
 import shutil
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Optional, Callable, List, Optional
@@ -34,6 +35,7 @@ from ..pipeline.invoice_boundary_detection import detect_invoice_boundaries
 from ..export.excel_export import export_to_excel
 from ..export.review_report import create_review_report
 from ..config import get_default_output_dir, get_output_subdirs
+from ..run_summary import RunSummary
 
 
 class InvoiceProcessingError(Exception):
@@ -478,7 +480,8 @@ def process_batch(
     input_path: str,
     output_dir: str,
     fail_fast: bool = False,
-    verbose: bool = False
+    verbose: bool = False,
+    artifacts_dir: Optional[str] = None
 ) -> Dict:
     """Process multiple invoice PDFs in batch.
     
@@ -487,10 +490,14 @@ def process_batch(
         output_dir: Output directory for Excel files and errors
         fail_fast: Stop on first error if True
         verbose: Enable verbose output
+        artifacts_dir: Optional custom directory for run artifacts
         
     Returns:
         Dict with batch processing results
     """
+    # Create run summary
+    summary = RunSummary.create(input_path, output_dir)
+    
     # Determine input files
     input_path_obj = Path(input_path)
     
@@ -504,9 +511,21 @@ def process_batch(
     if not pdf_files:
         raise ValueError(f"No PDF files found in: {input_path}")
     
+    summary.total_files = len(pdf_files)
+    
     # Setup output directories with subdirectory structure
     output_dir_obj = Path(output_dir)
     output_dir_obj.mkdir(parents=True, exist_ok=True)
+    
+    # Setup artifacts directory
+    if artifacts_dir:
+        run_artifacts_dir = Path(artifacts_dir)
+    else:
+        # Default: output_dir/artifacts/<run_id>
+        run_artifacts_dir = output_dir_obj / "artifacts" / summary.run_id
+        
+    run_artifacts_dir.mkdir(parents=True, exist_ok=True)
+    summary.artifacts_dir = str(run_artifacts_dir)
     
     # Create subdirectory structure (excel/, review/, errors/, temp/)
     subdirs = get_output_subdirs(output_dir_obj)
@@ -531,6 +550,8 @@ def process_batch(
     # Track invoice results per invoice (for grouping validation data)
     invoice_results = []
     
+    start_time = time.time()
+    
     for i, pdf_file in enumerate(pdf_files, start=1):
         print(f"Processing {i}/{total}...")
         
@@ -540,25 +561,32 @@ def process_batch(
         if not virtual_results:
             # No invoices found
             results["failed"] += 1
-            results["errors"].append({
+            summary.failed_count += 1
+            error_info = {
                 "filename": pdf_file.name,
                 "error": "No invoices found in PDF",
                 "timestamp": datetime.now().isoformat()
-            })
+            }
+            results["errors"].append(error_info)
+            summary.errors.append(error_info)
             continue
         
         # Process each virtual invoice result
         for virtual_result in virtual_results:
             results["processed"] += 1
+            summary.processed_files += 1
             
             if virtual_result.status == "FAILED":
                 results["failed"] += 1
-                results["errors"].append({
+                summary.failed_count += 1
+                error_info = {
                     "filename": pdf_file.name,
                     "virtual_invoice_id": virtual_result.virtual_invoice_id,
                     "error": virtual_result.error or "Processing failed",
                     "timestamp": datetime.now().isoformat()
-                })
+                }
+                results["errors"].append(error_info)
+                summary.errors.append(error_info)
                 
                 # Move corrupt PDF to errors directory (only once per PDF file)
                 if virtual_result.virtual_invoice_index == 1:
@@ -601,10 +629,13 @@ def process_batch(
                 # Update counters
                 if virtual_result.status == "OK":
                     results["ok"] += 1
+                    summary.ok_count += 1
                 elif virtual_result.status == "PARTIAL":
                     results["partial"] += 1
+                    summary.partial_count += 1
                 elif virtual_result.status == "REVIEW":
                     results["review"] = results.get("review", 0) + 1
+                    summary.review_count += 1
             
             # Status output per virtual invoice
             # Format: [PDF#/total] filename.pdf#invoice_index -> STATUS
@@ -623,6 +654,9 @@ def process_batch(
         
         if fail_fast and any(r.status == "FAILED" for r in virtual_results):
             break
+    
+    end_time = time.time()
+    summary.durations["total_processing_time"] = end_time - start_time
     
     # Export consolidated Excel with validation data
     if invoice_results:
@@ -657,6 +691,7 @@ def process_batch(
         # Export to Excel (using updated function that accepts list of invoice results)
         export_to_excel(excel_invoice_results, str(excel_path))
         results["excel_path"] = str(excel_path)
+        summary.excel_path = str(excel_path)
     else:
         results["excel_path"] = None
     
@@ -670,8 +705,15 @@ def process_batch(
             json.dump(results["errors"], f, indent=2, ensure_ascii=False)
         
         results["errors_path"] = str(errors_path)
+        summary.errors_path = str(errors_path)
     else:
         results["errors_path"] = None
+        
+    # Save run summary
+    summary.complete(status="FAILED" if summary.failed_count > 0 else "COMPLETED")
+    summary_path = output_dir_obj / "run_summary.json"
+    summary.save(summary_path)
+    print(f"Run summary saved to: {summary_path}")
     
     return results
 
@@ -695,9 +737,21 @@ def main():
     )
     
     parser.add_argument(
+        "--artifacts-dir",
+        required=False,
+        help="Custom directory for run artifacts (default: output_dir/artifacts/<run_id>)"
+    )
+    
+    parser.add_argument(
         "--fail-fast",
         action="store_true",
         help="Stop processing on first error"
+    )
+    
+    parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="Exit with error code if any invoice requires review"
     )
     
     parser.add_argument(
@@ -719,7 +773,8 @@ def main():
             args.input,
             output_dir,
             fail_fast=args.fail_fast,
-            verbose=args.verbose
+            verbose=args.verbose,
+            artifacts_dir=args.artifacts_dir
         )
         
         # Final summary with validation statistics
@@ -738,7 +793,18 @@ def main():
         if results.get("errors_path"):
             print(f"Errors: {results['errors_path']}")
         
-        sys.exit(0 if results["failed"] == 0 else 1)
+        # Exit code logic
+        # Default: 0 if no failures (OK/PARTIAL/REVIEW are successes)
+        # Strict: 0 only if all OK (PARTIAL/REVIEW/FAILED trigger error)
+        # Actually DoD says: "!=0 vid Review/Failure". So strict should catch Review.
+        
+        exit_code = 0
+        if results["failed"] > 0:
+            exit_code = 1
+        elif args.strict and (results["review"] > 0 or results["partial"] > 0):
+            exit_code = 1
+            
+        sys.exit(exit_code)
         
     except Exception as e:
         print(f"Error: {str(e)}", file=sys.stderr)

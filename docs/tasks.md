@@ -395,12 +395,12 @@ Varje task följer strikt format:
   - cloud-specifika filer/scripts (om finns)
 
 **DoD**:
-- [ ] “Production target” i docs/README är endast Windows Desktop
-- [ ] CLI är dokumenterad som secondary/advanced
-- [ ] Inga Streamlit/FastAPI/Docker/Cloud instruktioner i primär dokumentation
-- [ ] Streamlit/FastAPI/Docker-relaterade dependencies borttagna ur `pyproject.toml` (om ej använda)
-- [ ] Tester passerar
-- [ ] Repo-struktur har tydlig `docs/legacy/` för bortplockat material (om ni behåller historik)
+- [x] “Production target” i docs/README är endast Windows Desktop
+- [x] CLI är dokumenterad som secondary/advanced
+- [x] Inga Streamlit/FastAPI/Docker/Cloud instruktioner i primär dokumentation
+- [x] Streamlit/FastAPI/Docker-relaterade dependencies borttagna ur `pyproject.toml` (om ej använda)
+- [x] Tester passerar
+- [x] Repo-struktur har tydlig `docs/legacy/` för bortplockat material (om ni behåller historik)
 
 ---
 
@@ -420,12 +420,12 @@ Varje task följer strikt format:
 - `tests/test_run_summary.py` (Unit tests)
 
 **DoD**:
-- [ ] `run_summary.json` skapas alltid vid körning
-- [ ] Innehåller minst: run_id, input_file, output_excel, artifacts_dir, started_at, finished_at, durations_per_stage, validation_status
-- [ ] Artifacts-mappen skapas deterministiskt (t.ex. `artifacts/<run_id>/...`)
-- [ ] CLI returnerar exit code 0 vid OK/Warning och !=0 vid Review/Failure (konfigurerbart)
-- [ ] Unit tests passerar
-- [ ] Testat med `sample_invoice_1.pdf`
+- [x] `run_summary.json` skapas alltid vid körning
+- [x] Innehåller minst: run_id, input_file, output_excel, artifacts_dir, started_at, finished_at, durations_per_stage, validation_status
+- [x] Artifacts-mappen skapas deterministiskt (t.ex. `artifacts/<run_id>/...`)
+- [x] CLI returnerar exit code 0 vid OK/Warning och !=0 vid Review/Failure (konfigurerbart)
+- [x] Unit tests passerar
+- [x] Testat med `sample_invoice_1.pdf`
 
 ---
 

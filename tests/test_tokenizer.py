@@ -14,7 +14,7 @@ def sample_document():
     doc = Document(
         filename="test.pdf",
         filepath="/nonexistent/path/test.pdf",
-        page_count=1,
+        page_count=0,
         pages=[],
         metadata={}
     )

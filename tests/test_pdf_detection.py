@@ -33,7 +33,7 @@ def test_detect_pdf_type_returns_valid_value():
     doc = Document(
         filename="test.pdf",
         filepath="/nonexistent/path/test.pdf",
-        page_count=1,
+        page_count=0,
         pages=[],
         metadata={}
     )
@@ -48,7 +48,7 @@ def test_route_extraction_path():
     doc = Document(
         filename="test.pdf",
         filepath="/nonexistent/path/test.pdf",
-        page_count=1,
+        page_count=0,
         pages=[],
         metadata={}
     )
@@ -62,7 +62,7 @@ def test_get_detection_info():
     doc = Document(
         filename="test.pdf",
         filepath="/nonexistent/path/test.pdf",
-        page_count=1,
+        page_count=0,
         pages=[],
         metadata={}
     )
