@@ -11,12 +11,12 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 ## Current Position
 
 Milestone: v2.0 Features
-Phase: 5 of 9 (Improved Confidence Scoring)
-Plan: 3/3 in current phase
-Status: **✅ COMPLETE** - Phase 5 complete, ready for Phase 6
-Last activity: 2026-01-24 — Plan 05-03 completed (calibration validation CLI), Phase 5 complete!
+Phase: 6 of 9 (Manual Validation UI)
+Plan: 1/3 in current phase
+Status: **In progress** - Plan 06-01 complete, ready for 06-02
+Last activity: 2026-01-24 — Plan 06-01 completed (PDF viewer with click detection)
 
-Progress: █████████░░░ 56% (5/9 phases complete) — v1.0 complete, Phase 5 complete
+Progress: ██████████░░ 56% (5/9 phases complete, 1 plan in progress) — Phase 6 started
 
 **Projektstatus:** v1.0 komplett. v2.0 roadmap skapad med 5 faser (Phase 5-9). Ready for planning.
 
