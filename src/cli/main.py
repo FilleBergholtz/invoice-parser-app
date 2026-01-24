@@ -34,6 +34,7 @@ from ..pipeline.validation import validate_invoice
 from ..pipeline.invoice_boundary_detection import detect_invoice_boundaries
 from ..export.excel_export import export_to_excel
 from ..export.review_report import create_review_report
+from ..review.review_package import create_review_package
 from ..config import get_default_output_dir, get_output_subdirs, get_ai_enabled, get_ai_endpoint, get_ai_key
 from ..run_summary import RunSummary
 from ..ai.client import AIClient, AIClientError, AIConnectionError, AIAPIError, create_ai_diff, save_ai_artifacts
@@ -807,10 +808,11 @@ def process_batch(
                             virtual_result.ai_error if hasattr(virtual_result, 'ai_error') else None
                         )
                     
-                    # Create review report if REVIEW status
+                    # Create review report and package if REVIEW status
                     if virtual_result.validation_result.status == "REVIEW":
                         try:
-                            create_review_report(
+                            # Create review report (folder with PDF + metadata.json)
+                            review_folder = create_review_report(
                                 virtual_result.invoice_header,
                                 virtual_result.validation_result,
                                 virtual_result.invoice_lines,
@@ -818,10 +820,44 @@ def process_batch(
                                 output_dir_obj,
                                 virtual_invoice_id=virtual_result.virtual_invoice_id
                             )
+                            
+                            # Export Excel for this invoice to review folder
+                            invoice_excel_path = review_folder / f"{virtual_result.virtual_invoice_id}.xlsx"
+                            invoice_metadata = {
+                                "fakturanummer": virtual_result.invoice_header.invoice_number or "TBD",
+                                "foretag": virtual_result.invoice_header.supplier_name or "TBD",
+                                "fakturadatum": virtual_result.invoice_header.invoice_date.isoformat() if virtual_result.invoice_header.invoice_date else "TBD",
+                                "virtual_invoice_id": virtual_result.virtual_invoice_id,
+                                "status": virtual_result.validation_result.status,
+                                "lines_sum": virtual_result.validation_result.lines_sum,
+                                "diff": virtual_result.validation_result.diff if virtual_result.validation_result.diff is not None else "N/A",
+                                "invoice_number_confidence": virtual_result.invoice_header.invoice_number_confidence,
+                                "total_confidence": virtual_result.invoice_header.total_confidence,
+                            }
+                            export_to_excel(
+                                [{
+                                    "invoice_lines": virtual_result.invoice_lines,
+                                    "invoice_metadata": invoice_metadata
+                                }],
+                                str(invoice_excel_path)
+                            )
+                            
+                            # Create complete review package
+                            run_summary_path = output_dir_obj / "run_summary.json"
+                            artifact_manifest_path = run_artifacts_dir / "artifact_manifest.json" if run_artifacts_dir.exists() else None
+                            
+                            create_review_package(
+                                review_folder,
+                                Path(pdf_file),
+                                excel_path=invoice_excel_path,
+                                run_summary_path=run_summary_path if run_summary_path.exists() else None,
+                                artifact_manifest_path=Path(artifact_manifest_path) if artifact_manifest_path and Path(artifact_manifest_path).exists() else None,
+                                create_zip=False  # Keep as folder for easy access
+                            )
                         except Exception as e:
                             # Log warning but continue batch
                             if verbose:
-                                print(f"Warning: Failed to create review report for {virtual_result.virtual_invoice_id}: {e}")
+                                print(f"Warning: Failed to create review package for {virtual_result.virtual_invoice_id}: {e}")
                 
                 # Update counters
                 if virtual_result.status == "OK":

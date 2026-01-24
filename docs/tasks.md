@@ -582,14 +582,14 @@ Syftet är att höja **observability, produktvärde, robusthet och förvaltbarhe
 - `tests/test_review_package.py`
 
 **DoD**:
-- [ ] Review-paket innehåller:
+- [x] Review-paket innehåller:
   - original PDF
   - slutlig Excel
   - `run_summary.json`
   - `artifact_manifest.json`
-- [ ] `README.txt` genereras automatiskt med instruktioner
-- [ ] UI kan öppna review-mappen direkt
-- [ ] Enhetstest verifierar komplett paket
+- [x] `README.txt` genereras automatiskt med instruktioner
+- [x] UI kan öppna review-mappen direkt (via open_output_dir som öppnar output_dir/review)
+- [x] Enhetstest verifierar komplett paket
 
 ---
 
