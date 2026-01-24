@@ -162,7 +162,7 @@ Plans:
 Plans:
 - [x] 05-01: Enhanced Multi-Factor Scoring - Add additional signals (font size, VAT proximity, currency symbols, row isolation) and improve candidate extraction
 - [x] 05-02: Confidence Calibration - Implement isotonic regression calibration to map raw scores to actual accuracy
-- [ ] 05-03: Calibration Validation CLI - Add CLI command for regular validation and training of calibration models
+- [x] 05-03: Calibration Validation CLI - Add CLI command for regular validation and training of calibration models
 
 ---
 
@@ -261,7 +261,7 @@ Phases execute in numeric order: 5 → 6 → 7 → 8 → 9
 | 2. Header + Wrap | v1.0 | 5/5 | Complete | 2026-01-17 |
 | 3. Validation | v1.0 | 4/4 | Complete | 2026-01-17 |
 | 4. Web UI | v1.0 | 3/3 | Complete | 2026-01-17 |
-| 5. Improved Confidence Scoring | v2.0 | 0/3 | Not started | - |
+| 5. Improved Confidence Scoring | v2.0 | 3/3 | Complete | 2026-01-24 |
 | 6. Manual Validation UI | v2.0 | 0/TBD | Not started | - |
 | 7. Learning System | v2.0 | 0/TBD | Not started | - |
 | 8. AI Integration | v2.0 | 0/TBD | Not started | - |

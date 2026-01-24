@@ -12,11 +12,11 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 
 Milestone: v2.0 Features
 Phase: 5 of 9 (Improved Confidence Scoring)
-Plan: 2/3 in current phase
-Status: **In progress** - Plan 05-02 complete, ready for 05-03
-Last activity: 2026-01-24 — Plan 05-02 completed (confidence calibration with isotonic regression)
+Plan: 3/3 in current phase
+Status: **✅ COMPLETE** - Phase 5 complete, ready for Phase 6
+Last activity: 2026-01-24 — Plan 05-03 completed (calibration validation CLI), Phase 5 complete!
 
-Progress: ████████░░░░ 44% (4/9 phases complete) — v1.0 complete, v2.0 planned
+Progress: █████████░░░ 56% (5/9 phases complete) — v1.0 complete, Phase 5 complete
 
 **Projektstatus:** v1.0 komplett. v2.0 roadmap skapad med 5 faser (Phase 5-9). Ready for planning.
 
