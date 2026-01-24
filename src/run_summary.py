@@ -33,6 +33,7 @@ class RunSummary:
     # Details
     errors: List[Dict[str, Any]] = field(default_factory=list)
     durations: Dict[str, float] = field(default_factory=dict)  # Stage durations
+    quality_scores: List[Dict[str, Any]] = field(default_factory=list)  # Quality scores per invoice
     
     @classmethod
     def create(cls, input_path: str, output_dir: str) -> 'RunSummary':

@@ -537,14 +537,14 @@ Syftet är att höja **observability, produktvärde, robusthet och förvaltbarhe
 - `tests/test_quality_score.py`
 
 **DoD**:
-- [ ] Quality score beräknas deterministiskt
-- [ ] Score baseras på:
+- [x] Quality score beräknas deterministiskt
+- [x] Score baseras på:
   - validation status (OK / Warning / Review)
   - antal saknade fält
   - reconciliation diff
   - wrap-komplexitet
-- [ ] Score sparas i `run_summary.json`
-- [ ] Score är dokumenterad och testad
+- [x] Score sparas i `run_summary.json`
+- [x] Score är dokumenterad och testad
 
 ---
 

@@ -39,6 +39,7 @@ from ..run_summary import RunSummary
 from ..ai.client import AIClient, AIClientError, AIConnectionError, AIAPIError, create_ai_diff, save_ai_artifacts
 from ..ai.schemas import AIInvoiceRequest, AIInvoiceLineRequest
 from ..debug.artifact_index import create_manifest_for_run
+from ..quality.score import calculate_quality_score
 
 
 class InvoiceProcessingError(Exception):
@@ -765,6 +766,20 @@ def process_batch(
             else:
                 # Collect invoice results (OK/PARTIAL/REVIEW)
                 if virtual_result.invoice_header and virtual_result.validation_result:
+                    # Calculate quality score
+                    quality_score = calculate_quality_score(
+                        virtual_result.validation_result,
+                        virtual_result.invoice_header,
+                        virtual_result.invoice_lines
+                    )
+                    
+                    # Add quality score to summary
+                    summary.quality_scores.append({
+                        "virtual_invoice_id": virtual_result.virtual_invoice_id,
+                        "filename": pdf_file.name,
+                        "quality_score": quality_score.to_dict()
+                    })
+                    
                     invoice_results.append({
                         "invoice_header": virtual_result.invoice_header,
                         "validation_result": virtual_result.validation_result,
@@ -772,6 +787,7 @@ def process_batch(
                         "pdf_path": str(pdf_file),
                         "filename": pdf_file.name,
                         "virtual_invoice_id": virtual_result.virtual_invoice_id,
+                        "quality_score": quality_score.score,
                     })
                     
                     # Save AI artifacts if AI was attempted
