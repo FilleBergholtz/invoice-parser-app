@@ -6,12 +6,13 @@ from pathlib import Path
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
     QLabel, QPushButton, QFileDialog, QTextEdit, 
-    QProgressBar, QGroupBox, QLineEdit
+    QProgressBar, QGroupBox, QLineEdit, QSplitter
 )
 from PySide6.QtCore import Qt, QThread
 from PySide6.QtGui import QDragEnterEvent, QDropEvent
 
 from ..services.engine_runner import EngineRunner
+from .pdf_viewer import PDFViewer
 
 class MainWindow(QMainWindow):
     """Main application window."""
@@ -27,6 +28,7 @@ class MainWindow(QMainWindow):
         self.output_dir = str(Path.home() / "Documents" / "EPG PDF Extraherare" / "output")
         self.runner_thread = None
         self.runner = None
+        self.processing_result = None  # Store processing result for validation
         
         # UI Setup
         self.setup_ui()
@@ -89,6 +91,33 @@ class MainWindow(QMainWindow):
         # --- Status ---
         self.status_label = QLabel("Redo")
         layout.addWidget(self.status_label)
+        
+        # --- Validation Section (initially hidden) ---
+        self.validation_widget = QWidget()
+        validation_layout = QVBoxLayout(self.validation_widget)
+        
+        validation_label = QLabel("Validering: Välj korrekt totalsumma")
+        validation_label.setStyleSheet("font-weight: bold; font-size: 14px")
+        validation_layout.addWidget(validation_label)
+        
+        # Splitter for PDF viewer and candidate selector (next plan)
+        splitter = QSplitter(Qt.Orientation.Horizontal)
+        
+        # PDF Viewer
+        self.pdf_viewer = PDFViewer()
+        splitter.addWidget(self.pdf_viewer)
+        
+        # Placeholder for candidate selector (will be added in plan 06-02)
+        candidate_placeholder = QLabel("Kandidatväljare kommer här (Plan 06-02)")
+        candidate_placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        splitter.addWidget(candidate_placeholder)
+        
+        splitter.setSizes([600, 200])  # PDF viewer larger
+        validation_layout.addWidget(splitter)
+        
+        # Initially hide validation section
+        self.validation_widget.setVisible(False)
+        layout.addWidget(self.validation_widget)
 
     def dragEnterEvent(self, event: QDragEnterEvent):
         if event.mimeData().hasUrls():
@@ -171,6 +200,38 @@ class MainWindow(QMainWindow):
         if summary.get('excel_path'):
             self.log(f"Excel: {summary.get('excel_path')}")
         self.log("-" * 40)
+        
+        # Store result for validation
+        self.processing_result = summary
+        
+        # Check if validation needed (REVIEW status or low confidence)
+        # For now, show validation if review_count > 0 or if single file with low confidence
+        # In future, we'll check individual invoice confidence from artifacts
+        needs_validation = (
+            summary.get('review_count', 0) > 0 or
+            summary.get('status') == 'REVIEW'
+        )
+        
+        if needs_validation and self.input_path:
+            self._show_validation_ui()
+    
+    def _show_validation_ui(self):
+        """Show validation UI with PDF viewer."""
+        try:
+            # Load PDF
+            self.pdf_viewer.load_pdf(self.input_path)
+            
+            # TODO: Load candidates from processing result
+            # For now, we'll need to read from artifacts or review reports
+            # This will be enhanced when we have better integration
+            # For plan 06-01, just show PDF viewer
+            
+            # Show validation section
+            self.validation_widget.setVisible(True)
+            self.log("Valideringsläge aktiverat - klicka på totalsumma i PDF för att se kandidater")
+            
+        except Exception as e:
+            self.log_error(f"Kunde inte ladda PDF för validering: {e}")
 
     def log(self, message):
         self.log_area.append(message)
