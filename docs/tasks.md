@@ -373,9 +373,98 @@ Varje task följer strikt format:
 
 ---
 
+## Fas 4: Windows Desktop (Offline-first)
+
+**Mål**: Appen ska kunna installeras och köras lokalt på en Windows-dator utan webbberoende. AI ska kunna anslutas som ett valfritt (opt-in) nätverkssteg.
+
+### [U1] CLI Run Summary + Artifacts Contract
+
+**Input**: PDF-filväg (str), output_dir (str)
+
+**Output**: `run_summary.json` + artifacts-mapp + Excel-fil (via befintlig pipeline)
+
+**Files**:
+- `src/run_summary.py` (Ny: RunSummary-modell + serializer)
+- `src/main.py` (Uppdaterad CLI: `--artifacts-dir`, `--run-summary`)
+- `tests/test_run_summary.py` (Unit tests)
+
+**DoD**:
+- [ ] `run_summary.json` skapas alltid vid körning
+- [ ] Innehåller minst: run_id, input_file, output_excel, artifacts_dir, started_at, finished_at, durations_per_stage, validation_status
+- [ ] Artifacts-mappen skapas deterministiskt (t.ex. `artifacts/<run_id>/...`)
+- [ ] CLI returnerar exit code 0 vid OK/Warning och !=0 vid Review/Failure (konfigurerbart)
+- [ ] Unit tests passerar
+- [ ] Testat med `sample_invoice_1.pdf`
+
+---
+
+### [U2] Windows Engine Executable (No Python Required)
+
+**Input**: Repo + dependencies
+
+**Output**: `invoice_engine.exe` som kan köras utan Python installerat
+
+**Files**:
+- `build/windows/build_engine.py` (Ny: build script)
+- `build/windows/invoice_engine.spec` (PyInstaller spec)
+- `docs/deployment_windows_desktop.md` (Ny: bygginstruktioner)
+
+**DoD**:
+- [ ] `dist/invoice_engine.exe` byggs deterministiskt
+- [ ] Kör: `invoice_engine.exe input.pdf --out outdir --artifacts artifactsdir`
+- [ ] Skapar Excel + `run_summary.json` enligt U1
+- [ ] Kör på ren Windows-maskin utan Python (verifierat)
+- [ ] Build-instruktion dokumenterad
+- [ ] (Valfritt) Code signing placeholder dokumenterad
+
+---
+
+### [U3] Windows Desktop UI (Local, No Browser)
+
+**Input**: PDF-filväg (via filväljare/drag-drop)
+
+**Output**: Lokal GUI-app som kör `invoice_engine.exe` och visar resultat
+
+**Files**:
+- `ui/app.py` (Ny: PySide6/Qt app entry)
+- `ui/views/main_window.py` (Ny: huvudvy)
+- `ui/services/engine_runner.py` (Ny: kör engine + progress/logg)
+- `tests/test_ui_smoke.py` (Smoke test, om möjligt)
+
+**DoD**:
+- [ ] UI kan välja PDF och starta bearbetning
+- [ ] Visar status (Running/Done/Failed) och valideringsstatus (OK/Warning/Review)
+- [ ] Visar output paths (Excel + artifacts) och kan öppna output-mapp
+- [ ] Ingen webbläsare/localhost används
+- [ ] Appen fungerar offline (utan nät)
+- [ ] Minst ett manuellt test på Windows med `sample_invoice_1.pdf`
+
+---
+
+### [U4] AI Connector (Optional Online Enrichment)
+
+**Input**: InvoiceSpecification + List[InvoiceLine] (från lokal parsing)
+
+**Output**: Uppdaterad InvoiceSpecification + List[InvoiceLine] + AI-diff för spårbarhet
+
+**Files**:
+- `src/ai/client.py` (Ny: HTTP-klient + datakontrakt)
+- `src/ai/schemas.py` (Ny: request/response modeller)
+- `src/config.py` (Uppdaterad: AI_ENABLED, AI_ENDPOINT, AI_KEY)
+- `tests/test_ai_client.py` (Unit tests med mocked HTTP)
+
+**DoD**:
+- [ ] AI är opt-in: default `AI_ENABLED=false`
+- [ ] Vid offline/nätfel: pipeline fortsätter utan AI och loggar warning
+- [ ] AI request/response sparas i artifacts (`ai_request.json`, `ai_response.json`, `ai_diff.json`)
+- [ ] Unit tests passerar (mockad server)
+- [ ] Inga secrets hårdkodas (endast env/config)
+
+---
+
 ## Nästa task
 
-Alla tasks är nu färdigställda och projektet är redo för användning.
+Nästa task väljs från listan ovan. Implementera EN task i taget och uppdatera DoD-kryss vid completion.
 
 ## Implementation-regler
 
