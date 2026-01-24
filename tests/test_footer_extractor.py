@@ -73,6 +73,16 @@ def sample_invoice_lines():
     pytest.skip("Requires full InvoiceLine setup - integration test")
 
 
+@pytest.fixture(autouse=True)
+def _disable_calibration_learning_ai(monkeypatch):
+    """Disable calibration, learning, and AI so tests verify raw extraction only.
+    Avoids dependence on configs/calibration_model.joblib mapping heuristic scores to 0.
+    """
+    monkeypatch.setenv("CALIBRATION_ENABLED", "false")
+    monkeypatch.setenv("LEARNING_ENABLED", "false")
+    monkeypatch.setenv("AI_ENABLED", "false")
+
+
 def test_extract_total_amount_from_footer(sample_footer_segment, sample_page):
     """Test total amount extraction from footer segment."""
     # Create InvoiceHeader with dummy row
