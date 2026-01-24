@@ -56,14 +56,14 @@ class AIFallback:
         footer_text: str,
         line_items_sum: Optional[float] = None
     ) -> Optional[Dict[str, Any]]:
-        """Extract total amount using AI.
+        """Extract total amount using AI with validation and confidence boosting.
         
         Args:
             footer_text: Footer text from invoice
             line_items_sum: Optional sum of line items for validation
             
         Returns:
-            Dict with total_amount, confidence, reasoning, validation_passed, or None if fails
+            Dict with total_amount, confidence (boosted), reasoning, validation_passed, or None if fails
         """
         if not self.provider:
             return None
@@ -71,10 +71,39 @@ class AIFallback:
         try:
             result = self.provider.extract_total_amount(footer_text, line_items_sum)
             
-            # Validate response
+            # Validate response structure
             if not self.provider.validate_response(result):
-                logger.warning("AI response validation failed")
+                logger.warning("AI response structure validation failed")
                 return None
+            
+            # Validate against line items sum
+            ai_total = result.get('total_amount')
+            validation_passed = False
+            
+            if line_items_sum is not None and ai_total is not None:
+                # Validate: check if AI total matches line items sum (within ±1 SEK tolerance)
+                diff = abs(ai_total - line_items_sum)
+                validation_passed = diff <= 1.0
+                result['validation_passed'] = validation_passed
+                
+                # Boost confidence if validation passes
+                if validation_passed:
+                    base_confidence = result.get('confidence', 0.0)
+                    boost = 0.1  # Base boost
+                    
+                    # Additional boost if exact match (within 0.01 SEK)
+                    if abs(ai_total - line_items_sum) < 0.01:
+                        boost += 0.1  # Total 0.2 boost for exact match
+                    
+                    boosted_confidence = min(1.0, base_confidence + boost)
+                    result['confidence'] = boosted_confidence
+                    
+                    logger.debug(
+                        f"AI validation passed: boosted confidence from {base_confidence:.2f} "
+                        f"to {boosted_confidence:.2f} (boost: {boost:.2f})"
+                    )
+            else:
+                result['validation_passed'] = False
             
             return result
             

@@ -549,11 +549,21 @@ def extract_total_amount(
             if ai_result:
                 # Compare AI result with heuristic
                 ai_confidence = ai_result.get('confidence', 0.0)
-                if ai_confidence > top_heuristic_score:
-                    # Use AI result - add as top candidate
+                validation_passed = ai_result.get('validation_passed', False)
+                
+                # Use AI result if:
+                # 1. Confidence is higher than heuristic, OR
+                # 2. Validation passed and confidence is similar (within 0.05)
+                use_ai = (
+                    ai_confidence > top_heuristic_score or
+                    (validation_passed and abs(ai_confidence - top_heuristic_score) <= 0.05)
+                )
+                
+                if use_ai:
                     logger.info(
-                        f"AI fallback succeeded: confidence {ai_confidence:.2f} > "
-                        f"heuristic {top_heuristic_score:.2f}"
+                        f"AI fallback succeeded: confidence {ai_confidence:.2f} "
+                        f"(heuristic: {top_heuristic_score:.2f}), "
+                        f"validation: {'passed' if validation_passed else 'failed'}"
                     )
                     # Add AI result as new top candidate
                     ai_candidate = {
@@ -576,6 +586,11 @@ def extract_total_amount(
                             'keyword_type': candidate.get('keyword_type')
                         })
                     invoice_header.total_candidates = top_5_candidates if top_5_candidates else None
+                else:
+                    logger.debug(
+                        f"AI result not used: confidence {ai_confidence:.2f} <= "
+                        f"heuristic {top_heuristic_score:.2f}, validation: {validation_passed}"
+                    )
     
     # Step 6: Select final value
     if not scored_candidates:
