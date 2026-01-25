@@ -12,7 +12,7 @@ except ImportError:
     fitz = None
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QMouseEvent, QPen, QPixmap, QWheelEvent
+from PySide6.QtGui import QCloseEvent, QMouseEvent, QPen, QPixmap, QWheelEvent
 from PySide6.QtWidgets import (
     QGraphicsView,
     QGraphicsScene,
@@ -71,10 +71,13 @@ class _PDFGraphicsView(QGraphicsView):
         return len(self.pdf_doc) if self.pdf_doc else 0
 
     def load_pdf(self, path: str) -> None:
+        if fitz is None:
+            raise ImportError("pymupdf (fitz) is required for PDF viewer. Install with: pip install pymupdf")
+        fitz_mod = fitz
         pdf_path = Path(path)
         if not pdf_path.exists():
             raise FileNotFoundError(f"PDF file not found: {path}")
-        self.pdf_doc = fitz.open(str(pdf_path))
+        self.pdf_doc = fitz_mod.open(str(pdf_path))
         if len(self.pdf_doc) == 0:
             raise ValueError("PDF has no pages")
         self.current_page_number = 1
@@ -84,7 +87,8 @@ class _PDFGraphicsView(QGraphicsView):
     def _render_page(self, page_number: int) -> None:
         if self.pdf_doc is None or page_number < 1 or page_number > len(self.pdf_doc):
             return
-        self.scene.clear()
+        assert fitz is not None  # guaranteed by __init__
+        self._scene.clear()
         self.highlight_rects.clear()
         fitz_page = self.pdf_doc[page_number - 1]
         self.current_page = fitz_page
@@ -96,7 +100,7 @@ class _PDFGraphicsView(QGraphicsView):
         pix = fitz_page.get_pixmap(matrix=mat)
         img_data = pix.tobytes("png")
         qpixmap = QPixmap()
-        qpixmap.loadFromData(img_data, "PNG")
+        qpixmap.loadFromData(img_data)  # format auto-detected from PNG bytes
         self._pixmap_item = QGraphicsPixmapItem(qpixmap)
         self._scene.addItem(self._pixmap_item)
         self.scale_factor = qpixmap.width() / self.page_width
@@ -142,7 +146,7 @@ class _PDFGraphicsView(QGraphicsView):
             if self.selected_candidate_index is not None
             else QPen(Qt.GlobalColor.yellow, 2)
         )
-        self.scene.addItem(hr)
+        self._scene.addItem(hr)
         self.highlight_rects.append(hr)
 
     def highlight_candidate(self, candidate_index: int) -> None:
@@ -209,7 +213,7 @@ class _PDFGraphicsView(QGraphicsView):
             return
         super().wheelEvent(event)
 
-    def closeEvent(self, event) -> None:
+    def closeEvent(self, event: QCloseEvent) -> None:
         if self.pdf_doc:
             self.pdf_doc.close()
         super().closeEvent(event)
@@ -302,8 +306,9 @@ class PDFViewer(QWidget):
     def highlight_candidate(self, candidate_index: int) -> None:
         self._view.highlight_candidate(candidate_index)
 
-    def closeEvent(self, event) -> None:
-        if getattr(self._view, "pdf_doc", None) is not None:
-            self._view.pdf_doc.close()
+    def closeEvent(self, event: QCloseEvent) -> None:
+        doc = getattr(self._view, "pdf_doc", None)
+        if doc is not None:
+            doc.close()
             self._view.pdf_doc = None
         super().closeEvent(event)

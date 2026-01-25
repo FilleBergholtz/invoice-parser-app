@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from .invoice_header import InvoiceHeader
 from .invoice_line import InvoiceLine
@@ -39,7 +39,10 @@ class VirtualInvoiceResult:
     validation_result: Optional[ValidationResult] = None
     error: Optional[str] = None
     extraction_source: Optional[str] = None  # "pdfplumber" | "ocr" when --compare-extraction chose one
-    
+    ai_request: Optional[Dict[str, Any]] = None
+    ai_response: Optional[Dict[str, Any]] = None
+    ai_error: Optional[str] = None
+
     @property
     def line_count(self) -> int:
         """Get number of invoice lines."""

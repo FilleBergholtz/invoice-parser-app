@@ -10,12 +10,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple
 
-# Fix encoding for Windows console
+# Fix encoding for Windows console (reconfigure exists on 3.7+)
 if sys.platform == "win32":
     try:
-        sys.stdout.reconfigure(encoding='utf-8')
+        reconfigure = getattr(sys.stdout, "reconfigure", None)
+        if reconfigure is not None:
+            reconfigure(encoding="utf-8")
     except (AttributeError, ValueError):
-        pass  # Python < 3.7 or already configured
+        pass
 
 import pdfplumber
 
@@ -258,11 +260,13 @@ def process_invoice(
             invoice_header = InvoiceHeader(segment=header_segment)
             # Extract header fields (invoice number, date, vendor) with retry
             # Use provided progress_callback or create one for verbose mode
+            header_progress: Optional[Callable[[str, float, int], None]]
             if progress_callback:
                 header_progress = progress_callback
             elif verbose:
-                def header_progress(msg, conf, attempt):
+                def _verbose_header_progress(msg: str, conf: float, attempt: int) -> None:
                     print(f"  {msg} (confidence: {conf*100:.1f}%)")
+                header_progress = _verbose_header_progress
             else:
                 header_progress = None
             extract_header_fields(header_segment, invoice_header, progress_callback=header_progress)

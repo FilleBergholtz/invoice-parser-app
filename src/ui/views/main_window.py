@@ -348,10 +348,12 @@ class MainWindow(QMainWindow):
         Initializes validation queue from processing_result and shows first item.
         """
         try:
-            self._validation_queue = (self.processing_result or {}).get("validation_queue") or []
+            pr = self.processing_result or {}
+            self.processing_result = pr
+            self._validation_queue = pr.get("validation_queue") or []
             self._validation_queue_index = 0
-            if self._validation_queue and not (self.processing_result or {}).get("validation"):
-                self.processing_result["validation"] = self._validation_queue[0]
+            if self._validation_queue and not pr.get("validation"):
+                pr["validation"] = self._validation_queue[0]
             self._refresh_validation_view()
             self._update_next_button_visibility()
         except Exception as e:
@@ -398,7 +400,8 @@ class MainWindow(QMainWindow):
         """Switch to next item in validation queue, or close UI if none left."""
         self._validation_queue_index += 1
         if self._validation_queue_index < len(self._validation_queue):
-            self.processing_result["validation"] = self._validation_queue[self._validation_queue_index]
+            if self.processing_result is not None:
+                self.processing_result["validation"] = self._validation_queue[self._validation_queue_index]
             self.selected_candidate_index = None
             self.selected_candidate_amount = None
             self.correction_saved = False
@@ -464,9 +467,10 @@ class MainWindow(QMainWindow):
         from ...models.row import Row
         from ...models.token import Token
         
+        base_path = self.input_path or ""
         doc = Document(
-            filename=Path(self.input_path).name,
-            filepath=self.input_path,
+            filename=Path(base_path).name if base_path else "unknown.pdf",
+            filepath=base_path,
             page_count=0,
             pages=[],
             metadata={},
@@ -554,9 +558,10 @@ class MainWindow(QMainWindow):
             if self.current_invoice_header is None:
                 # Create minimal structure for correction saving
                 # This is a workaround until we have full integration
+                base_path = self.input_path or ""
                 doc = Document(
-                    filename=Path(self.input_path).name,
-                    filepath=self.input_path,
+                    filename=Path(base_path).name if base_path else "unknown.pdf",
+                    filepath=base_path,
                     page_count=0,
                     pages=[],
                     metadata={},
