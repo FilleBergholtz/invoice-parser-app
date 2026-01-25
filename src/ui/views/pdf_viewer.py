@@ -12,7 +12,7 @@ except ImportError:
     fitz = None
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QMouseEvent, QPixmap, QWheelEvent
+from PySide6.QtGui import QMouseEvent, QPen, QPixmap, QWheelEvent
 from PySide6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QGraphicsRectItem
 
 if TYPE_CHECKING:
@@ -222,14 +222,12 @@ class PDFViewer(QGraphicsView):
         highlight_rect = QGraphicsRectItem(
             pixmap_x, pixmap_y, pixmap_width, pixmap_height
         )
-        highlight_rect.setPen(Qt.PenStyle.SolidLine)
         highlight_rect.setBrush(Qt.BrushStyle.NoBrush)
-        
-        # Color based on selection
+        # Color and width via QPen (setPen takes a single QPen)
         if self.selected_candidate_index is not None:
-            highlight_rect.setPen(Qt.GlobalColor.blue, 3)
+            highlight_rect.setPen(QPen(Qt.GlobalColor.blue, 3))
         else:
-            highlight_rect.setPen(Qt.GlobalColor.yellow, 2)
+            highlight_rect.setPen(QPen(Qt.GlobalColor.yellow, 2))
         
         self.scene.addItem(highlight_rect)
         self.highlight_rects.append(highlight_rect)

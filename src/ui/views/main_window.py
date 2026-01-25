@@ -330,10 +330,26 @@ class MainWindow(QMainWindow):
         from ...models.segment import Segment
         from ...models.page import Page
         from ...models.document import Document
+        from ...models.row import Row
+        from ...models.token import Token
         
-        doc = Document(filename=Path(self.input_path).name, filepath=self.input_path)
-        page = Page(document=doc, page_number=1)
-        segment = Segment(page=page, rows=[])
+        doc = Document(
+            filename=Path(self.input_path).name,
+            filepath=self.input_path,
+            page_count=0,
+            pages=[],
+            metadata={},
+        )
+        page = Page(document=doc, page_number=1, width=595.0, height=842.0)
+        tok = Token(text="dummy", x=0, y=0, width=10, height=10, page=page)
+        row = Row(tokens=[tok], text="dummy", x_min=0, x_max=0, y=0, page=page)
+        segment = Segment(
+            segment_type="header",
+            rows=[row],
+            y_min=0,
+            y_max=100,
+            page=page,
+        )
         self.current_invoice_header = InvoiceHeader(
             segment=segment,
             total_amount=None,
@@ -397,14 +413,30 @@ class MainWindow(QMainWindow):
             from ...models.segment import Segment
             from ...models.page import Page
             from ...models.document import Document
+            from ...models.row import Row
+            from ...models.token import Token
             
             # Create minimal InvoiceHeader if not available
             if self.current_invoice_header is None:
                 # Create minimal structure for correction saving
                 # This is a workaround until we have full integration
-                doc = Document(filename=Path(self.input_path).name, filepath=self.input_path)
-                page = Page(document=doc, page_number=1)
-                segment = Segment(page=page, rows=[])
+                doc = Document(
+                    filename=Path(self.input_path).name,
+                    filepath=self.input_path,
+                    page_count=0,
+                    pages=[],
+                    metadata={},
+                )
+                page = Page(document=doc, page_number=1, width=595.0, height=842.0)
+                tok = Token(text="dummy", x=0, y=0, width=10, height=10, page=page)
+                row = Row(tokens=[tok], text="dummy", x_min=0, x_max=0, y=0, page=page)
+                segment = Segment(
+                    segment_type="header",
+                    rows=[row],
+                    y_min=0,
+                    y_max=100,
+                    page=page,
+                )
                 
                 self.current_invoice_header = InvoiceHeader(
                     segment=segment,

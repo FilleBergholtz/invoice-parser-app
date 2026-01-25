@@ -53,9 +53,9 @@ class CandidateSelector(QWidget):
         layout.addWidget(title)
         
         # Scroll area for candidate list
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         
         # Container for candidate buttons
         self.candidates_widget = QWidget()
@@ -64,8 +64,8 @@ class CandidateSelector(QWidget):
         self.candidates_layout.setSpacing(5)
         self.candidates_layout.addStretch()  # Push buttons to top
         
-        scroll.setWidget(self.candidates_widget)
-        layout.addWidget(scroll)
+        self.scroll_area.setWidget(self.candidates_widget)
+        layout.addWidget(self.scroll_area)
         
         # Instructions
         instructions = QLabel("Använd piltangenter för att navigera\nEnter för att välja")
@@ -167,10 +167,11 @@ class CandidateSelector(QWidget):
         
         # Select new
         self.selected_index = index
-        self.candidate_buttons[index].setChecked(True)
+        btn = self.candidate_buttons[index]
+        btn.setChecked(True)
         
-        # Scroll to selected button
-        self.candidate_buttons[index].scrollRectIntoView()
+        # Scroll scroll area so selected button is visible
+        self.scroll_area.ensureWidgetVisible(btn)
         
         # Set focus for keyboard navigation
         self.setFocus()
