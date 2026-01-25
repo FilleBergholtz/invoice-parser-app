@@ -111,9 +111,8 @@ class CandidateSelector(QWidget):
             # Format display text
             amount_str = f"{amount:,.2f}".replace(',', ' ').replace('.', ',')
             score_str = f"{score:.1%}"
-            
-            # Button text
-            button_text = f"SEK {amount_str}\n(confidence: {score_str})"
+            ai_tag = " [AI]" if keyword_type == "ai_extracted" else ""
+            button_text = f"SEK {amount_str}{ai_tag}\n(confidence: {score_str})"
             
             # Create button
             button = QPushButton(button_text)

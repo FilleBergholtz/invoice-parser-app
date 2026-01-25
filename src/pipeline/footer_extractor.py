@@ -223,12 +223,13 @@ def _apply_pattern_boosts(
 
 
 def _build_ui_candidates(scored: List[Dict], max_count: int = 10) -> List[Dict]:
-    """Build UI candidate list: all with_vat first, then rest by score; use raw_score for display."""
+    """Build UI candidate list: ai_extracted first (so user can always choose AI), then with_vat, then rest; use raw_score for display."""
+    ai_extracted = [c for c in scored if c.get('keyword_type') == 'ai_extracted']
     with_vat = [c for c in scored if c.get('keyword_type') == 'with_vat']
-    rest = [c for c in scored if c.get('keyword_type') != 'with_vat']
+    rest = [c for c in scored if c.get('keyword_type') not in ('ai_extracted', 'with_vat')]
     seen: set = set()
     out: List[Dict] = []
-    for c in with_vat + rest:
+    for c in ai_extracted + with_vat + rest:
         if len(out) >= max_count:
             break
         a = c['amount']

@@ -182,7 +182,7 @@ Return:
 - total_amount: The extracted total as float
 - confidence: 0.0-1.0
 - reasoning: Brief explanation
-- validation_passed: True if total matches line items sum within ±1 SEK
+- validation_passed: True if (a) total matches line items sum within ±1 SEK, OR (b) total is clearly from page (e.g. Att betala, Nettobelopp+Moms) and line_items_sum seems wrong—then trust the footer and set True.
 """
         return prompt
     
@@ -302,7 +302,7 @@ class ClaudeProvider(AIProvider):
             prompt += f"Heuristic candidates (may be wrong): {', '.join(parts)}. Prefer the amount from the full page text.\n"
         prompt += """
 Return JSON: {"total_amount": float, "confidence": 0.0-1.0, "reasoning": "...", "validation_passed": true/false}
-validation_passed: true if total matches line items sum within ±1 SEK.
+validation_passed: true if (a) total matches line items sum within ±1 SEK, OR (b) total is clearly from page (Att betala, Nettobelopp+Moms) and line_items_sum seems wrong—then trust footer, set true.
 """
         return prompt
     

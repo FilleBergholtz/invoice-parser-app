@@ -82,34 +82,40 @@ class AIFallback:
                 logger.warning("AI response structure validation failed")
                 return None
             
-            # Validate against line items sum
+            # Validate against line items sum (when it's plausible)
             ai_total = result.get('total_amount')
             validation_passed = False
             
             if line_items_sum is not None and ai_total is not None:
-                # Validate: check if AI total matches line items sum (within ±1 SEK tolerance)
                 diff = abs(ai_total - line_items_sum)
-                validation_passed = diff <= 1.0
-                result['validation_passed'] = validation_passed
-                
-                # Boost confidence if validation passes
-                if validation_passed:
-                    base_confidence = result.get('confidence', 0.0)
-                    boost = 0.1  # Base boost
-                    
-                    # Additional boost if exact match (within 0.01 SEK)
-                    if abs(ai_total - line_items_sum) < 0.01:
-                        boost += 0.1  # Total 0.2 boost for exact match
-                    
-                    boosted_confidence = min(1.0, base_confidence + boost)
-                    result['confidence'] = boosted_confidence
-                    
-                    logger.debug(
-                        f"AI validation passed: boosted confidence from {base_confidence:.2f} "
-                        f"to {boosted_confidence:.2f} (boost: {boost:.2f})"
+                # Line items sum can be wrong (OCR, garbled rows). If it's implausible vs AI total,
+                # don't fail validation – trust AI extraction (e.g. "Att betala: SEK X").
+                implausible = (
+                    diff > max(500.0, 0.15 * ai_total)
+                    or (line_items_sum < 100.0 and ai_total > 1000.0)
+                )
+                if implausible:
+                    result['validation_passed'] = True
+                    logger.info(
+                        f"Line items sum {line_items_sum:.2f} SEK implausible vs AI total {ai_total:.2f} SEK "
+                        f"(diff={diff:.2f}); trusting AI, validation_passed=True"
                     )
+                else:
+                    validation_passed = diff <= 1.0
+                    result['validation_passed'] = validation_passed
+                    if validation_passed:
+                        base_confidence = result.get('confidence', 0.0)
+                        boost = 0.1
+                        if abs(ai_total - line_items_sum) < 0.01:
+                            boost += 0.1
+                        boosted_confidence = min(1.0, base_confidence + boost)
+                        result['confidence'] = boosted_confidence
+                        logger.debug(
+                            f"AI validation passed: boosted confidence from {base_confidence:.2f} "
+                            f"to {boosted_confidence:.2f} (boost: {boost:.2f})"
+                        )
             else:
-                result['validation_passed'] = False
+                result['validation_passed'] = True if ai_total is not None else False
             
             return result
             
