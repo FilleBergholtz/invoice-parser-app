@@ -274,20 +274,19 @@ Plans:
 
 ### Phase 10: AI Fallback Fixes and Verification
 
-**Goal:** [To be planned]
+**Goal:** Document what we have fixed/improved regarding AI fallback and ensure it works well in practice.
 
 **Depends on:** Phase 9
 
-**Plans:** 0 plans
+**Plans:** 2 plans
 
 Plans:
-- [ ] TBD (run `/gsd:plan-phase 10` to break down)
+- [x] 10-01: Document AI fallback — 10-CONTEXT.md (trigger, context, prompts, config, UI, errors)
+- [x] 10-02: Verification — 10-VERIFICATION.md, link from context, run tests
 
 **Details:**
 
-Dokumentera vad vi åtgärdat gällande AI fallback (t.ex. full sidkontext till AI, kandidater, prompt-förbättringar, UI-status/aktivera-inaktivera) och säkerställa att AI fallback fungerar bra i praktiken.
-
-[To be added during planning]
+Dokumentera vad vi åtgärdat gällande AI fallback (t.ex. full sidkontext till AI, kandidater, prompt-förbättringar, UI-status/aktivera-inaktivera) och säkerställa att AI fallback fungerar bra i praktiken. Se `.planning/phases/10-ai-fallback-fixes/10-01-PLAN.md` och `10-02-PLAN.md`.
 
 ---
 
@@ -325,7 +324,7 @@ Phases execute in numeric order: 5 → 6 → 7 → 8 → 9 → 10 → 11
 | 7. Learning System | v2.0 | 3/3 | Complete | - |
 | 8. AI Integration | v2.0 | 3/3 | Complete | - |
 | 9. AI Data Analysis | v2.0 | 3/3 | Complete | - |
-| 10. AI Fallback Fixes and Verification | v2.0 | 0/0 | Not planned | - |
+| 10. AI Fallback Fixes and Verification | v2.0 | 2/2 | Complete | - |
 | 11. Pdfplumber och OCR: kör båda, jämför, använd bästa | v2.0 | 3/3 | Complete | - |
 
-**Note:** v1.0 phases complete. v2.0 phases 5–9 and 11 complete; Phase 10 not yet planned.
+**Note:** v1.0 phases complete. v2.0 phases 5–11 complete.

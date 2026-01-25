@@ -6,19 +6,19 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 
 **Core value:** 100% korrekt på fakturanummer och totalsumma, eller tydlig REVIEW-status. Allt som systemet exporterar som OK är garanterat korrekt. Osäkra fall går alltid till REVIEW (ingen tyst gissning).
 
-**Current focus:** v2.0 Features — Phase 10: AI Fallback Fixes and Verification (next, not planned); Phase 11 complete.
+**Current focus:** v2.0 Features — Phase 10 complete; all v2.0 phases 5–11 done.
 
 ## Current Position
 
 Milestone: v2.0 Features
-Phase: 11 of 11 — **Phase 11 complete** (Pdfplumber och OCR: 3/3 plans)
-Next in sequence: Phase 10 (AI Fallback Fixes) — 0 plans, not yet broken down)
-Status: **✅ Phase 11 DONE** — 11-01 OCR wiring, 11-02 dual-run/compare, 11-03 use best downstream.
-Last activity: 2026-01-24 — Phase 11 plans 01–03 executed and summarized.
+Phase: 10 of 11 — **Phase 10 complete** (AI Fallback Fixes: 2/2 plans)
+Plans: 10-01 Document AI fallback ✓, 10-02 Verification ✓
+Status: **✅ DONE** — 10-CONTEXT.md, 10-VERIFICATION.md, tests run (16 passed, 1 skipped).
+Last activity: 2026-01-24 — Phase 10 executed (document + verification).
 
-Progress: █████████████░ 91% (10/11 phases complete) — Phase 10 not planned; Phase 11 complete.
+Progress: ██████████████ 100% (11/11 phases complete) — Phase 10 and 11 done.
 
-**Projektstatus:** v1.0 komplett. v2.0 phases 5–9 och 11 implementerade; Phase 10 ej planerad.
+**Projektstatus:** v1.0 komplett. v2.0 phases 5–11 implementerade.
 
 ## Performance Metrics
 
@@ -81,5 +81,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-01-24
-Stopped at: Session resumed; Phase 11 complete (11-01, 11-02, 11-03). Next: Phase 10 or wrap v2.0.
+Stopped at: Phase 10 executed and complete. v2.0 phases 5–11 done.
 Resume file: None
