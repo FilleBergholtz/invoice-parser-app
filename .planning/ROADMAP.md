@@ -7,7 +7,7 @@ This roadmap delivers a Swedish invoice parsing system that transforms PDF invoi
 ## Milestones
 
 - ✅ **v1.0 MVP** - Phases 1-4 (shipped 2026-01-17)
-- 📋 **v2.0 Features** - Phases 5-9 (planned)
+- 📋 **v2.0 Features** - Phases 5-11 (planned)
 
 ## Phases
 
@@ -35,6 +35,7 @@ This roadmap delivers a Swedish invoice parsing system that transforms PDF invoi
 - [ ] **Phase 8: AI Integration** - AI fallback when confidence < 0.95 to improve extraction for edge cases
 - [ ] **Phase 9: AI Data Analysis** (Optional) - Natural language queries and data analysis over processed invoices
 - [ ] **Phase 10: AI Fallback Fixes and Verification** - Document fixes, address gaps, and verify AI fallback works well
+- [ ] **Phase 11: Pdfplumber och OCR: kör båda, jämför, använd bästa** - Dual extraction; compare results; use best
 
 ## Phase Details
 
@@ -290,10 +291,28 @@ Dokumentera vad vi åtgärdat gällande AI fallback (t.ex. full sidkontext till 
 
 ---
 
+### Phase 11: Pdfplumber och OCR: kör båda, jämför, använd bästa
+
+**Goal:** [To be planned]
+
+**Depends on:** Phase 10
+
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run `/gsd:plan-phase 11` to break down)
+
+**Details:**
+Implementera både pdfplumber- och OCR-extraktion, köra båda per faktura/PDF, jämföra resultat (t.ex. validation_passed, confidence), och använda den bästa källan vidare i pipelinen.
+
+[To be added during planning]
+
+---
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 5 → 6 → 7 → 8 → 9 → 10
+Phases execute in numeric order: 5 → 6 → 7 → 8 → 9 → 10 → 11
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -307,5 +326,6 @@ Phases execute in numeric order: 5 → 6 → 7 → 8 → 9 → 10
 | 8. AI Integration | v2.0 | 3/3 | Complete | - |
 | 9. AI Data Analysis | v2.0 | 3/3 | Complete | - |
 | 10. AI Fallback Fixes and Verification | v2.0 | 0/0 | Not planned | - |
+| 11. Pdfplumber och OCR: kör båda, jämför, använd bästa | v2.0 | 0/0 | Not planned | - |
 
-**Note:** v1.0 phases complete. v2.0 phases 5–9 complete; Phase 10 added, not yet planned.
+**Note:** v1.0 phases complete. v2.0 phases 5–9 complete; Phase 10–11 added, not yet planned.

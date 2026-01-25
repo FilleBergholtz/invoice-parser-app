@@ -6,19 +6,19 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 
 **Core value:** 100% korrekt på fakturanummer och totalsumma, eller tydlig REVIEW-status. Allt som systemet exporterar som OK är garanterat korrekt. Osäkra fall går alltid till REVIEW (ingen tyst gissning).
 
-**Current focus:** v2.0 Features - Phase 10: AI Fallback Fixes and Verification (next)
+**Current focus:** v2.0 Features - Phase 10: AI Fallback Fixes and Verification (next); Phase 11 added (Pdfplumber och OCR: kör båda, jämför, använd bästa).
 
 ## Current Position
 
 Milestone: v2.0 Features
-Phase: 10 of 10 (AI Fallback Fixes and Verification)
+Phase: 10 of 11 (AI Fallback Fixes and Verification)
 Plan: 0 plans in current phase
 Status: **📋 NOT PLANNED** - Phase 10 added; run `/gsd:plan-phase 10` to break down.
 Last activity: 2026-01-24 — Phase 10 added (AI fallback fixes and verification).
 
-Progress: █████████████░ 90% (9/10 phases complete) — Phase 10 not yet planned.
+Progress: ████████████░░ 82% (9/11 phases complete) — Phase 10–11 not yet planned.
 
-**Projektstatus:** v1.0 komplett. v2.0 phases 5–9 implementerade; Phase 10 tillagd, ej planerad.
+**Projektstatus:** v1.0 komplett. v2.0 phases 5–9 implementerade; Phase 10–11 tillagda, ej planerade.
 
 ## Performance Metrics
 
@@ -68,6 +68,7 @@ None yet.
 ### Roadmap Evolution
 
 - Phase 10 added: AI Fallback Fixes and Verification — document fixes, address gaps, verify AI fallback works well.
+- Phase 11 added: Pdfplumber och OCR: kör båda, jämför, använd bästa — dual extraction, compare results, use best.
 
 ### Blockers/Concerns
 
