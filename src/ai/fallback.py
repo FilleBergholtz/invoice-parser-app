@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from .providers import AIProvider, OpenAIProvider, ClaudeProvider
 from ..config import get_ai_key, get_ai_provider, get_ai_model
@@ -54,13 +54,17 @@ class AIFallback:
     def extract(
         self,
         footer_text: str,
-        line_items_sum: Optional[float] = None
+        line_items_sum: Optional[float] = None,
+        candidates: Optional[List[Dict[str, Any]]] = None,
+        page_context: Optional[str] = None,
     ) -> Optional[Dict[str, Any]]:
         """Extract total amount using AI with validation and confidence boosting.
         
         Args:
             footer_text: Footer text from invoice
             line_items_sum: Optional sum of line items for validation
+            candidates: Optional heuristic candidates [{amount, keyword_type}] for better AI context
+            page_context: Full page text (header/items/footer) so AI sees PDF hela data
             
         Returns:
             Dict with total_amount, confidence (boosted), reasoning, validation_passed, or None if fails
@@ -69,7 +73,9 @@ class AIFallback:
             return None
         
         try:
-            result = self.provider.extract_total_amount(footer_text, line_items_sum)
+            result = self.provider.extract_total_amount(
+                footer_text, line_items_sum, candidates=candidates, page_context=page_context
+            )
             
             # Validate response structure
             if not self.provider.validate_response(result):
@@ -115,7 +121,9 @@ class AIFallback:
 def extract_total_with_ai(
     footer_text: str,
     line_items_sum: Optional[float] = None,
-    provider: Optional[AIProvider] = None
+    provider: Optional[AIProvider] = None,
+    candidates: Optional[List[Dict[str, Any]]] = None,
+    page_context: Optional[str] = None,
 ) -> Optional[Dict[str, Any]]:
     """Extract total amount using AI fallback.
     
@@ -123,9 +131,13 @@ def extract_total_with_ai(
         footer_text: Footer text from invoice
         line_items_sum: Optional sum of line items for validation
         provider: Optional AIProvider instance (creates from config if None)
+        candidates: Optional heuristic candidates [{amount, keyword_type}] for better results
+        page_context: Full page text (header/items/footer) so AI sees PDF hela data
         
     Returns:
         Dict with total_amount, confidence, reasoning, validation_passed, or None if fails
     """
     fallback = AIFallback(provider=provider)
-    return fallback.extract(footer_text, line_items_sum)
+    return fallback.extract(
+        footer_text, line_items_sum, candidates=candidates, page_context=page_context
+    )

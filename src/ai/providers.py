@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 try:
     from openai import OpenAI
@@ -36,13 +36,17 @@ class AIProvider(ABC):
     def extract_total_amount(
         self,
         footer_text: str,
-        line_items_sum: Optional[float] = None
+        line_items_sum: Optional[float] = None,
+        candidates: Optional[List[Dict[str, Any]]] = None,
+        page_context: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Extract total amount from footer text using AI.
         
         Args:
             footer_text: Footer text from invoice
             line_items_sum: Optional sum of line items for validation
+            candidates: Optional [{amount, keyword_type}] from heuristics for better context
+            page_context: Full page text (header/items/footer) so AI sees PDF hela data
             
         Returns:
             Dict with total_amount, confidence, reasoning, validation_passed
@@ -103,22 +107,14 @@ class OpenAIProvider(AIProvider):
     def extract_total_amount(
         self,
         footer_text: str,
-        line_items_sum: Optional[float] = None
+        line_items_sum: Optional[float] = None,
+        candidates: Optional[List[Dict[str, Any]]] = None,
+        page_context: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """Extract total amount using OpenAI API.
-        
-        Args:
-            footer_text: Footer text from invoice
-            line_items_sum: Optional sum of line items for validation
-            
-        Returns:
-            Dict with total_amount, confidence, reasoning, validation_passed
-            
-        Raises:
-            Exception: If API call fails
-        """
-        # Build prompt
-        prompt = self._build_prompt(footer_text, line_items_sum)
+        """Extract total amount using OpenAI API."""
+        prompt = self._build_prompt(
+            footer_text, line_items_sum, candidates=candidates, page_context=page_context
+        )
         
         # Call OpenAI API with structured output
         try:
@@ -155,30 +151,38 @@ class OpenAIProvider(AIProvider):
             logger.error(f"OpenAI API error: {e}")
             raise
     
-    def _build_prompt(self, footer_text: str, line_items_sum: Optional[float] = None) -> str:
-        """Build prompt for AI extraction.
-        
-        Args:
-            footer_text: Footer text
-            line_items_sum: Optional line items sum
-            
-        Returns:
-            Prompt string
-        """
-        prompt = f"""Extract the total amount (totalsumma) from this Swedish invoice footer text:
+    def _build_prompt(
+        self,
+        footer_text: str,
+        line_items_sum: Optional[float] = None,
+        candidates: Optional[List[Dict[str, Any]]] = None,
+        page_context: Optional[str] = None,
+    ) -> str:
+        """Build prompt for AI extraction."""
+        prompt = "Extract the total amount (totalsumma / att betala) from this Swedish invoice.\n\n"
+        if page_context:
+            prompt += """Use the FULL PAGE TEXT below as the source of truth. Our heuristic candidates may be wrong or incomplete—derive the total from the actual text, not from the candidates.
 
-{footer_text}
-
+--- FULL PAGE (header, items, footer) ---
 """
+            prompt += page_context
+            prompt += "\n--- END FULL PAGE ---\n\n"
+        else:
+            prompt += f"Footer text:\n{footer_text}\n\n"
         if line_items_sum is not None:
-            prompt += f"The sum of all line items is: {line_items_sum:.2f} SEK. Use this to validate the total amount.\n"
-        
+            prompt += f"Line items sum: {line_items_sum:.2f} SEK. Use to validate; total often equals or slightly exceeds it (VAT, rounding).\n"
+        if candidates and not page_context:
+            parts = [f"{c.get('amount')} SEK ({c.get('keyword_type', '?')})" for c in candidates]
+            prompt += f"We detected these candidates: {', '.join(parts)}. Prefer 'with_vat' (att betala) when relevant.\n"
+        elif candidates and page_context:
+            parts = [f"{c.get('amount')} SEK ({c.get('keyword_type', '?')})" for c in candidates]
+            prompt += f"Heuristic candidates (may be wrong): {', '.join(parts)}. Prefer the amount from the full page text.\n"
         prompt += """
 Return:
-- total_amount: The extracted total amount as a float
-- confidence: Your confidence in the extraction (0.0-1.0)
-- reasoning: Brief explanation of how you found the total
-- validation_passed: True if the total matches the line items sum (within ±1 SEK tolerance), False otherwise
+- total_amount: The extracted total as float
+- confidence: 0.0-1.0
+- reasoning: Brief explanation
+- validation_passed: True if total matches line items sum within ±1 SEK
 """
         return prompt
     
@@ -236,22 +240,14 @@ class ClaudeProvider(AIProvider):
     def extract_total_amount(
         self,
         footer_text: str,
-        line_items_sum: Optional[float] = None
+        line_items_sum: Optional[float] = None,
+        candidates: Optional[List[Dict[str, Any]]] = None,
+        page_context: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """Extract total amount using Claude API.
-        
-        Args:
-            footer_text: Footer text from invoice
-            line_items_sum: Optional sum of line items for validation
-            
-        Returns:
-            Dict with total_amount, confidence, reasoning, validation_passed
-            
-        Raises:
-            Exception: If API call fails
-        """
-        # Build prompt
-        prompt = self._build_prompt(footer_text, line_items_sum)
+        """Extract total amount using Claude API."""
+        prompt = self._build_prompt(
+            footer_text, line_items_sum, candidates=candidates, page_context=page_context
+        )
         
         # Call Claude API with structured output
         try:
@@ -278,32 +274,35 @@ class ClaudeProvider(AIProvider):
             logger.error(f"Claude API error: {e}")
             raise
     
-    def _build_prompt(self, footer_text: str, line_items_sum: Optional[float] = None) -> str:
-        """Build prompt for AI extraction.
-        
-        Args:
-            footer_text: Footer text
-            line_items_sum: Optional line items sum
-            
-        Returns:
-            Prompt string
-        """
-        prompt = f"""Extract the total amount (totalsumma) from this Swedish invoice footer text:
+    def _build_prompt(
+        self,
+        footer_text: str,
+        line_items_sum: Optional[float] = None,
+        candidates: Optional[List[Dict[str, Any]]] = None,
+        page_context: Optional[str] = None,
+    ) -> str:
+        """Build prompt for AI extraction."""
+        prompt = "Extract the total amount (totalsumma / att betala) from this Swedish invoice.\n\n"
+        if page_context:
+            prompt += """Use the FULL PAGE TEXT below as the source of truth. Our heuristic candidates may be wrong or incomplete—derive the total from the actual text, not from the candidates.
 
-{footer_text}
-
+--- FULL PAGE (header, items, footer) ---
 """
+            prompt += page_context
+            prompt += "\n--- END FULL PAGE ---\n\n"
+        else:
+            prompt += f"Footer text:\n{footer_text}\n\n"
         if line_items_sum is not None:
-            prompt += f"The sum of all line items is: {line_items_sum:.2f} SEK. Use this to validate the total amount.\n"
-        
+            prompt += f"Line items sum: {line_items_sum:.2f} SEK. Use to validate; total often equals or slightly exceeds it (VAT, rounding).\n"
+        if candidates and not page_context:
+            parts = [f"{c.get('amount')} SEK ({c.get('keyword_type', '?')})" for c in candidates]
+            prompt += f"We detected these candidates: {', '.join(parts)}. Prefer 'with_vat' (att betala) when relevant.\n"
+        elif candidates and page_context:
+            parts = [f"{c.get('amount')} SEK ({c.get('keyword_type', '?')})" for c in candidates]
+            prompt += f"Heuristic candidates (may be wrong): {', '.join(parts)}. Prefer the amount from the full page text.\n"
         prompt += """
-Return a JSON object with:
-- total_amount: The extracted total amount as a float
-- confidence: Your confidence in the extraction (0.0-1.0)
-- reasoning: Brief explanation of how you found the total
-- validation_passed: True if the total matches the line items sum (within ±1 SEK tolerance), False otherwise
-
-Format: {"total_amount": 1234.56, "confidence": 0.95, "reasoning": "...", "validation_passed": true}
+Return JSON: {"total_amount": float, "confidence": 0.0-1.0, "reasoning": "...", "validation_passed": true/false}
+validation_passed: true if total matches line items sum within ±1 SEK.
 """
         return prompt
     

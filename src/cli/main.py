@@ -7,7 +7,7 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Optional, Callable, List, Optional
+from typing import Callable, Dict, List, Optional
 
 # Fix encoding for Windows console
 if sys.platform == "win32":
@@ -55,6 +55,23 @@ from ..versioning.compat import check_artifacts_compatibility, CompatibilityStat
 class InvoiceProcessingError(Exception):
     """Raised when invoice processing fails."""
     pass
+
+
+def _build_page_context_for_ai(last_page_segments: list) -> str:
+    """Bygg full sidtext (header, items, footer) så AI får PDF:ens hela data för totalsidan.
+    
+    AI behöver se hela sidan, inte bara footer + kandidater, för att hitta rätt
+    totalsumma när heuristiken ger fel kandidater.
+    """
+    if not last_page_segments:
+        return ""
+    ordered = sorted(last_page_segments, key=lambda s: s.y_min)
+    parts = []
+    for seg in ordered:
+        parts.append(f"--- {seg.segment_type.upper()} ---")
+        for row in seg.rows:
+            parts.append(row.text)
+    return "\n".join(parts)
 
 
 def process_invoice(
@@ -213,10 +230,13 @@ def process_invoice(
         if footer_segment and invoice_header:
             from ..pipeline.retry_extraction import extract_with_retry
             
+            page_context_for_ai = _build_page_context_for_ai(last_page_segments)
+            
             def extract_total(strategy=None):
                 extract_total_amount(
                     footer_segment, all_invoice_lines, invoice_header,
-                    strategy=strategy, rows_above_footer=rows_above_footer
+                    strategy=strategy, rows_above_footer=rows_above_footer,
+                    page_context_for_ai=page_context_for_ai
                 )
                 return invoice_header
             
@@ -469,10 +489,13 @@ def process_virtual_invoice(
         if footer_segment and invoice_header:
             from ..pipeline.retry_extraction import extract_with_retry
             
+            page_context_for_ai = _build_page_context_for_ai(last_page_segments)
+            
             def extract_total(strategy=None):
                 extract_total_amount(
                     footer_segment, all_invoice_lines, invoice_header,
-                    strategy=strategy, rows_above_footer=rows_above_footer
+                    strategy=strategy, rows_above_footer=rows_above_footer,
+                    page_context_for_ai=page_context_for_ai
                 )
                 return invoice_header
             

@@ -103,7 +103,9 @@ def _load_learning_database():
 def _try_ai_fallback(
     footer_segment: Segment,
     line_items: List[InvoiceLine],
-    invoice_header: InvoiceHeader
+    invoice_header: InvoiceHeader,
+    candidates: Optional[List[Dict[str, Any]]] = None,
+    page_context: Optional[str] = None,
 ) -> Optional[Dict[str, Any]]:
     """Try AI fallback for total amount extraction.
     
@@ -111,6 +113,8 @@ def _try_ai_fallback(
         footer_segment: Footer segment with text
         line_items: Line items for validation
         invoice_header: InvoiceHeader for context
+        candidates: Optional heuristic candidates (amount, keyword_type).
+        page_context: Full page text (header/items/footer) so AI sees PDF hela data.
         
     Returns:
         AI result dict with total_amount, confidence, reasoning, validation_passed, or None if fails
@@ -118,16 +122,16 @@ def _try_ai_fallback(
     try:
         from ..ai.fallback import extract_total_with_ai
         
-        # Get footer text
-        footer_text = footer_segment.raw_text if footer_segment.raw_text else " ".join(
+        footer_text = getattr(footer_segment, "raw_text", None) or " ".join(
             row.text for row in footer_segment.rows
         )
-        
-        # Calculate line items sum for validation
         line_items_sum = sum(line.total_amount for line in line_items) if line_items else None
-        
-        # Call AI fallback
-        ai_result = extract_total_with_ai(footer_text, line_items_sum)
+        cand = None
+        if candidates:
+            cand = [{"amount": c.get("amount"), "keyword_type": c.get("keyword_type")} for c in candidates[:10]]
+        ai_result = extract_total_with_ai(
+            footer_text, line_items_sum, candidates=cand, page_context=page_context
+        )
         
         if ai_result:
             logger.debug(
@@ -246,6 +250,7 @@ def extract_total_amount(
     invoice_header: InvoiceHeader,
     strategy: Optional[str] = None,
     rows_above_footer: Optional[List[Row]] = None,
+    page_context_for_ai: Optional[str] = None,
 ) -> None:
     """Extract total amount from footer segment using keyword matching and confidence scoring.
     
@@ -257,6 +262,8 @@ def extract_total_amount(
             If the first footer row has amounts but no keywords, we check the last row
             here for labels like "Att betala: SEK" / "Nettobelopp" (footer threshold can
             put labels in items and amounts in footer).
+        page_context_for_ai: Full page text (header/items/footer) for AI so it sees
+            PDF:ens hela data; används vid AI-fallback när kandidater kan vara fel.
         
     Algorithm:
     1. Extract all amount candidates from footer segment rows
@@ -604,8 +611,11 @@ def extract_total_amount(
     if get_ai_enabled() and scored_candidates:
         top_heuristic_score = scored_candidates[0]['score']
         if top_heuristic_score < 0.95:
-            # Try AI fallback
-            ai_result = _try_ai_fallback(footer_segment, line_items, invoice_header)
+            ai_result = _try_ai_fallback(
+                footer_segment, line_items, invoice_header,
+                candidates=scored_candidates[:10],
+                page_context=page_context_for_ai,
+            )
             if ai_result:
                 # Compare AI result with heuristic
                 ai_confidence = ai_result.get('confidence', 0.0)

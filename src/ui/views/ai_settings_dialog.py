@@ -8,7 +8,7 @@ from typing import Optional
 
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-    QPushButton, QComboBox, QGroupBox, QMessageBox, QCheckBox
+    QPushButton, QComboBox, QFrame, QGroupBox, QMessageBox, QCheckBox
 )
 from PySide6.QtCore import Qt
 
@@ -71,25 +71,37 @@ class AISettingsDialog(QDialog):
     def setup_ui(self):
         """Setup UI components."""
         layout = QVBoxLayout(self)
+        self.setStyleSheet("QDialog { background-color: #fafafa; }")
         
-        # --- Status (vilken AI som är tillagd) ---
+        # --- Status (vilken AI som är tillagd) - tydlig ruta med mörk text ---
+        status_frame = QFrame()
+        status_frame.setStyleSheet(
+            "QFrame { background-color: #e8e8e8; border: 1px solid #999; border-radius: 4px; } "
+            "QLabel { color: #111; font-weight: bold; font-size: 13px; }"
+        )
+        status_frame.setMinimumHeight(44)
+        status_layout = QVBoxLayout(status_frame)
+        status_layout.setContentsMargins(10, 6, 10, 6)
         self.status_label = QLabel()
-        self.status_label.setStyleSheet("font-weight: bold; padding: 6px; background: #f0f0f0; border-radius: 4px;")
         self.status_label.setWordWrap(True)
-        layout.addWidget(self.status_label)
+        status_layout.addWidget(self.status_label)
+        layout.addWidget(status_frame)
         
-        # --- AI Enabled ---
+        # --- Aktivera / Inaktivera ---
         self.ai_enabled_checkbox = QCheckBox("Aktivera AI-fallback")
+        self.ai_enabled_checkbox.setStyleSheet("QCheckBox { color: #111; font-weight: bold; }")
         self.ai_enabled_checkbox.setToolTip(
-            "Aktivera AI-fallback när confidence < 0.95 för att förbättra extraktion av totalsumma"
+            "Kryssa i för att aktivera, avkryssa för att inaktivera. AI används när confidence < 95 %."
         )
         layout.addWidget(self.ai_enabled_checkbox)
         
         # --- Provider Selection ---
         provider_group = QGroupBox("AI-leverantör")
+        provider_group.setStyleSheet("QGroupBox { color: #111; font-weight: bold; }")
         provider_layout = QVBoxLayout()
         
         provider_label = QLabel("Välj AI-leverantör:")
+        provider_label.setStyleSheet("color: #111;")
         provider_layout.addWidget(provider_label)
         
         self.provider_combo = QComboBox()
@@ -102,9 +114,11 @@ class AISettingsDialog(QDialog):
         
         # --- Model Selection ---
         model_group = QGroupBox("Modell")
+        model_group.setStyleSheet("QGroupBox { color: #111; font-weight: bold; }")
         model_layout = QVBoxLayout()
         
         model_label = QLabel("Välj modell:")
+        model_label.setStyleSheet("color: #111;")
         model_layout.addWidget(model_label)
         
         self.model_combo = QComboBox()
@@ -116,9 +130,11 @@ class AISettingsDialog(QDialog):
         
         # --- API Key ---
         key_group = QGroupBox("API-nyckel")
+        key_group.setStyleSheet("QGroupBox { color: #111; font-weight: bold; }")
         key_layout = QVBoxLayout()
         
         key_label = QLabel("API-nyckel:")
+        key_label.setStyleSheet("color: #111;")
         key_layout.addWidget(key_label)
         
         self.api_key_input = QLineEdit()
@@ -142,11 +158,12 @@ class AISettingsDialog(QDialog):
         # --- Info ---
         info_label = QLabel(
             "AI används innan kandidatlistan visas: om confidence < 95 % anropas AI och ev. "
-            "förslag läggs högst upp bland alternativen.\n"
-            "Inställningarna sparas lokalt och används vid nästa körning."
+            "förslag läggs högst upp. AI får hela sidans text (header, items, footer), radsumma "
+            "och våra kandidater—så den kan hitta rätt total även när kandidaterna är fel.\n"
+            "Spara för att aktivera/inaktivera. Inställningar gäller vid nästa körning."
         )
         info_label.setWordWrap(True)
-        info_label.setStyleSheet("color: #666; font-size: 11px;")
+        info_label.setStyleSheet("color: #333; font-size: 11px;")
         layout.addWidget(info_label)
         
         # --- Buttons ---
