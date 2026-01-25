@@ -1,7 +1,11 @@
 # Requirements: Invoice Parser App
 
-**Defined:** 2025-01-27
+**Defined:** 2025-01-27  
 **Core Value:** 100% korrekt på fakturanummer och totalsumma, eller tydlig REVIEW-status. Allt som systemet exporterar som OK är garanterat korrekt. Osäkra fall går alltid till REVIEW (ingen tyst gissning).
+
+**Status 2026-01-25:** v1 + v2 (Phase 1–3, 5–13) genomförda. Verifiering Phase 9, 10, 11 körd. Se `.planning/ROADMAP.md` och `.planning/STATE.md` för “var vi är”.
+
+---
 
 ## v1 Requirements
 

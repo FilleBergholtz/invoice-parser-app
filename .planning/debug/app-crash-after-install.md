@@ -1,11 +1,16 @@
 ---
-status: verified
+status: closed
 trigger: "när appen är installerad så får vi fel meddelande och den kraschar"
 created: 2025-01-27T00:00:00Z
-updated: 2026-01-24T23:02:00Z
+updated: 2026-01-25T00:00:00Z
+resolution: obsolete_and_verified
 ---
 
-## Current Focus
+**Avslutad 2026-01-25.** Originalproblemet gällde Streamlit (`run_streamlit.py`, `src/web/`), som inte längre finns. Nuvarande app är PySide6 (`run_gui.py`). Verifiering 2026-01-24: GUI startar efter `pip install -e .`. Rekommendation: nämn `pip install -e .` i README/setup. Detta kort arkiveras — ingen vidare åtgärd.
+
+---
+
+## Current Focus (arkiv)
 
 hypothesis: (legacy) Streamlit Runtime instance already exists
 next_action: N/A – Streamlit-variant borttagen; nuvarande app är PySide6 (run_gui.py)
@@ -46,13 +51,14 @@ fix: 1) Changed run_streamlit.py to use subprocess.run() instead of stcli.main()
 verification: [done 2026-01-24] Se "## Verification (2026-01-24)" nedan.
 files_changed: ['run_streamlit.py', 'src/web/app.py', 'src/pipeline/confidence_scoring.py']  # run_streamlit + src/web finns ej i repo längre
 
-## Verification (2026-01-24)
+## Verification (2026-01-24, stängd 2026-01-25)
 
 - **Original repro:** `python -m streamlit run run_streamlit.py` – kan inte köras; `run_streamlit.py` och `src/web/` finns inte i kodbasen. Nuvarande app är **PySide6** (`run_gui.py` → `src.ui.app`).
 - **Nuvarande app:** `python run_gui.py`
   - **Utan fulla deps** (t.ex. venv utan `pip install -e .`): kraschar med `ImportError: pymupdf (fitz) is required for PDF viewer`. pymupdf finns i pyproject.toml men var inte installerat i venv.
   - **Efter `pip install -e .`:** GUI startar utan fel, processen lever >5 s. **Verifierat OK.**
 - **Rekommendation:** Säkerställ `pip install -e .` (eller `pip install .`) före `run_gui.py`. Överväg att nämna detta i README/setup-instructions.
+- **Stängd:** Sessionen avslutad 2026-01-25. Problemet är obsolete (Streamlit borttagen) och PySide6-appen verifierad.
 
 ## Additional Fix: Confidence Scoring Too Strict
 

@@ -1,5 +1,11 @@
 # Invoice Parser App
 
+## Status 2026-01-25
+
+**Var vi är:** v1.0 (Phase 1–3) och v2.0 (Phase 5–13) är genomförda. Alla planerade faser klara. Senaste: Phase 13 (About-dialog, Hjälp-meny, ikoner, Windows .ico). Verifiering av Phase 9, 10 och 11 gjord 2026-01-25. Nästa steg: `/gsd:complete-milestone` eller planera nya faser. Detaljer: `.planning/STATE.md`, `.planning/ROADMAP.md`.
+
+---
+
 ## What This Is
 
 Ett system som automatiskt läser, förstår och strukturerar svenska PDF-fakturor – oavsett layout, namn på fält eller antal sidor – och sammanställer resultatet i en tydlig Excel-tabell. Varje rad i Excel är en produktrad, fakturainformation (fakturanummer, företag, datum, total) upprepas korrekt, och summeringar samt belopp är validerade och pålitliga. Det är inte "OCR till text", utan OCR + layoutanalys + semantisk tolkning + kontroll. Systemet är ett CLI/script för batch-körning av några till hundratals fakturor per vecka, med möjlighet att lägga till web-UI senare.
