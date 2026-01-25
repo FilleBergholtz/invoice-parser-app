@@ -2,6 +2,7 @@
 
 import json
 import math
+import os
 import uuid
 from dataclasses import dataclass, field, asdict
 from datetime import datetime
@@ -10,13 +11,23 @@ from typing import Dict, List, Optional, Any
 
 
 def _sanitize_for_json(obj: Any) -> Any:
-    """Recursively replace NaN/Inf floats so JSON round-trip works (json.load rejects them)."""
+    """Recursively replace NaN/Inf and numpy-like numbers so JSON round-trip works."""
     if isinstance(obj, dict):
         return {k: _sanitize_for_json(v) for k, v in obj.items()}
     if isinstance(obj, list):
         return [_sanitize_for_json(v) for v in obj]
-    if isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
-        return 0.0
+    if isinstance(obj, float):
+        return 0.0 if (math.isnan(obj) or math.isinf(obj)) else obj
+    if isinstance(obj, (int, str, type(None), bool)):
+        return obj
+    # numpy scalars, decimal.Decimal, etc. (do not float(str))
+    try:
+        f = float(obj)
+        if math.isnan(f) or math.isinf(f):
+            return 0.0
+        return f
+    except (TypeError, ValueError):
+        pass
     return obj
 
 @dataclass
@@ -65,7 +76,10 @@ class RunSummary:
         self.finished_at = datetime.now().isoformat()
         
     def save(self, path: Path):
-        """Save summary to JSON file."""
+        """Save summary to JSON file (atomic write to avoid truncated file on interrupt)."""
+        path = Path(path)
         data = _sanitize_for_json(asdict(self))
-        with open(path, 'w', encoding='utf-8') as f:
+        tmp = path.with_suffix(path.suffix + ".tmp")
+        with open(tmp, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
+        os.replace(tmp, path)

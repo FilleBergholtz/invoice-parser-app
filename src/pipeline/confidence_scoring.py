@@ -8,6 +8,37 @@ from ..models.page import Page
 from ..models.row import Row
 from ..models.token import Token
 
+# Amount pattern: space or dot thousands, comma or dot decimals. "3.717,35", "1 234,56", "743.47"
+_AMOUNT_PATTERN = re.compile(
+    r'\d{1,3}(?:\s+\d{3})*(?:[.,]\d{1,2})?|'
+    r'\d{1,3}(?:\.\d{3})*(?:,\d{1,2})?|'
+    r'\d+(?:[.,]\d{1,2})?'
+)
+_CURRENCY_SYMBOLS = ('kr', 'SEK', 'sek', ':-', '€', '$')
+
+
+def _parse_amount_str(s: str) -> Optional[float]:
+    """Parse amount string to float. Handles dot thousands (3.717,35), space thousands (1 234,56), dot decimal (743.47)."""
+    cleaned = s.strip()
+    for sym in _CURRENCY_SYMBOLS:
+        cleaned = cleaned.replace(sym, '')
+    cleaned = cleaned.replace(' ', '')
+    if ',' in cleaned and '.' in cleaned:
+        cleaned = cleaned.replace('.', '').replace(',', '.')
+    elif ',' in cleaned:
+        if re.search(r',\d{1,2}$', cleaned):
+            cleaned = cleaned.replace(',', '.')
+        else:
+            cleaned = cleaned.replace(',', '')
+    elif '.' in cleaned:
+        if not re.search(r'\.\d{1,2}$', cleaned):
+            cleaned = cleaned.replace('.', '')
+    try:
+        v = float(cleaned)
+        return v if v > 0 else None
+    except ValueError:
+        return None
+
 
 def score_total_amount_candidate(
     candidate: float,
@@ -144,20 +175,12 @@ def score_total_amount_candidate(
     
     # Relative size (0.08 weight, reduced from 0.10)
     if footer_rows:
-        # Find largest amount in footer rows
         amounts_in_footer = []
         for footer_row in footer_rows:
-            # Simple extraction: find numbers that look like amounts
-            amount_pattern = re.compile(r'\d{1,3}(?:\s+\d{3})*(?:[.,]\d{2})?')
-            matches = amount_pattern.findall(footer_row.text)
-            for match in matches:
-                try:
-                    cleaned = match.replace(' ', '').replace(',', '.')
-                    amount = float(cleaned)
-                    if amount > 0:
-                        amounts_in_footer.append(amount)
-                except ValueError:
-                    continue
+            for m in _AMOUNT_PATTERN.finditer(footer_row.text):
+                v = _parse_amount_str(m.group(0))
+                if v is not None:
+                    amounts_in_footer.append(v)
         
         if amounts_in_footer:
             max_amount = max(amounts_in_footer)
@@ -285,26 +308,14 @@ def _is_largest_in_footer(candidate: float, footer_rows: List[Row]) -> bool:
     Returns:
         True if candidate is largest numeric value in footer rows
     """
-    # Extract all numeric amounts from footer rows
     amounts = []
-    amount_pattern = re.compile(r'[\d\s]+[.,]\d{2}')
-    
     for footer_row in footer_rows:
-        for token in footer_row.tokens:
-            token_text = token.text.strip()
-            if amount_pattern.search(token_text):
-                # Extract numeric value
-                cleaned = token_text.replace('kr', '').replace('SEK', '').replace('sek', '').replace(':-', '')
-                cleaned = cleaned.replace(',', '.').replace(' ', '')
-                try:
-                    amount = float(cleaned)
-                    amounts.append(amount)
-                except ValueError:
-                    continue
-    
+        for m in _AMOUNT_PATTERN.finditer(footer_row.text):
+            v = _parse_amount_str(m.group(0))
+            if v is not None:
+                amounts.append(v)
     if not amounts:
-        return True  # No other amounts to compare, assume largest
-    
+        return True
     return candidate >= max(amounts)
 
 
