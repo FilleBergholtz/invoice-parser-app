@@ -11,12 +11,12 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 ## Current Position
 
 Milestone: v2.0 Features + polish
-Phase: **Phase 13 (sista) — klar**
-Plans: 13-01 ✓, 13-02 ✓, 13-03 ✓
-Status: **✅ ALLA FASER KLARA** — v1.0 (1–3) + v2.0 (5–13). Senast: About-dialog, Hjälp-meny, ikoner (QRC), Windows app.ico.
-Last activity: 2026-01-25 — Phase 13 exekverad; därefter ROADMAP/STATE uppdaterade.
+Phase: **Phase 14 (nästa)** — Extraction fallback optimization (pdfplumber → OCR → AI → vision)
+Plans: (ej planerad än — kör `/gsd:plan-phase 14`)
+Status: Phase 13 klar. **Phase 14 tillagd** — oplanerad.
+Last activity: 2026-01-25 — Phase 14 tillagd till roadmap.
 
-Progress: ████████████████████ 100% — Phase 1–3 (v1) + Phase 5–13 (v2) genomförda. Ingen oplanerad fas kvar.
+Progress: Phase 1–3 (v1) + Phase 5–13 (v2) genomförda. **Phase 14** tillagd, väntar på planering.
 
 ## Performance Metrics
 
@@ -64,6 +64,7 @@ None yet.
 - Phase 11 added: Pdfplumber och OCR: kör båda, jämför, använd bästa — dual extraction, compare results, use best.
 - Phase 11 planned: 11-01 (OCR wiring), 11-02 (dual-run compare), 11-03 (use best downstream).
 - Phase 13 added: About page + app icons (branding & help) — Om-dialog, Hjälp-meny, fönsterikoner. Discuss-phase 13: 13-DISCUSS.md with tabbed About (Om appen + Hjälp), QRC/icons, Windows .ico. Plans: 13-01 (About + Help menu), 13-02 (QRC + apply icons), 13-03 (Windows .ico + build).
+- Phase 14 added: Extraction fallback optimization (pdfplumber → OCR → AI → vision) — optimera fallback-kedjan för textextraktion.
 
 ### Blockers/Concerns
 

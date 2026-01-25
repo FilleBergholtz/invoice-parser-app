@@ -5,10 +5,10 @@
 | Status | Beskrivning |
 |--------|-------------|
 | **v1.0 MVP** | Klar (Phase 1–3). Shipped 2026-01-17. |
-| **v2.0 Features** | **Alla faser 5–13 klara.** Confidence, validerings-UI, inlärning, AI, dual extraction, UI polish, About + ikoner. |
-| **Nästa steg** | Ingen ny fas planerad. Kör `/gsd:complete-milestone` för att avsluta milestone, eller planera nya faser. |
+| **v2.0 Features** | Faser 5–13 klara. **Phase 14 tillagd:** Extraction fallback optimization (pdfplumber → OCR → AI → vision). |
+| **Nästa steg** | Phase 14 tillagd. Kör `/gsd:plan-phase 14` för att bryta ner fasen. |
 
-**Progress:** Phases 1–3 (v1) + 5–13 (v2) = **alla planerade faser genomförda.**
+**Progress:** Phases 1–3 (v1) + 5–13 (v2) klara. **Phase 14** tillagd (oplanerad).
 
 ---
 
@@ -50,6 +50,7 @@ This roadmap delivers a Swedish invoice parsing system that transforms PDF invoi
 - [x] **Phase 11: Pdfplumber och OCR: kör båda, jämför, använd bästa** - Dual extraction; compare results; use best ✅
 - [x] **Phase 12: UI Polish (PySide6)** - Theme + layout + engine states för desktop-GUI ✅
 - [x] **Phase 13: About page + app icons (branding & help)** - Om-dialog, Hjälp-meny, fönsterikoner ✅ 2026-01-25
+- [ ] **Phase 14: Extraction fallback optimization (pdfplumber → OCR → AI → vision)** — [To be planned]
 
 ## Phase Details
 
@@ -325,11 +326,25 @@ Plans:
 
 ---
 
+### Phase 14: Extraction fallback optimization (pdfplumber → OCR → AI → vision)
+
+**Goal:** [To be planned]
+**Depends on:** Phase 13
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run `/gsd:plan-phase 14` to break down)
+
+**Details:**
+[To be added during planning]
+
+---
+
 ## Progress
 
 **Senast uppdaterad:** 2026-01-25
 
-**Execution order:** 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12 → 13
+**Execution order:** 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12 → 13 → 14
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -346,5 +361,6 @@ Plans:
 | 11. Pdfplumber och OCR: kör båda, jämför, använd bästa | v2.0 | 3/3 | Complete | 2026-01-24 |
 | 12. UI Polish (PySide6) – theme + layout + engine states | v2.0 | 5/5 | Complete | 2026-01-24 |
 | 13. About page + app icons (branding & help) | v2.0 | 3/3 | Complete | 2026-01-25 |
+| 14. Extraction fallback optimization (pdfplumber → OCR → AI → vision) | v2.0 | 0/? | Not planned | – |
 
-**Sammanfattning:** v1.0 (Phase 1–3) klar. v2.0 phases 5–13 klara. **Alla planerade faser är genomförda.**
+**Sammanfattning:** v1.0 (Phase 1–3) klar. v2.0 phases 5–13 klara. **Phase 14 tillagd, oplanerad.**
