@@ -147,6 +147,7 @@ This phase includes **targeted research tasks** strictly limited to decisions th
      - confidence values
      - text quality scores
      - artifact paths (images, OCR TSV, AI responses)
+   - **Rekommendation A:** När `method_used` är `ai_vision`, inkludera även **vision_reason**: en array med de tröskelvillkor som ledde till vision, t.ex. `["pdf_text_quality < 0.5", "ocr_median_conf < 70"]`. Underlättar debugging, användarstöd och framtida threshold-justering.
 
 ---
 

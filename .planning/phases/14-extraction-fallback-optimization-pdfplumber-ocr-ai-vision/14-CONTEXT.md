@@ -3,7 +3,8 @@
 **Gathered:** 2026-01-25  
 **Updated:** 2026-01-25  
 **Status:** Ready for planning  
-**Full spec:** see `14-DISCUSS.md`
+**Full spec:** see `14-DISCUSS.md`  
+**Research (R1–R4):** see `14-RESEARCH.md` — konstanter och regler för DPI, OCR-confidence, vision-gränser, routing.
 
 ---
 
@@ -28,25 +29,21 @@ Optimize the extraction pipeline to be **robust, accurate, and cost-efficient** 
 
 Research in this phase is **limited and goal-oriented**: only decisions that are hard to reverse or significantly affect accuracy, cost, or performance. Outputs must be **concrete constants or rules in code**. Research must be **time-boxed**; **no research task may block unrelated implementation work.**
 
-### R1 — OCR Rendering Parameters
+### R1 — OCR Rendering Parameters ✅ (14-RESEARCH.md)
 
-- **Goal:** Optimal rendering for OCR and AI vision.
-- **Deliverable:** Baseline DPI (e.g. 300); optional retry DPI rule (e.g. retry at 400 only if OCR mean_conf < X).
+- **Baseline DPI:** 300. **Retry DPI:** 400 endast om `ocr_mean_conf < 55` efter 300 DPI; max 1 retry per sida.
 
-### R2 — OCR Confidence Aggregation
+### R2 — OCR Confidence Aggregation ✅ (14-RESEARCH.md)
 
-- **Goal:** How to summarize OCR confidence for routing.
-- **Deliverable:** Chosen metric(s) (mean/median/trimmed); confirm conf == -1 excluded; threshold values (e.g. median_conf < 70 → AI).
+- **Primärmått:** median_conf (median över ord, exkl. conf < 0). **Exkludera** conf == -1 / level != 5. **Routing:** median_conf < 70 → AI. low_conf_fraction > 0.25 som stödsignal för vision.
 
-### R3 — AI Vision Capabilities and Limits
+### R3 — AI Vision Capabilities and Limits ✅ (14-RESEARCH.md)
 
-- **Goal:** Vision used only when necessary, within technical limits.
-- **Deliverable:** Confirmed input format (PNG/JPEG, max resolution/size); which provider/model; rule for when vision is allowed vs forbidden; cost vs text-only.
+- **Format:** PNG/JPEG. **Max längd sida:** 4096 px. **Max filstorlek:** 20 MB. **1 bild per request.** Vision tillåten enligt R4-routing; förbjuden om konfig av eller bild överskrider gränser.
 
-### R4 — AI Routing Rules (Text-only vs Vision)
+### R4 — AI Routing Rules (Text-only vs Vision) ✅ (14-RESEARCH.md)
 
-- **Goal:** Deterministic, explainable triggers for AI.
-- **Deliverable:** Final routing table (pdfplumber → OCR → AI text → AI vision); retry rules (max 1 retry, strict schema); when text-only suffices vs when vision is required.
+- **Routing-tabell:** pdfplumber accept ↔ OCR accept ↔ AI text-only (om text_quality ≥ 0.5) ↔ AI vision (om text_quality < 0.5 eller text-only retry fail). **Retry:** max 1 per läge, strikt schema.
 
 ---
 
@@ -64,7 +61,7 @@ Two signals: **(1) extraction confidence** (existing), **(2) text quality score*
 ### 2. Token model and OCR quality
 
 - Add `Optional[float] confidence` to Token; persist OCR confidence from TSV.
-- Exclude `conf == -1` rows from word tokens. OCR aggregation choice per R2.
+- Exclude `conf == -1` rows from word tokens. OCR aggregation: **mean_conf** för DPI-retry (R1), **median_conf** för routing (R2). Kodkommentar: *"Mean is used for DPI retry sensitivity, median for routing robustness."*
 
 ### 3. pdfplumber tokenizer
 
@@ -85,6 +82,7 @@ Two signals: **(1) extraction confidence** (existing), **(2) text quality score*
 ### 7. Artifacts and run_summary
 
 - **run_summary.json** per-page: `method_used`, confidence values, text quality scores, artifact paths. Must **fully explain *why* OCR or AI was used.**
+- **Rekommendation A:** När `method_used` är `ai_vision`, inkludera **vision_reason**: array med de tröskelvillkor som ledde till vision (t.ex. `["pdf_text_quality < 0.5", "ocr_median_conf < 70"]`) — för debugging, användarstöd och threshold-justering.
 
 ### Claude's discretion
 
