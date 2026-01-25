@@ -14,10 +14,11 @@ from PySide6.QtWidgets import (
     QToolBar, QStatusBar, QStackedWidget, QFrame, QMessageBox,
 )
 from PySide6.QtCore import Qt, QThread
-from PySide6.QtGui import QDragEnterEvent, QDropEvent, QAction, QKeySequence
+from PySide6.QtGui import QDragEnterEvent, QDropEvent, QAction, QKeySequence, QIcon
 
 logger = logging.getLogger(__name__)
 
+from .. import resources_rc  # noqa: F401 - register icons for QIcon(":/...")
 from ..services.engine_runner import EngineRunner
 from .pdf_viewer import PDFViewer
 from .candidate_selector import CandidateSelector
@@ -34,6 +35,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("EPG PDF Extraherare")
         self.resize(800, 600)
         self.setAcceptDrops(True)
+        self.setWindowIcon(QIcon(":/icons/app.svg"))
         
         # State
         self.input_path = None
@@ -60,6 +62,7 @@ class MainWindow(QMainWindow):
         # Hjälp menu
         help_menu = menubar.addMenu("Hjälp")
         about_action = help_menu.addAction("Om EPG PDF Extraherare...")
+        about_action.setIcon(QIcon(":/icons/about.svg"))
         about_action.triggered.connect(self.open_about)
         
     def setup_ui(self):
@@ -70,22 +73,26 @@ class MainWindow(QMainWindow):
         self.addToolBar(toolbar)
 
         self.open_action = QAction("Öppna PDF", self)
+        self.open_action.setIcon(QIcon(":/icons/open.svg"))
         self.open_action.setShortcut(QKeySequence.StandardKey.Open)
         self.open_action.triggered.connect(self.browse_file)
         toolbar.addAction(self.open_action)
 
         self.run_action = QAction("Kör", self)
+        self.run_action.setIcon(QIcon(":/icons/run.svg"))
         self.run_action.setShortcut(QKeySequence("Ctrl+R"))
         self.run_action.triggered.connect(self.start_processing)
         self.run_action.setEnabled(False)
         toolbar.addAction(self.run_action)
 
         self.export_action = QAction("Export", self)
+        self.export_action.setIcon(QIcon(":/icons/export.svg"))
         self.export_action.setShortcut(QKeySequence("Ctrl+E"))
         self.export_action.triggered.connect(self.open_output_dir)
         toolbar.addAction(self.export_action)
 
         settings_act = QAction("Inställningar", self)
+        settings_act.setIcon(QIcon(":/icons/settings.svg"))
         settings_act.triggered.connect(self.open_ai_settings)
         toolbar.addAction(settings_act)
 
