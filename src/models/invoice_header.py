@@ -25,6 +25,7 @@ class InvoiceHeader:
         supplier_address: Supplier address or None (deferred to later phase)
         customer_name: Customer name or None
         customer_address: Customer address or None
+        reference: Fakturareferens/betalningsreferens or None (REF-01)
         raw_text: Concatenated text from header segment rows
         total_amount: Extracted total amount or None
         total_confidence: Confidence score for total amount (0.0-1.0)
@@ -40,6 +41,7 @@ class InvoiceHeader:
     supplier_address: Optional[str] = None
     customer_name: Optional[str] = None
     customer_address: Optional[str] = None
+    reference: Optional[str] = None  # Fakturareferens/betalningsreferens (REF-01)
     raw_text: str = ""
     total_amount: Optional[float] = None
     total_confidence: float = 0.0

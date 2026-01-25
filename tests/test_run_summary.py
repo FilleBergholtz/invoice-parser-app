@@ -71,6 +71,7 @@ def test_process_batch_creates_summary(mock_process_pdf, temp_input_dir, temp_ou
     mock_result.invoice_header.customer_name = None
     mock_result.invoice_header.invoice_number_confidence = 0.95
     mock_result.invoice_header.total_confidence = 0.90
+    mock_result.invoice_header.reference = None  # REF-01; avoid MagicMock leaking into Excel
     mock_result.validation_result = MagicMock()
     mock_result.validation_result.status = "OK"
     mock_result.validation_result.diff = 0.0

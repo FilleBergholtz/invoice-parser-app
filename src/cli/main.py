@@ -69,6 +69,11 @@ def _sanitize_invoice_id_for_path(s: str) -> str:
     return (s.strip() or "").replace("\x00", "")
 
 
+def _str_reference(val: Optional[str]) -> str:
+    """Return a string safe for Excel; never pass mocks or non-strings."""
+    return (val if isinstance(val, str) else "") or ""
+
+
 def _is_likely_garbled(row_text: str) -> bool:
     """Utelämn rader som ser ut som revers/vattensstämpel (t.ex. |TEKREVSGNINRYTSIMONOKE, nigirO, ecruoS)."""
     import re
@@ -1031,6 +1036,7 @@ def process_batch(
                                 "fakturanummer": virtual_result.invoice_header.invoice_number or "TBD",
                                 "foretag": virtual_result.invoice_header.supplier_name or "TBD",
                                 "fakturadatum": virtual_result.invoice_header.invoice_date.isoformat() if virtual_result.invoice_header.invoice_date else "TBD",
+                                "referenser": _str_reference(getattr(virtual_result.invoice_header, "reference", None)),
                                 "virtual_invoice_id": virtual_result.virtual_invoice_id,
                                 "status": virtual_result.validation_result.status,
                                 "lines_sum": virtual_result.validation_result.lines_sum,
@@ -1112,6 +1118,7 @@ def process_batch(
                 "fakturanummer": invoice_header.invoice_number or "TBD",
                 "foretag": invoice_header.supplier_name or "TBD",
                 "fakturadatum": invoice_header.invoice_date.isoformat() if invoice_header.invoice_date else "TBD",
+                "referenser": _str_reference(getattr(invoice_header, "reference", None)),
                 "virtual_invoice_id": invoice_result.get("virtual_invoice_id", ""),  # Include virtual invoice ID
                 "status": validation_result.status,
                 "lines_sum": validation_result.lines_sum,

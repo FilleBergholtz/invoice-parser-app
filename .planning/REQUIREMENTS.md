@@ -226,7 +226,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 - [x] **INV-ID-01** (2026-01-25): I corrections.json och learning.db ska vi spara **extraherade fakturanummer** som identifierare när dessa finns, inte bara PDF-filnamn. En PDF kan innehålla flera fakturor med olika fakturanummer – varje ska identifieras med sitt fakturanummer. **Implementerat:** validation-blob innehåller `invoice_number`; GUI använder det vid "Bekräfta val" som `invoice_id` när det finns.
 - [ ] **MULTIPAGE-01**: Fakturor som sträcker sig över flera sidor ska kunna lokaliseras och slås ihop: (a) hitta samma fakturanummer på flera sidor, (b) använd sidnummer i hörn (oftast övre högra) för att veta vilka sidor som hör ihop, (c) flera line items kan ligga på flera sidor för samma faktura – dessa ska behandlas som en logisk faktura.
+- [x] **INV-NUM-02** (2026-01-25): Fakturanumret saknar första siffran vid extraktion. Korrekt är t.ex. 40615472 men vi får 0615472. I run_summary syns källtoken "4061547206" – undersök header_extractor (regex/kandidatval) så att hela numret eller rätt del (40615472) används, inte bara avklippt 0615472. **Implementerat:** Efter val av bästa kandidat söker header_extractor bland tokens efter en längre sifferseqvens som innehåller det valda numret; vid 10 tecken med årsuffix (06/24/25/26) används första 8 tecken (t.ex. 4061547206 → 40615472).
+- [x] **REF-01** (2026-01-25): Referens/fakturareferens ska extraheras från headern och sparas i Excel. Kolumnen "Referenser" finns idag men fylls inte från extraktion. Sök i headern efter etiketter som "fakturareferens", "betalningsreferens", "referens", "reference" etc. och spara värdet så att det hamnar i Excel-kolumnen Referenser. **Implementerat:** extract_reference() i header_extractor, InvoiceHeader.reference, invoice_metadata["referenser"] i CLI, Excel använder meta.get("referenser").
 
 ---
 *Requirements defined: 2025-01-27*
-*Last updated: 2026-01-25 — INV-ID-01 impl., MULTIPAGE-01 backlog*
+*Last updated: 2026-01-25 — INV-NUM-02, REF-01 implementerade*

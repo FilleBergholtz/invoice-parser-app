@@ -8,16 +8,16 @@ updated: "2026-01-25T00:00:00Z"
 
 ## Current Test
 
-**Test 1** – AI av eller API-nyckel saknas: ingen krasch
+**Test 3** – Provider-väljning (OpenAI/Claude)
 
-Pipeline körs när AI är av (t.ex. AI_ENABLED=false eller ingen API-nyckel). Förväntat: körning mot en PDF ger heuristik-resultat, ingen krasch. Svara "pass" eller beskriv problem.
+Med AI_PROVIDER=openai resp. claude och motsvarande API-nyckel: rätt provider används. Verifiera via logg eller att båda vägarna fungerar. Svara "pass", "skip" eller beskriv problem.
 
 ## Tests
 
 ### 1. AI av eller API-nyckel saknas – ingen krasch
 expected: |
   När AI är av (AI_ENABLED=false) eller OPENAI_API_KEY/ANTHROPIC_API_KEY saknas: pipeline körs mot en PDF, ger heuristik-resultat (totalsumma från footer-extraktion), ingen krasch eller ohanterat undantag.
-result: pending
+result: pass
 
 ### 2. AI aktiveras vid låg konfidens (< 0.95)
 expected: |
@@ -42,9 +42,9 @@ result: pending
 ## Summary
 
 total: 5
-passed: 0
+passed: 2
 issues: 0
-pending: 5
+pending: 3
 skipped: 0
 
 ## Gaps

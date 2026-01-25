@@ -244,6 +244,24 @@ def extract_invoice_number(
     final_score = top_candidate['score']
     final_row = top_candidate['row']
     
+    # INV-NUM-02: Om ett helt token i headern innehåller valt kandidat och är längre (t.ex. "4061547206" vs "0615472"), använd hela token
+    for row in all_rows:
+        for t in row.tokens:
+            s = t.text
+            if not s.isdigit() or final_number not in s or len(s) <= len(final_number):
+                continue
+            if 5 <= len(s) <= 12:
+                # Tokens som "4061547206" (10 siffror) kan vara "40615472" + "06" (år/suffix); använd 8 siffror om suffix ser ut som år
+                if len(s) == 10 and s[-2:] in ('06', '24', '25', '26'):
+                    final_number = s[:8]
+                else:
+                    final_number = s
+                final_row = row
+                break
+        else:
+            continue
+        break
+    
     # Note: We no longer have hard gate - always store the best candidate
     # Status will be REVIEW if confidence < 0.95 (handled in validation)
     
@@ -585,6 +603,46 @@ def extract_vendor_name(
     invoice_header.supplier_name = best_candidate['text']
 
 
+def extract_reference(
+    header_segment: Optional[Segment],
+    invoice_header: InvoiceHeader
+) -> None:
+    """Extract reference (fakturareferens/betalningsreferens) from header. REF-01.
+    
+    Searches for labels like "fakturareferens", "betalningsreferens", "referens", "reference"
+    and captures the value on same row or next token.
+    """
+    if header_segment is None or not header_segment.rows:
+        invoice_header.reference = None
+        return
+    
+    label_patterns = [
+        r'fakturareferens\s*:?\s*',
+        r'betalningsreferens\s*:?\s*',
+        r'betalnings\s*referens\s*:?\s*',
+        r'referens\s*:?\s*',
+        r'reference\s*:?\s*',
+    ]
+    label_re = re.compile('(?:' + '|'.join(label_patterns) + ')', re.IGNORECASE)
+    # Värdet: siffror och eventuellt bokstäver (t.ex. "4061547206" eller "RF 123")
+    value_re = re.compile(r'[\d\sA-ZÅÄÖa-zåäö\-]{3,40}')
+    
+    for row in header_segment.rows:
+        norm = _normalize_text(row.text)
+        m = label_re.search(norm)
+        if not m:
+            continue
+        after = norm[m.end():].strip()
+        val_m = value_re.match(after)
+        if val_m:
+            ref = val_m.group(0).strip()
+            if ref and len(ref) >= 3:
+                invoice_header.reference = ref
+                return
+    
+    invoice_header.reference = None
+
+
 def extract_header_fields(
     header_segment: Optional[Segment],
     invoice_header: InvoiceHeader,
@@ -614,6 +672,7 @@ def extract_header_fields(
         progress_callback=progress_callback
     )
     
-    # Extract date and vendor (no retry needed, lower priority)
+    # Extract date, vendor, reference (no retry needed, lower priority)
     extract_invoice_date(header_segment, invoice_header)
     extract_vendor_name(header_segment, invoice_header)
+    extract_reference(header_segment, invoice_header)
