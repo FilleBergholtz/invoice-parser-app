@@ -10,5 +10,17 @@
     "candidate_index": 0,
     "timestamp": "2026-01-25T02:38:54.448998",
     "correction_type": "total_amount"
+  },
+  {
+    "invoice_id": "export_2026-01-13_09-01-06",
+    "supplier_name": "Unknown",
+    "original_total": null,
+    "original_confidence": 0.0,
+    "corrected_total": 3717.35,
+    "corrected_confidence": 0.92,
+    "raw_confidence": null,
+    "candidate_index": 0,
+    "timestamp": "2026-01-25T10:15:24.998175",
+    "correction_type": "total_amount"
   }
 ]
