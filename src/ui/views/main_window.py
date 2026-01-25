@@ -22,6 +22,7 @@ from .pdf_viewer import PDFViewer
 from .candidate_selector import CandidateSelector
 from .ai_settings_dialog import AISettingsDialog
 from ...learning.correction_collector import save_correction
+from ...config import get_learning_db_path
 
 class MainWindow(QMainWindow):
     """Main application window."""
@@ -527,7 +528,7 @@ class MainWindow(QMainWindow):
                     candidate = self.current_invoice_header.total_candidates[self.selected_candidate_index]
                     candidate_score = candidate.get('score', 0.0)
             
-            # Save correction
+            # Save correction to JSON (and to learning DB so it's used for learning directly)
             correction = save_correction(
                 invoice_id=invoice_id,
                 invoice_header=self.current_invoice_header,
@@ -536,10 +537,31 @@ class MainWindow(QMainWindow):
                 candidate_score=candidate_score
             )
             
+            db_ok = False
+            try:
+                from ...learning.database import LearningDatabase
+                from ...learning.pattern_extractor import extract_patterns_from_corrections
+                db_path = get_learning_db_path()
+                db = LearningDatabase(db_path)
+                db.add_correction(correction)
+                patterns = extract_patterns_from_corrections([correction])
+                for p in patterns:
+                    db.save_pattern(p)
+                db_ok = True
+            except Exception as db_err:
+                logger.warning("Could not persist correction to learning DB: %s", db_err)
+            
             self.correction_saved = True
             self.confirm_btn.setEnabled(False)
-            self.correction_status.setText(f"✓ Korrigering sparad: SEK {self.selected_candidate_amount:,.2f}")
-            self.log(f"Korrigering sparad för faktura {invoice_id}")
+            msg = f"✓ Korrigering sparad: SEK {self.selected_candidate_amount:,.2f}"
+            if db_ok:
+                msg += " (fil + inlärningsdatabas)"
+            else:
+                msg += " (fil; databas otillgänglig)"
+            self.correction_status.setText(msg)
+            self.log(f"Korrigering sparad för faktura {invoice_id}" + (" – även i inlärningsdatabasen" if db_ok else " – endast i fil"))
+            self._finish_current_validation_and_continue()
+            return
             
         except Exception as e:
             self.log_error(f"Kunde inte spara korrigering: {e}")

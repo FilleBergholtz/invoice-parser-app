@@ -1,14 +1,14 @@
 ---
-status: incomplete
+status: complete
 phase: 07-learning-system
-source: [07-01-SUMMARY.md, 07-02-SUMMARY.md, 07-03-SUMMARY.md, 07-04-SUMMARY.md]
+source: [07-01-SUMMARY.md, 07-02-SUMMARY.md, 07-03-SUMMARY.md, 07-04-SUMMARY.md, 07-05-SUMMARY.md, 07-06-SUMMARY.md]
 started: "2026-01-24T23:59:00Z"
 updated: "2026-01-24T23:59:00Z"
 ---
 
 ## Current Test
 
-[testing paused – gaps loggade för plan-phase --gaps]
+[testing complete]
 
 ## Tests
 
@@ -45,14 +45,27 @@ result: issue
 reported: "Den får inte högre resultat och sedan verkar vi bara spara 1 pdf's mönster och vi får bara svara på 1 pdf i viewer men de finns pdfer som har sämre confidence"
 severity: major
 
+### 7. Konfidensboost vid saknad leverantör (07-05)
+expected: |
+  Efter 07-05: När en PDF processas utan extraherad leverantör (supplier_name tom/None) och det finns inlärda mönster för "Unknown"/unknown i learning.db, ska totalsumma-kandidater kunna få konfidensboost. Observable: högre confidence eller färre REVIEW när mönster för unknown finns (jämfört med utan sådana mönster).
+result: pass
+
+### 8. Flera PDF:er i validerings-UI (07-06)
+expected: |
+  Efter 07-06: Vid en run som ger flera REVIEW-fakturor (t.ex. batch med 2+ PDFs som blir REVIEW) ska validerings-UI visa första PDF:en; knappen "Nästa faktura" ska visas när fler finns. Efter "Hoppa över" eller "Bekräfta val" ska nästa REVIEW-PDF visas tills kön är tom. Korrigeringar ska sparas per faktura (invoice_id) så att flera inte skriver över varandra.
+result: issue
+reported: "Korrigeringar sparas i data/corrections.json men inte i db (learning.db)"
+severity: major
+note: "UI-flöde (flera PDF:er, Nästa faktura) godkänt; gap kvar: persistering till learning.db vid Bekräfta val."
+
 ## Summary
 
-total: 6
-passed: 5
-issues: 1
+total: 8
+passed: 6
+issues: 2
 pending: 0
 skipped: 0
-**UAT complete:** Nej – gaps kvar (konfidensboost, flera PDF:er i viewer).
+**UAT complete:** Ja – 1 nytt gap (korrigeringar från GUI ska hamna i learning.db).
 
 ## Gaps
 
@@ -81,3 +94,12 @@ skipped: 0
   missing: []
   debug_session: ""
   note: "Överlappar Phase 6 (Manual Validation UI) – viewer/validering visar idag bara en REVIEW-PDF; fler med sämre confidence får inte valideras."
+- truth: "Corrections saved from validation UI (Bekräfta val) are persisted to learning.db or available for learning without manual import"
+  status: failed
+  reason: "User reported: Korrigeringar sparas i data/corrections.json men inte i db"
+  severity: major
+  test: 8
+  root_cause: ""
+  artifacts: []
+  missing: []
+  note: "GUI anropar save_correction som skriver till JSON; learning.db uppdateras idag endast via CLI --import-corrections."

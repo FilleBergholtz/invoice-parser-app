@@ -170,6 +170,46 @@ class LearningDatabase:
         logger.info(f"Imported {imported_count} corrections from {json_path}")
         return imported_count
     
+    def add_correction(self, correction: Dict[str, Any]) -> None:
+        """Insert a single correction into the database.
+        
+        Same format as produced by correction_collector.save_correction.
+        Used when saving from GUI so corrections go to both JSON and DB.
+        
+        Args:
+            correction: Dict with invoice_id, supplier_name, original_total,
+                corrected_total, timestamp, correction_type, etc.
+                
+        Raises:
+            ValueError: If required fields are missing
+        """
+        required = ('invoice_id', 'corrected_total', 'timestamp')
+        for k in required:
+            if k not in correction:
+                raise ValueError(f"Missing required field: {k}")
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO corrections (
+                    invoice_id, supplier_name, original_total,
+                    original_confidence, corrected_total, corrected_confidence,
+                    raw_confidence, candidate_index, timestamp, correction_type
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                correction.get('invoice_id', ''),
+                correction.get('supplier_name', 'Unknown'),
+                correction.get('original_total'),
+                correction.get('original_confidence'),
+                correction.get('corrected_total'),
+                correction.get('corrected_confidence'),
+                correction.get('raw_confidence'),
+                correction.get('candidate_index'),
+                correction.get('timestamp', datetime.now().isoformat()),
+                correction.get('correction_type', 'total_amount')
+            ))
+            conn.commit()
+        logger.info(f"Added correction for invoice {correction.get('invoice_id')} to learning DB")
+    
     def get_corrections(self, supplier: Optional[str] = None) -> List[Dict[str, Any]]:
         """Get corrections, optionally filtered by supplier.
         

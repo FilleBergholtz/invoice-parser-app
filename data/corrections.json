@@ -22,5 +22,77 @@
     "candidate_index": 0,
     "timestamp": "2026-01-25T10:15:24.998175",
     "correction_type": "total_amount"
+  },
+  {
+    "invoice_id": "export_2026-01-13_09-01-06__1",
+    "supplier_name": "Unknown",
+    "original_total": null,
+    "original_confidence": 0.0,
+    "corrected_total": 3717.35,
+    "corrected_confidence": 0.92,
+    "raw_confidence": null,
+    "candidate_index": 0,
+    "timestamp": "2026-01-25T10:54:00.510276",
+    "correction_type": "total_amount"
+  },
+  {
+    "invoice_id": "export_2026-01-13_09-01-06__2",
+    "supplier_name": "Unknown",
+    "original_total": null,
+    "original_confidence": 0.0,
+    "corrected_total": 3717.35,
+    "corrected_confidence": 0.92,
+    "raw_confidence": null,
+    "candidate_index": 0,
+    "timestamp": "2026-01-25T10:54:17.184930",
+    "correction_type": "total_amount"
+  },
+  {
+    "invoice_id": "export_2026-01-13_09-01-06__3",
+    "supplier_name": "Unknown",
+    "original_total": null,
+    "original_confidence": 0.0,
+    "corrected_total": 32891.1,
+    "corrected_confidence": 0.92,
+    "raw_confidence": null,
+    "candidate_index": 0,
+    "timestamp": "2026-01-25T10:54:30.985563",
+    "correction_type": "total_amount"
+  },
+  {
+    "invoice_id": "export_2026-01-13_09-01-06__4",
+    "supplier_name": "Unknown",
+    "original_total": null,
+    "original_confidence": 0.0,
+    "corrected_total": 32891.1,
+    "corrected_confidence": 0.92,
+    "raw_confidence": null,
+    "candidate_index": 0,
+    "timestamp": "2026-01-25T10:54:43.088918",
+    "correction_type": "total_amount"
+  },
+  {
+    "invoice_id": "export_2026-01-13_09-01-06__5",
+    "supplier_name": "Unknown",
+    "original_total": null,
+    "original_confidence": 0.0,
+    "corrected_total": 40531.46,
+    "corrected_confidence": 0.92,
+    "raw_confidence": null,
+    "candidate_index": 0,
+    "timestamp": "2026-01-25T10:54:54.316882",
+    "correction_type": "total_amount"
+  },
+  {
+    "invoice_id": "export_2026-01-13_09-01-06__6",
+    "supplier_name": "Unknown",
+    "original_total": null,
+    "original_confidence": 0.0,
+    "corrected_total": 40531.46,
+    "corrected_confidence": 0.92,
+    "raw_confidence": null,
+    "candidate_index": 0,
+    "timestamp": "2026-01-25T10:55:03.267968",
+    "correction_type": "total_amount"
   }
 ]
