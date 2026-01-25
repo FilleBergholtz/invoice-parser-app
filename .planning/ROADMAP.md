@@ -5,10 +5,10 @@
 | Status | Beskrivning |
 |--------|-------------|
 | **v1.0 MVP** | Klar (Phase 1–3). Shipped 2026-01-17. |
-| **v2.0 Features** | Faser 5–13 klara. **Phase 14 tillagd:** Extraction fallback optimization (pdfplumber → OCR → AI → vision). |
-| **Nästa steg** | Phase 14 tillagd. Kör `/gsd:plan-phase 14` för att bryta ner fasen. |
+| **v2.0 Features** | Faser 5–13 klara. Phase 14: Extraction fallback optimization. **Phase 15 tillagd:** Extraction quality hardening (OCR confidence + routing + parser robustness). |
+| **Nästa steg** | Phase 15 tillagd. Kör `/gsd:plan-phase 15` för att bryta ner fasen. |
 
-**Progress:** Phases 1–3 (v1) + 5–13 (v2) klara. **Phase 14** tillagd (oplanerad).
+**Progress:** Phases 1–3 (v1) + 5–14 (v2) klara eller pågår. **Phase 15** tillagd (oplanerad).
 
 ---
 
@@ -50,7 +50,8 @@ This roadmap delivers a Swedish invoice parsing system that transforms PDF invoi
 - [x] **Phase 11: Pdfplumber och OCR: kör båda, jämför, använd bästa** - Dual extraction; compare results; use best ✅
 - [x] **Phase 12: UI Polish (PySide6)** - Theme + layout + engine states för desktop-GUI ✅
 - [x] **Phase 13: About page + app icons (branding & help)** - Om-dialog, Hjälp-meny, fönsterikoner ✅ 2026-01-25
-- [ ] **Phase 14: Extraction fallback optimization (pdfplumber → OCR → AI → vision)** — [To be planned]
+- [ ] **Phase 14: Extraction fallback optimization (pdfplumber → OCR → AI → vision)** — [To be planned / in progress]
+- [ ] **Phase 15: Extraction quality hardening (OCR confidence + routing + parser robustness)** — [To be planned]
 
 ## Phase Details
 
@@ -348,6 +349,19 @@ Se `.planning/phases/14-extraction-fallback-optimization-pdfplumber-ocr-ai-visio
 
 ---
 
+### Phase 15: Extraction quality hardening (OCR confidence + routing + parser robustness)
+
+**Goal:** Hårdna extraktionskvaliteten: konsekvent OCR confidence-användning, stabil routing utan flipp, och parsers tåliga mot tom/brusig/konstig text.
+
+**Depends on:** Phase 14
+
+**Plans:** [To be planned]
+
+**Details:**
+Se `.planning/phases/15-extraction-quality-hardening/15-CONTEXT.md`, `15-VERIFICATION.md`. Planer skapas med `/gsd:plan-phase 15`.
+
+---
+
 ## Progress
 
 **Senast uppdaterad:** 2026-01-25
@@ -369,6 +383,7 @@ Se `.planning/phases/14-extraction-fallback-optimization-pdfplumber-ocr-ai-visio
 | 11. Pdfplumber och OCR: kör båda, jämför, använd bästa | v2.0 | 3/3 | Complete | 2026-01-24 |
 | 12. UI Polish (PySide6) – theme + layout + engine states | v2.0 | 5/5 | Complete | 2026-01-24 |
 | 13. About page + app icons (branding & help) | v2.0 | 3/3 | Complete | 2026-01-25 |
-| 14. Extraction fallback optimization (pdfplumber → OCR → AI → vision) | v2.0 | 2/6 | In progress | – |
+| 14. Extraction fallback optimization (pdfplumber → OCR → AI → vision) | v2.0 | 6/6 | In progress / Complete | – |
+| 15. Extraction quality hardening (OCR confidence + routing + parser robustness) | v2.0 | 0/? | To be planned | – |
 
-**Sammanfattning:** v1.0 (Phase 1–3) klar. v2.0 phases 5–13 klara. **Phase 14 tillagd, oplanerad.**
+**Sammanfattning:** v1.0 (Phase 1–3) klar. v2.0 phases 5–14 klara eller pågår. **Phase 15 tillagd, oplanerad.**

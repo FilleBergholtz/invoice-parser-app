@@ -6,17 +6,17 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 
 **Core value:** 100% korrekt på fakturanummer och totalsumma, eller tydlig REVIEW-status. Allt som systemet exporterar som OK är garanterat korrekt. Osäkra fall går alltid till REVIEW (ingen tyst gissning).
 
-**Current focus:** Alla planerade faser (v1 + v2) genomförda. Status och roadmap uppdaterade 2026-01-25.
+**Current focus:** Phase 15 tillagd. Status och roadmap uppdaterade 2026-01-25.
 
 ## Current Position
 
 Milestone: v2.0 Features + polish
-Phase: **Phase 14 (nästa)** — Extraction fallback optimization (pdfplumber → OCR → AI → vision)
-Plans: 14-01 … 14-06 (planerade 2026-01-25)
-Status: Phase 13 klar. **Phase 14 planerad** — 6 planer, 4 waves.
-Last activity: 2026-01-25 — Phase 14-06 exekverad (R4-routing, run_summary extraction_details, artifacts/pages).
+Phase: **Phase 15 (nästa)** — Extraction quality hardening (OCR confidence + routing + parser robustness)
+Plans: [To be planned]
+Status: Phase 14 genomförd. **Phase 15 tillagd** — CONTEXT och VERIFICATION skapade 2026-01-25.
+Last activity: 2026-01-25 — Phase 15 add-phase: 15-CONTEXT.md, 15-VERIFICATION.md, ROADMAP/STATE uppdaterade.
 
-Progress: Phase 1–3 (v1) + Phase 5–13 (v2) genomförda. **Phase 14** planerad, redo för execute-phase.
+Progress: Phase 1–3 (v1) + Phase 5–14 (v2) genomförda. **Phase 15** tillagd, redo för plan-phase.
 
 ## Performance Metrics
 
@@ -69,6 +69,7 @@ None yet.
 - Phase 14 discuss uppdaterad: mål "robust, accurate, cost-efficient"; steg 3 uttryckligen "AI (text-only)"; fyra begränsade research-uppgifter R1–R4 (OCR-rendering, OCR-confidence, AI vision-gränser, AI-routing) med leverabler och constraints; implementation post-research (6 uppgifter); run_summary ska förklara *varför* OCR/AI användes.
 - Phase 14 research R1–R4 genomförd (14-RESEARCH.md): R1 baseline 300 DPI, retry 400 vid mean_conf<55; R2 median_conf, exkl. conf<0, tröskel 70; R3 vision PNG/JPEG max 4096px 20MB; R4 routing-tabell + text_quality 0.5 + retry-regler. Konstanter klara för implementation.
 - Phase 14 planerad: 6 planer (14-01…14-06). Wave 1: Token+OCR confidence, pdfplumber tokenizer. Wave 2: text_quality, rendering DPI. Wave 3: AI vision+retry. Wave 4: orchestration + run_summary/vision_reason.
+- Phase 15 tillagd: Extraction quality hardening (OCR confidence + routing + parser robustness). 15-CONTEXT.md, 15-VERIFICATION.md skapade. Redo för /gsd:plan-phase 15.
 
 ### Blockers/Concerns
 
