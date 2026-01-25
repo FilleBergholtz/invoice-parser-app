@@ -40,8 +40,8 @@ class VirtualInvoiceResult:
     error: Optional[str] = None
     extraction_source: Optional[str] = None  # "pdfplumber" | "ocr" | "ai_text" | "ai_vision" when fallback chain used
     extraction_detail: Optional[Dict[str, Any]] = None  # method_used, vision_reason, text_quality, artifact_paths (14-06)
-    ai_request: Optional[Dict[str, Any]] = None
-    ai_response: Optional[Dict[str, Any]] = None
+    ai_request: Optional[Any] = None  # AIInvoiceRequest or dict, for artifact saving
+    ai_response: Optional[Any] = None  # AIInvoiceResponse or dict, for artifact saving
     ai_error: Optional[str] = None
 
     @property

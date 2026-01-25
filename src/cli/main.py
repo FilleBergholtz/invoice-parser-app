@@ -1060,10 +1060,9 @@ def process_batch(
                         "quality_score": quality_score.to_dict(),
                         "extraction_source": getattr(virtual_result, "extraction_source", None),
                     })
-                    if getattr(virtual_result, "extraction_detail", None) is not None:
-                        det = dict(virtual_result.extraction_detail)
-                        det["virtual_invoice_id"] = virtual_result.virtual_invoice_id
-                        det["filename"] = pdf_file.name
+                    ed = getattr(virtual_result, "extraction_detail", None)
+                    if ed is not None:
+                        det: Dict[str, Any] = {**ed, "virtual_invoice_id": virtual_result.virtual_invoice_id, "filename": pdf_file.name}
                         summary.extraction_details.append(det)
                     
                     invoice_results.append({
