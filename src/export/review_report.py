@@ -4,11 +4,24 @@ import json
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from ..models.invoice_header import InvoiceHeader
 from ..models.invoice_line import InvoiceLine
 from ..models.validation_result import ValidationResult
+
+
+def _sanitize_for_json(obj: Any) -> Any:
+    """Ensure JSON-serializable; convert numpy.bool_/int64/float64 etc. to Python native."""
+    if isinstance(obj, dict):
+        return {k: _sanitize_for_json(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_sanitize_for_json(v) for v in obj]
+    if isinstance(obj, (str, int, float, type(None), bool)):
+        return obj
+    if hasattr(obj, "item") and callable(getattr(obj, "item")):
+        return _sanitize_for_json(obj.item())
+    return obj
 
 
 def create_review_report(
@@ -82,14 +95,12 @@ def create_review_report(
         "line_count": len(line_items),
     }
     
-    # Combine into metadata structure
     metadata = {
         "invoice_header": header_dict,
         "validation": validation_dict,
         "timestamp": datetime.now().isoformat(),
     }
-    
-    # Write JSON
+    metadata = _sanitize_for_json(metadata)
     metadata_path = review_folder / "metadata.json"
     with open(metadata_path, 'w', encoding='utf-8') as f:
         json.dump(metadata, f, indent=2, ensure_ascii=False)

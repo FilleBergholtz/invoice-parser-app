@@ -35,13 +35,14 @@ def create_review_package(
     - artifact_manifest.json (if provided)
     - README.txt (instructions for reviewer)
     """
-    # Ensure review folder exists
     review_folder.mkdir(parents=True, exist_ok=True)
-    
-    # Copy Excel file if provided
     if excel_path and excel_path.exists():
+        dest = review_folder / excel_path.name
         try:
-            shutil.copy2(excel_path, review_folder / excel_path.name)
+            src_res = excel_path.resolve()
+            dest_res = dest.resolve()
+            if src_res != dest_res:
+                shutil.copy2(excel_path, dest)
         except Exception as e:
             print(f"Warning: Failed to copy Excel file to review package: {e}")
     

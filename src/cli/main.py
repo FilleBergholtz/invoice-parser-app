@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import logging
 import shutil
 import sys
 import time
@@ -776,10 +777,11 @@ def process_batch(
     }
     
     total = len(pdf_files)
+    if verbose:
+        logging.basicConfig(level=logging.INFO, format="%(message)s")
+        print(f"  AI fallback: enabled={get_ai_enabled()}, API key set={bool(get_ai_key())}")
     
-    # Track invoice results per invoice (for grouping validation data)
     invoice_results = []
-    
     start_time = time.time()
     
     for i, pdf_file in enumerate(pdf_files, start=1):

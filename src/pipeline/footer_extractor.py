@@ -10,7 +10,8 @@ from ..config import (
     get_calibration_model_path,
     get_learning_enabled,
     get_learning_db_path,
-    get_ai_enabled
+    get_ai_enabled,
+    get_ai_key,
 )
 from ..models.invoice_header import InvoiceHeader
 from ..models.invoice_line import InvoiceLine
@@ -606,52 +607,74 @@ def extract_total_amount(
     # Store raw_score for display (calibration can zero out, making % useless).
     invoice_header.total_candidates = _build_ui_candidates(scored_candidates, 10) or None
     
-    # Step 5: Try AI fallback if confidence is low
+    # Step 5: Try AI fallback when confidence low or no candidates
     ai_result = None
-    if get_ai_enabled() and scored_candidates:
-        top_heuristic_score = scored_candidates[0]['score']
-        if top_heuristic_score < 0.95:
+    if get_ai_enabled():
+        if not get_ai_key():
+            logger.info("AI fallback skipped: no API key configured")
+        elif scored_candidates:
+            top_heuristic_score = scored_candidates[0]['score']
+            if top_heuristic_score >= 0.95:
+                logger.info("AI fallback skipped: confidence >= 0.95")
+            else:
+                ai_result = _try_ai_fallback(
+                    footer_segment, line_items, invoice_header,
+                    candidates=scored_candidates[:10],
+                    page_context=page_context_for_ai,
+                )
+                if ai_result:
+                    ai_confidence = ai_result.get('confidence', 0.0)
+                    validation_passed = ai_result.get('validation_passed', False)
+                    use_ai = (
+                        ai_confidence > top_heuristic_score or
+                        (validation_passed and abs(ai_confidence - top_heuristic_score) <= 0.05)
+                    )
+                    if use_ai:
+                        logger.info(
+                            f"AI fallback succeeded: confidence {ai_confidence:.2f} "
+                            f"(heuristic: {top_heuristic_score:.2f}), "
+                            f"validation: {'passed' if validation_passed else 'failed'}"
+                        )
+                        ai_candidate = {
+                            'amount': ai_result['total_amount'],
+                            'score': ai_confidence,
+                            'raw_score': ai_confidence,
+                            'row_index': -1,
+                            'keyword_type': 'ai_extracted',
+                            'row': None,
+                        }
+                        scored_candidates.insert(0, ai_candidate)
+                        scored_candidates.sort(key=sort_key, reverse=True)
+                        invoice_header.total_candidates = _build_ui_candidates(scored_candidates, 10) or None
+                    else:
+                        logger.debug(
+                            f"AI result not used: confidence {ai_confidence:.2f} <= "
+                            f"heuristic {top_heuristic_score:.2f}, validation: {validation_passed}"
+                        )
+                else:
+                    logger.info("AI fallback skipped: no result (extraction failed or invalid response)")
+        else:
             ai_result = _try_ai_fallback(
                 footer_segment, line_items, invoice_header,
-                candidates=scored_candidates[:10],
+                candidates=None,
                 page_context=page_context_for_ai,
             )
             if ai_result:
-                # Compare AI result with heuristic
-                ai_confidence = ai_result.get('confidence', 0.0)
-                validation_passed = ai_result.get('validation_passed', False)
-                
-                # Use AI result if:
-                # 1. Confidence is higher than heuristic, OR
-                # 2. Validation passed and confidence is similar (within 0.05)
-                use_ai = (
-                    ai_confidence > top_heuristic_score or
-                    (validation_passed and abs(ai_confidence - top_heuristic_score) <= 0.05)
-                )
-                
-                if use_ai:
-                    logger.info(
-                        f"AI fallback succeeded: confidence {ai_confidence:.2f} "
-                        f"(heuristic: {top_heuristic_score:.2f}), "
-                        f"validation: {'passed' if validation_passed else 'failed'}"
-                    )
-                    # Add AI result as new top candidate
-                    ai_candidate = {
-                        'amount': ai_result['total_amount'],
-                        'score': ai_confidence,
-                        'raw_score': ai_confidence,
-                        'row_index': -1,
-                        'keyword_type': 'ai_extracted',
-                        'row': None,
-                    }
-                    scored_candidates.insert(0, ai_candidate)
-                    scored_candidates.sort(key=sort_key, reverse=True)
-                    invoice_header.total_candidates = _build_ui_candidates(scored_candidates, 10) or None
-                else:
-                    logger.debug(
-                        f"AI result not used: confidence {ai_confidence:.2f} <= "
-                        f"heuristic {top_heuristic_score:.2f}, validation: {validation_passed}"
-                    )
+                logger.info("AI fallback used: no heuristic candidates, AI extracted total")
+                ai_candidate = {
+                    'amount': ai_result['total_amount'],
+                    'score': ai_result.get('confidence', 0.0),
+                    'raw_score': ai_result.get('confidence', 0.0),
+                    'row_index': -1,
+                    'keyword_type': 'ai_extracted',
+                    'row': None,
+                }
+                scored_candidates = [ai_candidate]
+                invoice_header.total_candidates = _build_ui_candidates(scored_candidates, 10) or None
+            else:
+                logger.info("AI fallback skipped: no candidates and AI extraction failed")
+    else:
+        logger.info("AI fallback skipped: AI not enabled")
     
     # Step 6: Select final value
     if not scored_candidates:
