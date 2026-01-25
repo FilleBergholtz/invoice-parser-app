@@ -58,14 +58,19 @@ reported: "Korrigeringar sparas i data/corrections.json men inte i db (learning.
 severity: major
 note: "UI-flöde (flera PDF:er, Nästa faktura) godkänt; gap kvar: persistering till learning.db vid Bekräfta val."
 
+### 9. Korrigeringar från Bekräfta val sparas i learning.db (gap-fix)
+expected: |
+  Efter implementerad fix: När användaren i validerings-UI klickar "Bekräfta val" ska korrigeringen sparas både i data/corrections.json och i data/learning.db. Statusraden ska visa "(fil + inlärningsdatabas)" när det lyckas. Inga manuella steg (t.ex. --import-corrections) ska behövas för att korrigeringen ska finnas i learning.db.
+result: pass
+
 ## Summary
 
-total: 8
-passed: 6
+total: 9
+passed: 7
 issues: 2
 pending: 0
 skipped: 0
-**UAT complete:** Ja – 1 nytt gap (korrigeringar från GUI ska hamna i learning.db).
+**UAT complete:** Ja – gap-fix test 9 godkänd; korrigeringar från UI sparas i learning.db.
 
 ## Gaps
 
@@ -95,11 +100,9 @@ skipped: 0
   debug_session: ""
   note: "Överlappar Phase 6 (Manual Validation UI) – viewer/validering visar idag bara en REVIEW-PDF; fler med sämre confidence får inte valideras."
 - truth: "Corrections saved from validation UI (Bekräfta val) are persisted to learning.db or available for learning without manual import"
-  status: failed
+  status: resolved
   reason: "User reported: Korrigeringar sparas i data/corrections.json men inte i db"
+  resolution: "LearningDatabase.add_correction() + GUI sparar till DB vid Bekräfta val; användaren bekräftade (test 9)."
   severity: major
   test: 8
-  root_cause: ""
-  artifacts: []
-  missing: []
-  note: "GUI anropar save_correction som skriver till JSON; learning.db uppdateras idag endast via CLI --import-corrections."
+  note: "Stängd via test 9: Bekräfta val skriver nu till både fil och learning.db."
