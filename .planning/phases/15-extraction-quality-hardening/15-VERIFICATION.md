@@ -1,48 +1,66 @@
 # Phase 15: Extraction quality hardening — Verification
 
-**Skapad:** 2026-01-25
+**Skapad:** 2026-01-25  
+**Spec:** 15-DISCUSS.md
 
-Verifiering av OCR confidence-användning, routing-stabilitet och parser-robusthet enligt 15-CONTEXT.md. Uppdateras när planer (15-01 …) är definierade.
+Verifiering av D1–D8 och acceptanskriterier enligt 15-DISCUSS.md. Uppdateras när planer (15-01 …) är definierade.
 
 ---
 
 ## 1. Per-plan checks (from SUMMARY)
 
-| Plan | Check | Resultat |
-|------|--------|----------|
-| *(planer ej definierade än)* | — | — |
+| Plan | Deliverable | Check | Resultat |
+|------|-------------|--------|----------|
+| *(planer ej definierade än)* | — | — | — |
 
-*Fyll i efter /gsd:plan-phase 15.*
-
----
-
-## 2. Success criteria (15-CONTEXT)
-
-1. **OCR confidence:** Mått används konsekvent i routing och run_summary; trösklar dokumenterade eller konfigurerbara.
-2. **Routing:** Inget onödigt flipp mellan metoder vid marginella inputs; vision_reason och method_used konsekventa.
-3. **Parser robustness:** Header/total/line-parsers hanterar tom/brusig/konstig text utan krasch; REVIEW eller tomt fält där lämpligt.
-4. Befintliga tester och Phase 14-verifiering förblir passerande.
+*Fyll i efter /gsd:plan-phase 15 och efter varje plan-SUMMARY.*
 
 ---
 
-## 3. Automatiska tester
+## 2. Deliverable-level checks (15-DISCUSS)
 
-Kör relevanta testmoduler efter implementation:
-
-```bash
-python -m pytest tests/ -v -k "ocr token text_quality run_summary header total line_parser"
-```
-
-*(Anpassa -k efter faktiska testfiler.)*
-
----
-
-## 4. Manuell verifiering (rekommenderas)
-
-1. **Routing:** Kör engine med PDF:er som ger marginell text_quality/confidence; kontrollera att method_used och vision_reason inte flippar vid små variationer.
-2. **Parser robustness:** Testa med PDF:er eller mocks med tom text, enbart specialtecken, eller extremt långa rader; förvänta REVIEW eller tomma fält, ingen krasch.
-3. **OCR confidence:** Om trösklar eller logg/UI läggs till, verifiera att värdena stämmer med run_summary och routing.
+| ID | Deliverable | Verifiering |
+|----|-------------|-------------|
+| D1 | Token confidence plumbing | Token.confidence satt från OCR; conf&lt;0 exkluderad; ocr_median/mean/low_conf_fraction; confidence_scoring använder verklig confidence |
+| D2 | pdfplumber tokenizer | use_text_flow=True; extra_attrs med safe fallback; läsordning via line clustering |
+| D3 | Text quality + routing | text_quality.py: score_text_quality, score_ocr_quality [0..1]; R4-routing använder TEXT_QUALITY_THRESHOLD |
+| D4 | DPI retry (R1) | Retry vid mean_conf&lt;55, max 1 per sida; artifacts visar använd DPI |
+| D5 | Boundary hardening | Färre falska positiva; kräv extra signal utöver “faktura”+alfanum |
+| D6 | Line parser | HARD/SOFT keywords; inga O(n²) index-lookups; bbox-baserad amount-detektion |
+| D7 | Header/Footer | Header: negativa labels, bbox för split-tokens. Footer: separation candidate→scoring→learning→calibration→routing; R4-trösklar |
+| D8 | Traceability | run_summary: method_used, metrics, reason flags, artifact paths, vision_reason vid ai_vision |
 
 ---
 
-*Skapad 2026-01-25 — Phase 15 extraction quality hardening*
+## 3. Unit / regression tests (15-DISCUSS)
+
+- OCR TSV: conf -1 exkluderad, word conf sparad.
+- OCR metrics: median / mean / low fraction.
+- Tokenizer: extra_attrs fallback och läsordning.
+- Boundary detection: färre falska positiva på sample-inputs.
+- Line parser: hard/soft-klassificering.
+
+---
+
+## 4. Benchmark (15-DISCUSS)
+
+Kör benchmark över ett set PDF:er och jämför:
+
+- Antal AI-anrop (ska minska eller bli mer riktade).
+- Andel sidor till vision (ska vara sällsynt).
+- Extraktionsframgång för kritiska fält (behåll eller förbättra).
+
+---
+
+## 5. Acceptance criteria (15-DISCUSS)
+
+1. OCR token confidence persisterad och använd (ingen placeholder 1.0).
+2. Per-sida routing följer Phase 14-regler och är förklarbar i run_summary.json.
+3. Färre falska gränsdetektioner utan att multi-invoice-PDF:er går sönder.
+4. Radparsning tappar färre giltiga rader och prestanda förbättrad.
+5. Footer/Header korrekt och mer underhållbart; AI/vision-routing använder R4-trösklar.
+6. Färre onödiga AI/vision-anrop; kritisk fältnoggrannhet bibehållen eller förbättrad.
+
+---
+
+*Skapad 2026-01-25 — Phase 15 extraction quality hardening — Spec: 15-DISCUSS.md*

@@ -70,6 +70,7 @@ None yet.
 - Phase 14 research R1–R4 genomförd (14-RESEARCH.md): R1 baseline 300 DPI, retry 400 vid mean_conf<55; R2 median_conf, exkl. conf<0, tröskel 70; R3 vision PNG/JPEG max 4096px 20MB; R4 routing-tabell + text_quality 0.5 + retry-regler. Konstanter klara för implementation.
 - Phase 14 planerad: 6 planer (14-01…14-06). Wave 1: Token+OCR confidence, pdfplumber tokenizer. Wave 2: text_quality, rendering DPI. Wave 3: AI vision+retry. Wave 4: orchestration + run_summary/vision_reason.
 - Phase 15 tillagd: Extraction quality hardening (OCR confidence + routing + parser robustness). 15-CONTEXT.md, 15-VERIFICATION.md skapade. Redo för /gsd:plan-phase 15.
+- Phase 15 discuss genomförd (15-DISCUSS.md): OBJECTIVE (D1–D8), SCOPE, FILES IN SCOPE, REQUIRED CONSTANTS (R1–R4), DELIVERABLES, NON-GOALS, TESTING/VERIFICATION, ACCEPTANCE CRITERIA. CONTEXT och VERIFICATION uppdaterade att peka på DISCUSS. Redo för /gsd:plan-phase 15.
 
 ### Blockers/Concerns
 

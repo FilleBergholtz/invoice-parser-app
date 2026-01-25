@@ -358,7 +358,7 @@ Se `.planning/phases/14-extraction-fallback-optimization-pdfplumber-ocr-ai-visio
 **Plans:** [To be planned]
 
 **Details:**
-Se `.planning/phases/15-extraction-quality-hardening/15-CONTEXT.md`, `15-VERIFICATION.md`. Planer skapas med `/gsd:plan-phase 15`.
+Se `.planning/phases/15-extraction-quality-hardening/15-DISCUSS.md` (full spec), `15-CONTEXT.md`, `15-VERIFICATION.md`. Deliverables D1–D8, R1–R4-konstanter, filer i scope och acceptanskriterier i 15-DISCUSS. Planer skapas med `/gsd:plan-phase 15`.
 
 ---
 

@@ -3,65 +3,74 @@
 **Gathered:** 2026-01-25  
 **Updated:** 2026-01-25  
 **Status:** Ready for planning  
+**Full spec:** see **15-DISCUSS.md**  
 **Depends on:** Phase 14 (Extraction fallback optimization)
 
 ---
 
 ## Phase Boundary
 
-Hårdna extraktionskvaliteten genom **OCR confidence-tillämpning**, **routing-stabilitet** och **parser-robusthet**. Bygg vidare på Phase 14:s fallback-kedja och text quality; ingen ny arkitektur. Fokus: färre fel vid kantfall, tydligare beslut om när OCR/AI används, och parsers som inte kraschar eller ger felaktiga fält vid dålig text.
+Implement the agreed improvements from R1–R4 and code review so extraction is **strictly better**: persist OCR token confidence and metrics, improve pdfplumber tokenization and text quality scoring, harden invoice boundary detection, improve line parsing robustness/performance, and refactor footer (and header) extraction for clear separation and deterministic routing. All changes preserve **subprocess + file-based** architecture and improve **traceability**.
 
-**In scope:**
-- **OCR confidence:** Tröskeljustering, användning i UI/logg (t.ex. visa median_conf eller low_conf_fraction där det hjälper), eventuell DPI-retry-finkalibrering.
-- **Routing:** Stabilisera och dokumentera routing-beslut; undvik flippande mellan metoder vid marginalfall; tydlig “vision_reason” och gränsfall-hantering.
-- **Parser robustness:** Tålighet mot tom text, konstiga tecken, för korta/långa rader; defensiv parsing i header/total/line-item-stegen så att enstaka fel inte förstör hela dokumentet.
-
-**Out of scope:** Nya extraction-metoder, nya AI-modeller, client-server, stor refaktor av pipeline-arkitekturen.
+**Out of scope:** GUI changes, new web services, broad pipeline refactor, model training.
 
 ---
 
 ## Current State (Summary)
 
-- Phase 14 levererar: Token.confidence, ocr_page_metrics (mean/median/low_conf_fraction), text_quality (pdf/ocr), per-page routing (pdfplumber → OCR → AI text → AI vision), run_summary med method_used och vision_reason.
-- Trösklar (t.ex. median_conf 70, text_quality 0.5) är definierade men kan behöva justering utifrån riktiga fakturor.
-- Parsers (header, total, line items) antas ofta “snäll” input; kantfall (tomma sidor, mycket brus, konstiga tecken) kan ge oväntade resultat.
+- Phase 14 delivers: Token.confidence, ocr_page_metrics, text_quality, per-page routing, run_summary with method_used and vision_reason.
+- Some behavior may still use placeholders (e.g. confidence 1.0) or lack full use of R1–R4 constants.
+- Boundary detection, line parser, and footer/header logic need hardening and maintainability improvements as spelled out in 15-DISCUSS.
 
 ---
 
-## Goals
+## Deliverables (from 15-DISCUSS)
 
-1. **OCR confidence:** Säkerställ att confidence-mått används konsekvent (routing, DPI-retry, run_summary) och att trösklar eller deras användning kan finjusteras/observeras (logg, UI, eller konfig).
-2. **Routing:** Gör routing-beslut stabila och förutsägbara vid marginalfall; tydlig dokumentation och eventuella “tie-break”-regler eller buffer (hysteresis) så att små fluktuationer inte byter metod.
-3. **Parser robustness:** Förbättra header-, total- och line-item-parsning mot tomma/brusiga/konstiga inputs så att systemet sätter REVIEW eller tomma fält i stället för krasch eller felaktiga värden.
+| ID | Summary |
+|----|--------|
+| **D1** | Token confidence plumbing (OCR): persist TSV conf in Token, exclude conf&lt;0, OCR metrics helpers, confidence_scoring uses real confidence |
+| **D2** | pdfplumber tokenizer: use_text_flow, extra_attrs with fallback, line-clustering reading order |
+| **D3** | text_quality.py + R4 routing integration (TEXT_QUALITY_THRESHOLD, ai_text vs ai_vision) |
+| **D4** | OCR DPI retry (R1): BASELINE_DPI → if mean_conf&lt;55 retry at RETRY_DPI once per page; artifacts show DPI |
+| **D5** | Invoice boundary hardening: reduce false positives; require extra signal beyond “faktura”+alphanumeric |
+| **D6** | Line parser: HARD vs SOFT footer keywords, remove O(n²) lookups, bbox-based amount detection |
+| **D7** | Header: negative labels, bbox matching for split tokens. Footer: refactor to candidate→scoring→learning→calibration→routing; R4 thresholds |
+| **D8** | Traceability: run_summary per-page method_used, metrics, reason flags, artifact paths, vision_reason when ai_vision |
 
 ---
 
-## Implementation Directions (to be refined in plans)
+## Required Constants (Phase 14 R1–R4)
 
-- **OCR confidence:** Granska var median_conf, low_conf_fraction och mean_conf används; lägg till loggning eller UI-visning där det underlättar felsökning; överväg konfigurerbara trösklar eller dokumentation av “rekommenderade” värden.
-- **Routing:** Definiera explicita regler för lika confidence/text_quality (t.ex. preferera pdfplumber över OCR över AI); eventuell liten buffer (hysteresis) kring trösklar för att undvika flipp; se till att vision_reason alltid reflekterar verkliga villkor.
-- **Parser robustness:** Null/empty-checks, safe parsing av tal och datum, max-längd eller truncation där det är meningsfullt; returnera “empty/safe” default istället för exception där det passar; behåll eller förstärk REVIEW-path när data är osäker.
+All thresholds must come from Phase 14 research: `BASELINE_DPI=300`, `RETRY_DPI=400`, `OCR_MEAN_CONF_RETRY_THRESHOLD=55`, `OCR_MEDIAN_CONF_ROUTING_THRESHOLD=70`, `OCR_LOW_CONF_FRACTION_THRESHOLD=0.25`, `TEXT_QUALITY_THRESHOLD=0.5`, `CRITICAL_FIELDS_CONF_THRESHOLD=0.95`, `AI_JSON_RETRY_COUNT=1`, `VISION_MAX_PIXELS_LONGEST_SIDE=4096`, `VISION_MAX_FILE_BYTES=20MB`. See 15-DISCUSS for full table.
 
 ---
 
-## Acceptance Criteria (draft)
+## Files in Scope
 
-- OCR confidence-mått används konsekvent i routing och run_summary; trösklar är dokumenterade eller konfigurerbara.
-- Routing visar inget onödigt “flipp” mellan metoder vid marginella inputs; vision_reason och method_used är konsekventa.
-- Parsers (header, total, line items) hanterar tom/brusig/konstig text utan krasch och med tydlig REVIEW eller tomt fält där lämpligt.
-- Befintliga tester och Phase 14-verifiering förblir passerande.
+`confidence_scoring.py`, `confidence_calibration.py`, `tokenizer.py`, `ocr_abstraction.py`, `invoice_boundary_detection.py`, `invoice_line_parser.py`, `header_extractor.py`, `footer_extractor.py`, `pdf_renderer.py` (only if needed for DPI/retry). New: `text_quality.py` (if not already present from Phase 14).
+
+---
+
+## Acceptance Criteria (15-DISCUSS)
+
+- OCR token confidence persisted and used (no placeholder 1.0).
+- Page-level routing follows Phase 14 rules and is explainable in run_summary.json.
+- False invoice boundary detections decrease without breaking multi-invoice PDFs.
+- Line-item parsing drops fewer true items and improves performance.
+- Footer/Header extraction correct and easier to maintain; AI/vision routing uses R4 thresholds.
+- Fewer unnecessary AI/vision calls; critical field accuracy maintained or improved.
 
 ---
 
 ## Existing Codebase Anchors
 
-- `src/pipeline/ocr_abstraction.py` — ocr_page_metrics, OCR_MEDIAN_CONF_ROUTING_THRESHOLD, DPI-retry (mean_conf).
-- `src/pipeline/text_quality.py` — score_text_quality, score_ocr_quality.
+- `src/pipeline/ocr_abstraction.py` — TSV parsing, Token confidence, ocr_page_metrics.
+- `src/pipeline/text_quality.py` — score_text_quality, score_ocr_quality (if exists).
 - `src/run_summary.py` — extraction_details, method_used, vision_reason.
-- Pipeline/orchestration (R4-routing) — process_pdf, extraction_detail.
-- Header/total/line parsing — header_extractor, total extraction, invoice_line_parser etc.
+- Pipeline/orchestration — R4 routing, process_pdf, extraction_detail.
+- `header_extractor.py`, `footer_extractor.py`, `invoice_line_parser.py`, `invoice_boundary_detection.py`, `tokenizer.py`, `confidence_scoring.py`.
 
 ---
 
 *Phase: 15-extraction-quality-hardening*  
-*Context gathered: 2026-01-25 | Updated: 2026-01-25*
+*Context gathered: 2026-01-25 | Updated: 2026-01-25 | Spec: 15-DISCUSS.md*
