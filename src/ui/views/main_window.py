@@ -8,12 +8,13 @@ import logging
 from typing import Optional, Tuple, List, Any
 
 from PySide6.QtWidgets import (
-    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
-    QLabel, QPushButton, QFileDialog, QTextEdit, 
-    QProgressBar, QGroupBox, QLineEdit, QSplitter, QMenuBar, QMenu
+    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
+    QLabel, QPushButton, QFileDialog, QTextEdit,
+    QProgressBar, QGroupBox, QLineEdit, QSplitter, QMenuBar, QMenu,
+    QToolBar, QStatusBar, QStackedWidget, QFrame,
 )
 from PySide6.QtCore import Qt, QThread
-from PySide6.QtGui import QDragEnterEvent, QDropEvent
+from PySide6.QtGui import QDragEnterEvent, QDropEvent, QAction, QKeySequence
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +39,8 @@ class MainWindow(QMainWindow):
         self.output_dir = str(Path.home() / "Documents" / "EPG PDF Extraherare" / "output")
         self.runner_thread = None
         self.runner = None
-        self.processing_result = None  # Store processing result for validation
+        self.processing_result = None
+        self._last_run_summary: Optional[str] = None
         
         # UI Setup
         self.setup_menu_bar()
@@ -56,142 +58,144 @@ class MainWindow(QMainWindow):
         ai_settings_action.triggered.connect(self.open_ai_settings)
         
     def setup_ui(self):
-        """Initialize UI components."""
-        central_widget = QWidget()
-        self.setCentralWidget(central_widget)
-        layout = QVBoxLayout(central_widget)
-        
-        # --- Input Section ---
-        input_group = QGroupBox("Input PDF")
-        input_layout = QHBoxLayout()
-        
+        """Initialize UI: toolbar, stacked empty/content, splitter, status bar."""
+        # --- Toolbar: Öppna (Ctrl+O), Kör (Ctrl+R), Export (Ctrl+E), Inställningar ---
+        toolbar = QToolBar()
+        toolbar.setObjectName("main_toolbar")
+        self.addToolBar(toolbar)
+
+        open_act = QAction("Öppna PDF", self)
+        open_act.setShortcut(QKeySequence.StandardKey.Open)
+        open_act.triggered.connect(self.browse_file)
+        toolbar.addAction(open_act)
+
+        self.run_action = QAction("Kör", self)
+        self.run_action.setShortcut(QKeySequence("Ctrl+R"))
+        self.run_action.triggered.connect(self.start_processing)
+        self.run_action.setEnabled(False)
+        toolbar.addAction(self.run_action)
+
+        export_act = QAction("Export", self)
+        export_act.setShortcut(QKeySequence("Ctrl+E"))
+        export_act.triggered.connect(self.open_output_dir)
+        toolbar.addAction(export_act)
+
+        settings_act = QAction("Inställningar", self)
+        settings_act.triggered.connect(self.open_ai_settings)
+        toolbar.addAction(settings_act)
+
+        # --- Central: stacked empty state | content (splitter) ---
+        self.stacked = QStackedWidget()
+        self.setCentralWidget(self.stacked)
+
+        # Empty state: no PDF
+        empty_widget = QWidget()
+        empty_layout = QVBoxLayout(empty_widget)
+        empty_layout.addStretch()
+        empty_label = QLabel("Öppna en PDF för att börja")
+        empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        empty_label.setStyleSheet("font-size: 16px; color: #64748b;")
+        empty_layout.addWidget(empty_label)
+        open_cta = QPushButton("Öppna")
+        open_cta.setMinimumHeight(44)
+        open_cta.clicked.connect(self.browse_file)
+        empty_layout.addWidget(open_cta, alignment=Qt.AlignmentFlag.AlignCenter)
+        empty_layout.addStretch()
+        self.stacked.addWidget(empty_widget)
+
+        # Content: horizontal splitter (PDF left | results right)
+        self.content_splitter = QSplitter(Qt.Orientation.Horizontal)
+        self.pdf_viewer = PDFViewer()
+        self.content_splitter.addWidget(self.pdf_viewer)
+
+        results_panel = QWidget()
+        results_layout = QVBoxLayout(results_panel)
+
+        # Input / Output rows
+        input_row = QHBoxLayout()
         self.input_label = QLineEdit()
-        self.input_label.setPlaceholderText("Dra och släpp PDF här eller välj fil...")
+        self.input_label.setPlaceholderText("Dra och släpp PDF eller välj fil...")
         self.input_label.setReadOnly(True)
-        
-        browse_btn = QPushButton("Välj Fil")
+        browse_btn = QPushButton("Välj fil")
         browse_btn.clicked.connect(self.browse_file)
-        
-        input_layout.addWidget(self.input_label)
-        input_layout.addWidget(browse_btn)
-        input_group.setLayout(input_layout)
-        layout.addWidget(input_group)
-        
-        # --- Output Section ---
-        output_group = QGroupBox("Output Mapp")
-        output_layout = QHBoxLayout()
-        
+        input_row.addWidget(self.input_label)
+        input_row.addWidget(browse_btn)
+        results_layout.addLayout(input_row)
+
+        output_row = QHBoxLayout()
         self.output_label = QLineEdit(self.output_dir)
         self.output_label.setReadOnly(True)
-        
-        open_output_btn = QPushButton("Öppna Mapp")
+        open_output_btn = QPushButton("Öppna mapp")
         open_output_btn.clicked.connect(self.open_output_dir)
-        
-        output_layout.addWidget(self.output_label)
-        output_layout.addWidget(open_output_btn)
-        output_group.setLayout(output_layout)
-        layout.addWidget(output_group)
-        
-        # --- Actions ---
-        action_layout = QHBoxLayout()
-        self.start_btn = QPushButton("Starta Bearbetning")
-        self.start_btn.setMinimumHeight(40)
-        self.start_btn.clicked.connect(self.start_processing)
-        self.start_btn.setEnabled(False)
-        
-        action_layout.addWidget(self.start_btn)
-        layout.addLayout(action_layout)
-        
-        # --- Progress & Logs ---
+        output_row.addWidget(self.output_label)
+        output_row.addWidget(open_output_btn)
+        results_layout.addLayout(output_row)
+
         self.progress_bar = QProgressBar()
-        layout.addWidget(self.progress_bar)
-        
+        results_layout.addWidget(self.progress_bar)
+
         self.log_area = QTextEdit()
         self.log_area.setReadOnly(True)
-        layout.addWidget(self.log_area)
-        
-        # --- Status ---
-        self.status_label = QLabel("Redo")
-        layout.addWidget(self.status_label)
-        
-        # --- Validation Section (initially hidden) ---
-        self.validation_widget = QWidget()
-        validation_layout = QVBoxLayout(self.validation_widget)
-        
+        results_layout.addWidget(self.log_area)
+
+        # Validation section (hidden until needed)
+        self.validation_section = QWidget()
+        val_layout = QVBoxLayout(self.validation_section)
         validation_label = QLabel("Validering: Välj korrekt totalsumma")
         validation_label.setStyleSheet("font-weight: bold; font-size: 14px")
-        validation_layout.addWidget(validation_label)
-        
-        # Splitter for PDF viewer and candidate selector
-        splitter = QSplitter(Qt.Orientation.Horizontal)
-        
-        # PDF Viewer
-        self.pdf_viewer = PDFViewer()
-        splitter.addWidget(self.pdf_viewer)
-        
-        # Candidate Selector
+        val_layout.addWidget(validation_label)
         self.candidate_selector = CandidateSelector()
-        splitter.addWidget(self.candidate_selector)
-        
-        splitter.setSizes([600, 300])  # PDF viewer larger, candidate selector wider
-        validation_layout.addWidget(splitter)
-        
-        # Action buttons (explicit contrast: dark text on light background)
-        action_layout = QHBoxLayout()
-        _btn_style = """
-            QPushButton {
-                background-color: #e0e0e0; color: #111; border: 2px solid #888;
-                border-radius: 4px; font-weight: bold; padding: 8px 16px;
-            }
-            QPushButton:hover { background-color: #d0d0d0; border-color: #0078d4; }
-            QPushButton:pressed { background-color: #c0c0c0; }
-            QPushButton:disabled { background-color: #ccc; color: #666; border-color: #999; }
-        """
+        val_layout.addWidget(self.candidate_selector)
+        val_btn_layout = QHBoxLayout()
         self.confirm_btn = QPushButton("Bekräfta val")
         self.confirm_btn.setMinimumHeight(40)
-        self.confirm_btn.setStyleSheet(_btn_style)
         self.confirm_btn.setEnabled(False)
         self.confirm_btn.clicked.connect(self._confirm_correction)
-        action_layout.addWidget(self.confirm_btn)
-        
+        val_btn_layout.addWidget(self.confirm_btn)
         skip_btn = QPushButton("Hoppa över")
         skip_btn.setMinimumHeight(40)
-        skip_btn.setStyleSheet(_btn_style)
         skip_btn.clicked.connect(self._skip_validation)
-        action_layout.addWidget(skip_btn)
-        
-        validation_layout.addLayout(action_layout)
-        
-        # Status message for corrections
+        val_btn_layout.addWidget(skip_btn)
+        self.next_invoice_btn = QPushButton("Nästa faktura")
+        self.next_invoice_btn.setMinimumHeight(40)
+        self.next_invoice_btn.clicked.connect(self._advance_to_next_validation)
+        self.next_invoice_btn.setVisible(False)
+        val_btn_layout.addWidget(self.next_invoice_btn)
+        val_layout.addLayout(val_btn_layout)
         self.correction_status = QLabel("")
         self.correction_status.setStyleSheet("color: green; font-weight: bold")
         self.correction_status.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        validation_layout.addWidget(self.correction_status)
-        
-        # Connect signals for bidirectional synchronization
+        val_layout.addWidget(self.correction_status)
+        self.validation_section.setVisible(False)
+        results_layout.addWidget(self.validation_section)
+
         self.pdf_viewer.candidate_clicked.connect(self._on_pdf_candidate_clicked)
         self.candidate_selector.candidate_selected.connect(self._on_selector_candidate_selected)
-        
-        # State for selected candidate and correction
+
         self.selected_candidate_index: Optional[int] = None
         self.selected_candidate_amount: Optional[float] = None
         self.correction_saved: bool = False
-        self.current_invoice_header = None  # Will store InvoiceHeader when available
+        self.current_invoice_header = None
         self._validation_queue: List[dict] = []
         self._validation_queue_index: int = 0
         self._current_validation_invoice_id: Optional[str] = None
-        self._current_validation_invoice_number: Optional[str] = None  # Extraherade fakturanummer (prioritet över filnamn)
+        self._current_validation_invoice_number: Optional[str] = None
 
-        self.next_invoice_btn = QPushButton("Nästa faktura")
-        self.next_invoice_btn.setMinimumHeight(40)
-        self.next_invoice_btn.setStyleSheet(_btn_style)
-        self.next_invoice_btn.clicked.connect(self._advance_to_next_validation)
-        action_layout.addWidget(self.next_invoice_btn)
-        self.next_invoice_btn.setVisible(False)
-        
-        # Initially hide validation section
-        self.validation_widget.setVisible(False)
-        layout.addWidget(self.validation_widget)
+        self.content_splitter.addWidget(results_panel)
+        self.content_splitter.setSizes([500, 400])
+        self.stacked.addWidget(self.content_splitter)
+
+        self.stacked.setCurrentIndex(0)
+
+        # --- Status bar: engine state + last run summary ---
+        self._update_status_bar("Idle", None)
+
+    def _update_status_bar(self, state: str, summary: Optional[str] = None) -> None:
+        """Set status bar text from engine state and optional last-run summary."""
+        parts = [state]
+        if summary:
+            parts.append(summary)
+        self.statusBar().showMessage("  |  ".join(parts))
 
     def dragEnterEvent(self, event: QDragEnterEvent):
         if event.mimeData().hasUrls():
@@ -214,7 +218,8 @@ class MainWindow(QMainWindow):
     def set_input_file(self, path):
         self.input_path = path
         self.input_label.setText(path)
-        self.start_btn.setEnabled(True)
+        self.run_action.setEnabled(True)
+        self.stacked.setCurrentIndex(1)
         self.log(f"Vald fil: {path}")
 
     def open_output_dir(self):
@@ -226,12 +231,11 @@ class MainWindow(QMainWindow):
     def start_processing(self):
         if not self.input_path:
             return
-            
-        # Disable UI
-        self.start_btn.setEnabled(False)
-        self.progress_bar.setRange(0, 0) # Indeterminate
+
+        self.run_action.setEnabled(False)
+        self.progress_bar.setRange(0, 0)
         self.log_area.clear()
-        self.status_label.setText("Bearbetar...")
+        self._update_status_bar("Running", None)
         
         # Create Runner
         self.runner_thread = QThread()
@@ -241,7 +245,7 @@ class MainWindow(QMainWindow):
         # Connect signals
         self.runner.started.connect(lambda: self.log("Startar motor..."))
         self.runner.progress.connect(self.log)
-        self.runner.error.connect(self.log_error)
+        self.runner.error.connect(self._on_engine_error)
         self.runner.result_ready.connect(self.handle_result)
         self.runner.finished.connect(self.processing_finished)
         
@@ -251,20 +255,18 @@ class MainWindow(QMainWindow):
         self.runner_thread.start()
 
     def processing_finished(self, exit_code):
-        self.runner_thread.quit()
-        self.runner_thread.wait()
-        
+        if self.runner_thread:
+            self.runner_thread.quit()
+            self.runner_thread.wait()
+
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(100)
-        self.start_btn.setEnabled(True)
-        
+        self.run_action.setEnabled(True)
+
         if exit_code == 0:
-            self.status_label.setText("Klar (OK)")
-            self.status_label.setStyleSheet("color: green")
+            self._update_status_bar("Success", self._last_run_summary)
         else:
-            self.status_label.setText(f"Klar (Exit Code {exit_code})")
-            # Yellow/Red depending on severity logic, usually code 1 is fail/review
-            self.status_label.setStyleSheet("color: orange")
+            self._update_status_bar("Error", self._last_run_summary or f"Exit code {exit_code}")
 
     def handle_result(self, summary):
         self.log("-" * 40)
@@ -274,8 +276,19 @@ class MainWindow(QMainWindow):
         if summary.get('excel_path'):
             self.log(f"Excel: {summary.get('excel_path')}")
         self.log("-" * 40)
-        
-        # Store result for validation
+
+        ok = summary.get("ok_count", 0)
+        review = summary.get("review_count", 0)
+        total = ok + review
+        if total == 0:
+            self._last_run_summary = "ingen fil"
+        else:
+            parts = [f"{total} fil{'er' if total != 1 else ''}"]
+            if ok:
+                parts.append(f"{ok} OK")
+            if review:
+                parts.append(f"{review} review")
+            self._last_run_summary = ", ".join(parts)
         self.processing_result = summary
         
         # Check if validation needed (REVIEW status or low confidence)
@@ -328,7 +341,7 @@ class MainWindow(QMainWindow):
                 pass
         else:
             self.log("Inga kandidater hittades - validering kan inte utföras")
-        self.validation_widget.setVisible(True)
+        self.validation_section.setVisible(True)
         self.log("Valideringsläge aktiverat - välj korrekt totalsumma från listan")
         self.candidate_selector.setFocus()
 
@@ -356,8 +369,8 @@ class MainWindow(QMainWindow):
             self._close_validation_ui()
 
     def _close_validation_ui(self) -> None:
-        """Hide validation widget and clear status."""
-        self.validation_widget.setVisible(False)
+        """Hide validation section and clear status."""
+        self.validation_section.setVisible(False)
         self.correction_status.setText("")
         self.log("Validering avslutad")
 
@@ -580,8 +593,7 @@ class MainWindow(QMainWindow):
         """Open AI settings dialog."""
         dialog = AISettingsDialog(self)
         if dialog.exec():
-            # Settings saved, update status
-            self.status_label.setText("AI-inställningar uppdaterade")
+            self._update_status_bar("Idle", "AI-inställningar uppdaterade")
             logger.info("AI settings updated from UI")
 
     def log(self, message):
@@ -592,3 +604,7 @@ class MainWindow(QMainWindow):
 
     def log_error(self, message):
         self.log_area.append(f"<font color='red'>{message}</font>")
+
+    def _on_engine_error(self, message: str) -> None:
+        self.log_error(message)
+        self._update_status_bar("Error", message)
