@@ -34,6 +34,7 @@ This roadmap delivers a Swedish invoice parsing system that transforms PDF invoi
 - [ ] **Phase 7: Learning System** - SQLite database and pattern matching to learn from user corrections
 - [ ] **Phase 8: AI Integration** - AI fallback when confidence < 0.95 to improve extraction for edge cases
 - [ ] **Phase 9: AI Data Analysis** (Optional) - Natural language queries and data analysis over processed invoices
+- [ ] **Phase 10: AI Fallback Fixes and Verification** - Document fixes, address gaps, and verify AI fallback works well
 
 ## Phase Details
 
@@ -270,10 +271,29 @@ Plans:
 
 ---
 
+### Phase 10: AI Fallback Fixes and Verification
+
+**Goal:** [To be planned]
+
+**Depends on:** Phase 9
+
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run `/gsd:plan-phase 10` to break down)
+
+**Details:**
+
+Dokumentera vad vi åtgärdat gällande AI fallback (t.ex. full sidkontext till AI, kandidater, prompt-förbättringar, UI-status/aktivera-inaktivera) och säkerställa att AI fallback fungerar bra i praktiken.
+
+[To be added during planning]
+
+---
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 5 → 6 → 7 → 8 → 9
+Phases execute in numeric order: 5 → 6 → 7 → 8 → 9 → 10
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -286,5 +306,6 @@ Phases execute in numeric order: 5 → 6 → 7 → 8 → 9
 | 7. Learning System | v2.0 | 3/3 | Complete | - |
 | 8. AI Integration | v2.0 | 3/3 | Complete | - |
 | 9. AI Data Analysis | v2.0 | 3/3 | Complete | - |
+| 10. AI Fallback Fixes and Verification | v2.0 | 0/0 | Not planned | - |
 
-**Note:** v1.0 phases complete. v2.0 phases ready for planning.
+**Note:** v1.0 phases complete. v2.0 phases 5–9 complete; Phase 10 added, not yet planned.

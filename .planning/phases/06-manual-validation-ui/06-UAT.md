@@ -1,14 +1,18 @@
 ---
-status: complete
+status: incomplete
 phase: 06-manual-validation-ui
 source: [06-01-SUMMARY.md, 06-02-SUMMARY.md, 06-03-SUMMARY.md]
 started: "2026-01-25T00:42:00Z"
 updated: "2026-01-25T00:58:00Z"
 ---
 
+## UAT-status
+
+**Vi är inte klara med Phase 6 UAT.** Det finns öppna gaps (zoom, tangentbordsval, kandidatlista). Gap-åtgärder har planerats (06-04-PLAN) och delvis verkställts, men full verifiering återstår. UAT ska köras igen efter att gapen är stängda och ev. ytterligare fixar är på plats.
+
 ## Current Test
 
-[testing complete]
+[testing paused – återuppta efter gap-åtgärder]
 
 ## Tests
 
@@ -60,6 +64,7 @@ passed: 3
 issues: 2
 pending: 0
 skipped: 2
+**UAT complete:** Nej – återstår att stänga gaps och köra om testerna.
 
 ## Gaps
 
