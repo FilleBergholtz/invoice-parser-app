@@ -1368,7 +1368,19 @@ def main():
         help="Path to corrections JSON (with --import-corrections); default is data/corrections.json"
     )
     
+    parser.add_argument(
+        "--check-deps",
+        action="store_true",
+        help="Kontrollera att Tesseract och alla nödvändiga program/bibliotek finns; avsluta med 0/1."
+    )
+    
     args = parser.parse_args()
+    
+    # Handle --check-deps (beroendekontroll)
+    if args.check_deps:
+        from .check_deps import run_check
+        ok = run_check(verbose=True)
+        sys.exit(0 if ok else 1)
     
     # Handle --validate-confidence command
     if args.validate_confidence:

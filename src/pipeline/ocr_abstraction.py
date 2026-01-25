@@ -1,5 +1,6 @@
 """OCR abstraction layer with Tesseract implementation."""
 
+import sys
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import List, Optional
@@ -13,6 +14,17 @@ except ImportError:
 
 from ..models.page import Page
 from ..models.token import Token
+
+# Vanlig installationssökväg på Windows; används om Tesseract inte finns i PATH
+TESSERACT_DEFAULT_WIN_PATH = Path(r"C:\Program Files\Tesseract-OCR\tesseract.exe")
+
+
+def _apply_tesseract_default_path() -> None:
+    """Sätt tesseract_cmd till C:\\Program Files\\Tesseract-OCR om den filen finns (Windows)."""
+    if sys.platform != "win32" or pytesseract is None:
+        return
+    if TESSERACT_DEFAULT_WIN_PATH.is_file():
+        pytesseract.pytesseract.tesseract_cmd = str(TESSERACT_DEFAULT_WIN_PATH)
 
 
 class OCRException(Exception):
@@ -66,10 +78,12 @@ class TesseractOCREngine(OCREngine):
             )
         
         self.lang = lang
+        _apply_tesseract_default_path()
         self._verify_tesseract()
     
-    def _verify_tesseract(self):
+    def _verify_tesseract(self) -> None:
         """Verify Tesseract is installed and language data is available."""
+        assert pytesseract is not None  # ensured by __init__ guard
         try:
             # Try to get version
             version = pytesseract.get_tesseract_version()
@@ -121,6 +135,7 @@ class TesseractOCREngine(OCREngine):
                 f"Rendered image not found: {page.rendered_image_path}"
             )
         
+        assert pytesseract is not None and Image is not None  # ensured by __init__ guards
         try:
             # Load image
             img = Image.open(page.rendered_image_path)
@@ -141,7 +156,7 @@ class TesseractOCREngine(OCREngine):
             tsv_data = pytesseract.image_to_data(
                 img,
                 lang=self.lang,
-                output_type=pytesseract.Output.TSV,
+                output_type=pytesseract.Output.TSV,  # type: ignore[attr-defined]
                 config='--psm 6'  # Assume uniform block of text
             )
             
