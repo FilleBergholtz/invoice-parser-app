@@ -124,7 +124,18 @@ class TesseractOCREngine(OCREngine):
         try:
             # Load image
             img = Image.open(page.rendered_image_path)
-            
+            img_width, img_height = img.size  # pixels
+
+            # Scale OCR pixel coordinates to page space (points).
+            # Render is 300 DPI; page dimensions are in points (72 DPI).
+            # scale = page_points / image_pixels.
+            if img_width > 0 and img_height > 0 and getattr(page, 'width', None) and getattr(page, 'height', None):
+                scale_x = float(page.width) / img_width
+                scale_y = float(page.height) / img_height
+            else:
+                scale_x = 72.0 / 300.0
+                scale_y = 72.0 / 300.0
+
             # Use TSV output to get bbox + confidence
             # TSV format: level page_num block_num par_num line_num word_num left top width height conf text
             tsv_data = pytesseract.image_to_data(
@@ -163,25 +174,21 @@ class TesseractOCREngine(OCREngine):
                 if not text:
                     continue
                 
-                # Get bounding box
+                # Get bounding box (pixels)
                 try:
-                    x = float(fields[left_idx])
-                    y = float(fields[top_idx])
-                    width = float(fields[width_idx])
-                    height = float(fields[height_idx])
+                    x_px = float(fields[left_idx])
+                    y_px = float(fields[top_idx])
+                    w_px = float(fields[width_idx])
+                    h_px = float(fields[height_idx])
                     confidence = float(fields[conf_idx])
                 except (ValueError, IndexError):
                     continue  # Skip invalid rows
                 
-                # Convert confidence from 0-100 to 0.0-1.0
-                confidence_normalized = confidence / 100.0 if confidence > 0 else 0.0
-                
-                # Convert Tesseract coordinates to Page coordinate system
-                # Tesseract uses image coordinates (pixels), Page uses points
-                # Scale factor depends on DPI: 300 DPI / 72 DPI = 4.1667
-                # But we need to match to Page.width/height
-                # For now, assume image matches page dimensions (rendered at same scale)
-                # TODO: Proper coordinate transformation if needed
+                # Scale to page coordinates (points) for segment_identification
+                x = x_px * scale_x
+                y = y_px * scale_y
+                width = w_px * scale_x
+                height = h_px * scale_y
                 
                 # Create Token object
                 token = Token(

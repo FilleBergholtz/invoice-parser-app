@@ -59,6 +59,7 @@ class RunSummary:
     quality_scores: List[Dict[str, Any]] = field(default_factory=list)  # Quality scores per invoice
     profile_name: Optional[str] = None  # Configuration profile used
     validation: Optional[Dict[str, Any]] = None  # Candidates + traceability for GUI (single-PDF REVIEW)
+    compare_extraction_used: bool = False  # True when --compare-extraction was used
     
     @classmethod
     def create(cls, input_path: str, output_dir: str) -> 'RunSummary':

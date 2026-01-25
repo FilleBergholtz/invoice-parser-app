@@ -65,6 +65,7 @@ def export_to_excel(
             diff = invoice_metadata.get("diff", "N/A")
             invoice_number_confidence = invoice_metadata.get("invoice_number_confidence", 0.0)
             total_confidence = invoice_metadata.get("total_confidence", 0.0)
+            extraction_source = invoice_metadata.get("extraction_source", "") or ""
             
             # Calculate Hela summan (sum of all line totals for this invoice)
             hela_summan = sum(line.total_amount for line in invoice_lines)
@@ -90,6 +91,7 @@ def export_to_excel(
                     "Avvikelse": diff,
                     "Fakturanummer-konfidens": invoice_number_confidence,  # Excel format will convert to percentage
                     "Totalsumma-konfidens": total_confidence,  # Excel format will convert to percentage
+                    "Extraktionskälla": extraction_source,  # "pdfplumber" | "ocr" when --compare-extraction was used
                 }
                 all_rows.append(row)
         

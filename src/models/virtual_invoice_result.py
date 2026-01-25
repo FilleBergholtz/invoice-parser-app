@@ -25,6 +25,7 @@ class VirtualInvoiceResult:
         invoice_lines: List of InvoiceLine objects
         validation_result: ValidationResult with validation data
         error: Error message if processing failed
+        extraction_source: When compare-extraction was used, "pdfplumber" or "ocr" for the chosen source
     """
     
     virtual_invoice_id: str
@@ -37,6 +38,7 @@ class VirtualInvoiceResult:
     invoice_lines: List[InvoiceLine] = field(default_factory=list)
     validation_result: Optional[ValidationResult] = None
     error: Optional[str] = None
+    extraction_source: Optional[str] = None  # "pdfplumber" | "ocr" when --compare-extraction chose one
     
     @property
     def line_count(self) -> int:

@@ -300,9 +300,9 @@ Dokumentera vad vi åtgärdat gällande AI fallback (t.ex. full sidkontext till 
 **Plans:** 3 plans
 
 Plans:
-- [ ] 11-01: OCR path wiring — coordinate scaling, render→OCR in pipeline, pytesseract/pillow deps
-- [ ] 11-02: Dual-run and comparison — --compare-extraction, run both, compare, pick best
-- [ ] 11-03: Use best result downstream — export/review use chosen source; optional extraction_source metadata
+- [x] 11-01: OCR path wiring — coordinate scaling, render→OCR in pipeline, pytesseract/pillow deps
+- [x] 11-02: Dual-run and comparison — --compare-extraction, run both, compare, pick best
+- [x] 11-03: Use best result downstream — export/review use chosen source; optional extraction_source metadata
 
 **Details:**
 Implementera både pdfplumber- och OCR-extraktion, köra båda per faktura/PDF, jämföra resultat (t.ex. validation_passed, confidence), och använda den bästa källan vidare i pipelinen. Se `.planning/phases/11-pdfplumber-ocr-compare/11-CONTEXT.md` och 11-01/11-02/11-03 PLAN-filer.
@@ -326,6 +326,6 @@ Phases execute in numeric order: 5 → 6 → 7 → 8 → 9 → 10 → 11
 | 8. AI Integration | v2.0 | 3/3 | Complete | - |
 | 9. AI Data Analysis | v2.0 | 3/3 | Complete | - |
 | 10. AI Fallback Fixes and Verification | v2.0 | 0/0 | Not planned | - |
-| 11. Pdfplumber och OCR: kör båda, jämför, använd bästa | v2.0 | 0/3 | Planned | - |
+| 11. Pdfplumber och OCR: kör båda, jämför, använd bästa | v2.0 | 3/3 | Complete | - |
 
 **Note:** v1.0 phases complete. v2.0 phases 5–9 complete; Phase 10 not yet planned; Phase 11 planned (3 plans).

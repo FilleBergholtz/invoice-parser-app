@@ -1,6 +1,8 @@
 """Invoice boundary detection for identifying multiple invoices within a single PDF."""
 
 import re
+import tempfile
+from pathlib import Path
 from typing import List, Optional, Tuple
 
 from ..models.document import Document
@@ -15,7 +17,8 @@ from ..pipeline.segment_identification import identify_segments
 def detect_invoice_boundaries(
     doc: Document,
     extraction_path: str,
-    verbose: bool = False
+    verbose: bool = False,
+    output_dir: Optional[str] = None,
 ) -> List[Tuple[int, int]]:
     """Detect invoice boundaries (page ranges) within a PDF.
     
@@ -23,6 +26,7 @@ def detect_invoice_boundaries(
         doc: Document object with all pages loaded
         extraction_path: "pdfplumber" or "ocr"
         verbose: Enable verbose output
+        output_dir: Output directory (used for OCR path to store rendered images; if None and ocr, uses temp dir)
         
     Returns:
         List of (page_start, page_end) tuples (1-based, inclusive).
@@ -43,47 +47,53 @@ def detect_invoice_boundaries(
     if not doc.pages:
         return []
     
-    # Extract tokens from all pages for boundary detection
-    page_segments_map = {}  # page_number -> List[Segment]
+    page_segments_map = {}  # page_number -> (segments, rows)
     
-    import pdfplumber
-    pdf = pdfplumber.open(doc.filepath)
-    
-    try:
-        for page in doc.pages:
-            if extraction_path == "pdfplumber":
+    if extraction_path == "pdfplumber":
+        import pdfplumber
+        pdf = pdfplumber.open(doc.filepath)
+        try:
+            from ..pipeline.tokenizer import extract_tokens_from_page
+            for page in doc.pages:
                 pdfplumber_page = pdf.pages[page.page_number - 1]
-                from ..pipeline.tokenizer import extract_tokens_from_page
                 tokens = extract_tokens_from_page(page, pdfplumber_page)
-            else:
-                # OCR path - skip for now (would require rendering)
+                if not tokens:
+                    continue
+                rows = group_tokens_to_rows(tokens)
+                segments = identify_segments(rows, page)
+                page_segments_map[page.page_number] = (segments, rows)
+        finally:
+            pdf.close()
+    else:
+        # OCR path: render each page, then OCR
+        from ..pipeline.pdf_renderer import render_page_to_image
+        from ..pipeline.ocr_abstraction import extract_tokens_with_ocr, OCRException
+        ocr_render_dir = Path(output_dir) / "ocr_render" if output_dir else Path(tempfile.mkdtemp(prefix="ocr_boundary_"))
+        ocr_render_dir.mkdir(parents=True, exist_ok=True)
+        for page in doc.pages:
+            try:
+                render_page_to_image(page, str(ocr_render_dir))
+                tokens = extract_tokens_with_ocr(page)
+            except OCRException as e:
                 if verbose:
-                    print(f"  Warning: OCR path not yet implemented for boundary detection")
-                tokens = []
-            
+                    print(f"  OCR failed for boundary detection page {page.page_number}: {e}")
+                continue
+            except Exception as e:
+                if verbose:
+                    print(f"  Render/OCR failed for boundary detection page {page.page_number}: {e}")
+                continue
             if not tokens:
                 continue
-            
-            # Group tokens to rows
             rows = group_tokens_to_rows(tokens)
-            
-            # Identify segments
             segments = identify_segments(rows, page)
             page_segments_map[page.page_number] = (segments, rows)
-        
-        # Detect boundaries based on header/footer patterns
-        boundaries = _find_invoice_boundaries(doc, page_segments_map, verbose)
-        
-        # Fail-safe: If no boundaries found or uncertain, treat entire PDF as one invoice
-        if not boundaries:
-            if verbose:
-                print(f"  Warning: No invoice boundaries detected, treating entire PDF as one invoice")
-            return [(1, len(doc.pages))]
-        
-        return boundaries
-        
-    finally:
-        pdf.close()
+    
+    boundaries = _find_invoice_boundaries(doc, page_segments_map, verbose)
+    if not boundaries:
+        if verbose:
+            print(f"  Warning: No invoice boundaries detected, treating entire PDF as one invoice")
+        return [(1, len(doc.pages))]
+    return boundaries
 
 
 def _find_invoice_boundaries(
