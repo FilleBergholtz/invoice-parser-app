@@ -1,6 +1,6 @@
 # Phase 12: UI Polish (PySide6) — Verification
 
-**Verifierad:** 2026-01-24
+**Verifierad:** 2026-01-25 (inkl. 12-06)
 
 ## Per-plan checks (from SUMMARY-filer)
 
@@ -12,7 +12,8 @@
 | 12-02 | MainWindow + apply_theme, w.show() → "OK" | ✅ |
 | 12-03 | EngineRunner stateChanged, logLine → "signals ok" | ✅ |
 | 12-04 | PDFViewer() → "ok" | ✅ |
-| 12-05 | AISettingsDialog: 4+ QGroupBox, "Testa anslutning"-knapp → "ok" | ✅ |
+| 12-05 | AISettingsDialog: grupper, "Testa anslutning"-knapp → "ok" | ✅ |
+| 12-06 | CandidateButton, två-panels AI-dialog, PDF-placeholder, Run CTA | ✅ |
 
 ## Samlad acceptanstest
 
@@ -33,11 +34,17 @@ r = EngineRunner('x', 'y')
 assert hasattr(r, 'stateChanged') and hasattr(r, 'finished')
 assert hasattr(w, '_show_run_error_dialog') and hasattr(w, 'log_toggle_btn')
 assert hasattr(w.pdf_viewer, '_page_label') and w.pdf_viewer._view is not None
+assert hasattr(w.pdf_viewer, 'run_requested') and hasattr(w.pdf_viewer, 'set_run_button_enabled')
+assert hasattr(w.pdf_viewer, '_placeholder_run_btn') or hasattr(w.pdf_viewer, '_stack')
 from src.ui.views.ai_settings_dialog import AISettingsDialog
-from PySide6.QtWidgets import QGroupBox, QPushButton
+from PySide6.QtWidgets import QGroupBox, QPushButton, QListWidget
 dlg = AISettingsDialog(w)
-assert len(dlg.findChildren(QGroupBox)) >= 4
+assert dlg.findChild(QListWidget) is not None
 assert any(b.text() == 'Testa anslutning' for b in dlg.findChildren(QPushButton))
+assert any(b.text() == 'Ersätt' for b in dlg.findChildren(QPushButton))
+from src.ui.views.candidate_selector import CandidateButton, CandidateSelector
+b = CandidateButton()
+assert b.height() == 56 and hasattr(b, 'amount_label') and hasattr(b, 'meta_label')
 print('Phase 12 acceptance: all ok')
 "
 ```
@@ -50,17 +57,20 @@ print('Phase 12 acceptance: all ok')
 3. **Engine states:** Idle/Running/Success/Error i statusfält; Run inaktiverad under körning; stateChanged, "Visa detaljer" (12-03). ✅
 4. **PDF viewer:** Zoom in/ut, Fit bredd, Föregående/Nästa, sidindikator (12-04). ✅
 5. **AI-dialog:** Grupper, hjälptexter, "Testa anslutning"-stub, tema (12-05). ✅
-6. **Ändringar begränsade till src/ui/.** ✅
+6. **12-06 UI-fixar:** Kandidatknappar fix höjd (52–60 px), en “Inställningar”-entry, AI-dialog två paneler + redigera/spara + maskad API-nyckel + Avancerat, PDF-placeholder + Run CTA, Run vid Öppna + enable/disable från motorstate. ✅
+7. **Ändringar begränsade till src/ui/ (+ theme).** ✅
 
 ## Manuell kontroll (rekommenderas)
 
 - Starta `run_gui.py` (eller `python -m src.ui.app`).
 - **Empty state:** Ingen PDF vald → "Öppna en PDF för att börja" + Öppna-knapp.
-- **Toolbar:** Öppna PDF (Ctrl+O), Kör (Ctrl+R), Export (Ctrl+E), Inställningar.
-- **Välj PDF** → splitter med PDF-viewer vänster, logg/resultat höger; sidindikator och zoom/fit/prev/next i PDF-toolbar.
-- **Kör** → Run/Öppna/Export inaktiverade under körning; status "Running"; vid fel → dialog med "Visa detaljer".
-- **Inställningar → AI-inställningar:** Fyra grupper (Provider, Modell, Tröskelvärden, Gränser), hjälptexter, "Testa anslutning".
+- **Toolbar:** Öppna PDF (Ctrl+O), Kör (Ctrl+R), Export (Ctrl+E), Inställningar. Kör bredvid Öppna.
+- **Meny:** Endast **"AI"** (inte "Inställningar") i menyn med "AI-inställningar…"; verktygsfältet har "Inställningar".
+- **Välj PDF** → splitter med PDF-viewer vänster; **placeholder:** "PDF laddad. Kör analys för att visa sidor och resultat." + **Kör**-knapp (ingen tom vit yta). Logg/resultat höger.
+- **Kör** (verktygsfält eller placeholder) → Run/Öppna/Export och placeholder-Kör inaktiverade under körning; status "Running"; vid fel → dialog med "Visa detaljer".
+- **Inställningar / AI → AI-inställningar:** Vänster = lista (OpenAI, Claude), höger = formulär. Välj leverantör → redigera → Spara. API-nyckel maskad med "Ersätt"; "Avancerat" hopfällbart (Tröskelvärden, Gränser). "Testa anslutning".
+- **Validering (efter körning med review):** Kandidatlistan har **låga, likhöga knappar** (amount + konfidens i två rader), tooltips.
 
 ---
 
-*Verification run: 2026-01-24*
+*Verification run: 2026-01-25 (12-06 inkluderad)*
