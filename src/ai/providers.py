@@ -1,10 +1,17 @@
-"""AI provider abstraction for OpenAI and Claude."""
+"""AI provider abstraction for OpenAI and Claude.
+
+R3 (14-RESEARCH): Vision input PNG/JPEG, max 4096 px longest side, 20 MB, one image per request.
+R4: Max 1 retry on invalid JSON/schema with stricter instruction.
+"""
 
 from __future__ import annotations
 
+import base64
+import io
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
 try:
     from openai import OpenAI
@@ -16,9 +23,59 @@ try:
 except ImportError:
     Anthropic = None
 
+try:
+    from PIL import Image
+except ImportError:
+    Image = None
+
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
+
+# R3 limits for vision (14-RESEARCH)
+VISION_MAX_PIXELS_LONGEST_SIDE = 4096
+VISION_MAX_FILE_BYTES = 20 * 1024 * 1024  # 20 MB
+VISION_ALLOWED_FORMATS = ("png", "jpeg")
+AI_JSON_RETRY_COUNT = 1  # R4: max retries on invalid JSON
+
+
+def _prepare_vision_image(image_path: str) -> Tuple[bytes, str]:
+    """Prepare image for vision API: enforce R3 limits (PNG/JPEG, max 4096 px, 20 MB).
+
+    Loads from path, scales down if longest side > 4096, ensures size <= 20 MB.
+    Returns (image_bytes, mime_type) e.g. (b'...', 'image/png').
+    """
+    if Image is None:
+        raise ImportError("Pillow (PIL) is required for vision. Install with: pip install Pillow")
+    path = Path(image_path)
+    if not path.is_file():
+        raise FileNotFoundError(f"Vision image not found: {image_path}")
+    ext = path.suffix.lower().lstrip(".")
+    if ext not in ("png", "jpg", "jpeg"):
+        raise ValueError(f"Vision only supports PNG/JPEG, got: {ext}")
+    mime = "image/png" if ext == "png" else "image/jpeg"
+    img = Image.open(path).convert("RGB")
+    w, h = img.size
+    longest = max(w, h)
+    if longest > VISION_MAX_PIXELS_LONGEST_SIDE:
+        scale = VISION_MAX_PIXELS_LONGEST_SIDE / longest
+        new_w = max(1, int(w * scale))
+        new_h = max(1, int(h * scale))
+        img = img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    out = buf.getvalue()
+    if len(out) > VISION_MAX_FILE_BYTES:
+        # Try JPEG with reduced quality to meet size limit
+        buf = io.BytesIO()
+        for q in [85, 70, 50]:
+            buf.seek(0)
+            buf.truncate(0)
+            img.save(buf, format="JPEG", quality=q, optimize=True)
+            if len(buf.getvalue()) <= VISION_MAX_FILE_BYTES:
+                return (buf.getvalue(), "image/jpeg")
+        raise ValueError(f"Image exceeds {VISION_MAX_FILE_BYTES // (1024*1024)} MB after scaling")
+    return (out, "image/png")
 
 
 class AITotalResponse(BaseModel):
@@ -31,7 +88,7 @@ class AITotalResponse(BaseModel):
 
 class AIProvider(ABC):
     """Abstract base class for AI providers."""
-    
+
     @abstractmethod
     def extract_total_amount(
         self,
@@ -39,14 +96,20 @@ class AIProvider(ABC):
         line_items_sum: Optional[float] = None,
         candidates: Optional[List[Dict[str, Any]]] = None,
         page_context: Optional[str] = None,
+        image_path: Optional[str] = None,
+        strict_json_instruction: bool = False,
     ) -> Dict[str, Any]:
-        """Extract total amount from footer text using AI.
+        """Extract total amount from footer text (and optionally page image) using AI.
+
+        When image_path is set, uses vision API (R3: PNG/JPEG, max 4096 px, 20 MB).
         
         Args:
             footer_text: Footer text from invoice
             line_items_sum: Optional sum of line items for validation
             candidates: Optional [{amount, keyword_type}] from heuristics for better context
             page_context: Full page text (header/items/footer) so AI sees PDF hela data
+            image_path: Optional path to page image for vision (enforces R3 limits)
+            strict_json_instruction: If True, append instruction to return only valid JSON
             
         Returns:
             Dict with total_amount, confidence, reasoning, validation_passed
@@ -110,46 +173,60 @@ class OpenAIProvider(AIProvider):
         line_items_sum: Optional[float] = None,
         candidates: Optional[List[Dict[str, Any]]] = None,
         page_context: Optional[str] = None,
+        image_path: Optional[str] = None,
+        strict_json_instruction: bool = False,
     ) -> Dict[str, Any]:
-        """Extract total amount using OpenAI API."""
+        """Extract total amount using OpenAI API (text or vision)."""
         prompt = self._build_prompt(
-            footer_text, line_items_sum, candidates=candidates, page_context=page_context
+            footer_text, line_items_sum, candidates=candidates, page_context=page_context,
+            strict_json_instruction=strict_json_instruction
         )
-        
-        # Call OpenAI API with structured output
+
+        if image_path:
+            return self._extract_with_vision(prompt, line_items_sum, image_path)
+
         try:
             response = self.client.beta.chat.completions.parse(
                 model=self.model,
                 messages=[
-                    {
-                        "role": "system",
-                        "content": "You are an expert at extracting total amounts from Swedish invoice footers. Return structured data with confidence score."
-                    },
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
+                    {"role": "system", "content": "You are an expert at extracting total amounts from Swedish invoice footers. Return structured data with confidence score."},
+                    {"role": "user", "content": prompt}
                 ],
                 response_format=AITotalResponse
             )
-            
-            # Parse response
             parsed = response.choices[0].message.parsed
             if parsed:
                 return {
-                    'total_amount': parsed.total_amount,
-                    'confidence': parsed.confidence,
-                    'reasoning': parsed.reasoning,
-                    'validation_passed': parsed.validation_passed
+                    "total_amount": parsed.total_amount,
+                    "confidence": parsed.confidence,
+                    "reasoning": parsed.reasoning,
+                    "validation_passed": parsed.validation_passed,
                 }
-            else:
-                # Fallback to manual parsing if structured output fails
-                content = response.choices[0].message.content
-                return self._parse_fallback_response(content, line_items_sum)
-                
+            content = response.choices[0].message.content or ""
+            return self._parse_fallback_response(content, line_items_sum)
         except Exception as e:
             logger.error(f"OpenAI API error: {e}")
             raise
+
+    def _extract_with_vision(self, prompt: str, line_items_sum: Optional[float], image_path: str) -> Dict[str, Any]:
+        """Call OpenAI vision API and parse response (no structured-output path for vision)."""
+        img_bytes, mime = _prepare_vision_image(image_path)
+        b64 = base64.b64encode(img_bytes).decode("ascii")
+        url = f"data:{mime};base64,{b64}"
+        user_content: List[Any] = [
+            {"type": "text", "text": prompt},
+            {"type": "image_url", "image_url": {"url": url}},
+        ]
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": "You are an expert at extracting total amounts from Swedish invoice footers. Return structured data with confidence score."},
+                {"role": "user", "content": user_content},
+            ],
+            max_tokens=1024,
+        )
+        content = (response.choices[0].message.content or "").strip()
+        return self._parse_fallback_response(content, line_items_sum)
     
     def _build_prompt(
         self,
@@ -157,6 +234,7 @@ class OpenAIProvider(AIProvider):
         line_items_sum: Optional[float] = None,
         candidates: Optional[List[Dict[str, Any]]] = None,
         page_context: Optional[str] = None,
+        strict_json_instruction: bool = False,
     ) -> str:
         """Build prompt for AI extraction."""
         prompt = "Extract the total amount (totalsumma / att betala) from this Swedish invoice.\n\n"
@@ -184,25 +262,38 @@ Return:
 - reasoning: Brief explanation
 - validation_passed: True if (a) total matches line items sum within ±1 SEK, OR (b) total is clearly from page (e.g. Att betala, Nettobelopp+Moms) and line_items_sum seems wrong—then trust the footer and set True.
 """
+        if strict_json_instruction:
+            prompt += "\nReturn only valid JSON matching this schema; no additional text or markdown.\n"
         return prompt
-    
+
     def _parse_fallback_response(
         self,
         content: str,
         line_items_sum: Optional[float] = None
     ) -> Dict[str, Any]:
-        """Parse fallback response if structured output fails.
-        
-        Args:
-            content: Response content
-            line_items_sum: Optional line items sum
-            
-        Returns:
-            Parsed response dict
-        """
-        # Simple fallback parsing (extract number from response)
+        """Parse fallback response if structured output fails (JSON or plain text)."""
+        import json
         import re
-        numbers = re.findall(r'\d+[.,]\d+|\d+', content)
+        # Try JSON first (e.g. from vision or strict retry)
+        content_stripped = content.strip()
+        for start in ("{", "```json", "```"):
+            try:
+                idx = content_stripped.find(start)
+                if idx < 0:
+                    continue
+                if start == "```json":
+                    idx = content_stripped.find("{", idx)
+                if idx < 0:
+                    continue
+                end = content_stripped.rfind("}")
+                if end > idx:
+                    js = content_stripped[idx : end + 1]
+                    data = json.loads(js)
+                    r = AITotalResponse(**data)
+                    return {"total_amount": r.total_amount, "confidence": r.confidence, "reasoning": r.reasoning, "validation_passed": r.validation_passed}
+            except (json.JSONDecodeError, ValueError, TypeError):
+                continue
+        numbers = re.findall(r"\d+[.,]\d+|\d+", content)
         if numbers:
             # Try to parse as float
             try:
@@ -243,43 +334,42 @@ class ClaudeProvider(AIProvider):
         line_items_sum: Optional[float] = None,
         candidates: Optional[List[Dict[str, Any]]] = None,
         page_context: Optional[str] = None,
+        image_path: Optional[str] = None,
+        strict_json_instruction: bool = False,
     ) -> Dict[str, Any]:
-        """Extract total amount using Claude API."""
+        """Extract total amount using Claude API (text or vision)."""
         prompt = self._build_prompt(
-            footer_text, line_items_sum, candidates=candidates, page_context=page_context
+            footer_text, line_items_sum, candidates=candidates, page_context=page_context,
+            strict_json_instruction=strict_json_instruction
         )
-        
-        # Call Claude API with structured output
+        if image_path:
+            img_bytes, mime = _prepare_vision_image(image_path)
+            b64 = base64.b64encode(img_bytes).decode("ascii")
+            user_content: List[Any] = [
+                {"type": "image", "source": {"type": "base64", "media_type": mime, "data": b64}},
+                {"type": "text", "text": prompt},
+            ]
+        else:
+            user_content = prompt
         try:
-            from anthropic import AnthropicError
-            
             response = self.client.messages.create(
                 model=self.model,
                 max_tokens=1024,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ],
-                # Claude doesn't have built-in structured outputs like OpenAI,
-                # so we'll parse JSON from response
+                messages=[{"role": "user", "content": user_content}],
             )
-            
-            # Parse JSON from response
             content = response.content[0].text
             return self._parse_json_response(content, line_items_sum)
-            
         except Exception as e:
             logger.error(f"Claude API error: {e}")
             raise
-    
+
     def _build_prompt(
         self,
         footer_text: str,
         line_items_sum: Optional[float] = None,
         candidates: Optional[List[Dict[str, Any]]] = None,
         page_context: Optional[str] = None,
+        strict_json_instruction: bool = False,
     ) -> str:
         """Build prompt for AI extraction."""
         prompt = "Extract the total amount (totalsumma / att betala) from this Swedish invoice.\n\n"
@@ -304,6 +394,8 @@ class ClaudeProvider(AIProvider):
 Return JSON: {"total_amount": float, "confidence": 0.0-1.0, "reasoning": "...", "validation_passed": true/false}
 validation_passed: true if (a) total matches line items sum within ±1 SEK, OR (b) total is clearly from page (Att betala, Nettobelopp+Moms) and line_items_sum seems wrong—then trust footer, set true.
 """
+        if strict_json_instruction:
+            prompt += "\nReturn only valid JSON matching the schema above; no additional text or markdown.\n"
         return prompt
     
     def _parse_json_response(

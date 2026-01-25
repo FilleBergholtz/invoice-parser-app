@@ -339,7 +339,7 @@ Plans:
 - [x] 14-02: pdfplumber tokenizer (use_text_flow, extra_attrs safe fallback, line clustering)
 - [x] 14-03: Text quality module (score_text_quality, score_ocr_quality [0..1])
 - [x] 14-04: Rendering DPI (300 baseline, 400 retry when mean_conf&lt;55)
-- [ ] 14-05: AI vision + retry (image input, 4096px/20MB, 1 retry on invalid JSON)
+- [x] 14-05: AI vision + retry (image input, 4096px/20MB, 1 retry on invalid JSON)
 - [ ] 14-06: Orchestration + run_summary (page-level routing, vision_reason, artifacts)
 
 **Details:**

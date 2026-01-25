@@ -14,7 +14,7 @@ Milestone: v2.0 Features + polish
 Phase: **Phase 14 (nästa)** — Extraction fallback optimization (pdfplumber → OCR → AI → vision)
 Plans: 14-01 … 14-06 (planerade 2026-01-25)
 Status: Phase 13 klar. **Phase 14 planerad** — 6 planer, 4 waves.
-Last activity: 2026-01-25 — Phase 14-04 exekverad (render_page_to_image dpi-parameter, R1-konstanter).
+Last activity: 2026-01-25 — Phase 14-05 exekverad (AI vision + R3-gränser, 1 retry vid ogiltig JSON).
 
 Progress: Phase 1–3 (v1) + Phase 5–13 (v2) genomförda. **Phase 14** planerad, redo för execute-phase.
 
