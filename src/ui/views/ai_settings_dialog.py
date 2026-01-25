@@ -1,4 +1,4 @@
-"""AI settings dialog: grouped Provider, Model, Thresholds, Limits; help text; Test connection stub."""
+"""AI settings dialog: two-pane (provider list + detail form), edit/save, masked API key, Advanced collapsible (12-06)."""
 
 from __future__ import annotations
 
@@ -15,14 +15,22 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QListWidget,
+    QListWidgetItem,
     QMessageBox,
     QPushButton,
+    QScrollArea,
+    QSizePolicy,
+    QSplitter,
     QVBoxLayout,
 )
 
 from ...config import clear_ai_config, load_ai_config, set_ai_config
 
 logger = logging.getLogger(__name__)
+
+PROVIDER_IDS = ["openai", "claude"]
+PROVIDER_LABELS = {"openai": "OpenAI", "claude": "Claude"}
 
 
 def _default_model(provider: str) -> str:
@@ -32,7 +40,6 @@ def _default_model(provider: str) -> str:
 
 
 def _help_label(text: str) -> QLabel:
-    """Create a muted help label (theme: QLabel[class=\"muted\"])."""
     lbl = QLabel(text)
     lbl.setWordWrap(True)
     lbl.setProperty("class", "muted")
@@ -40,182 +47,18 @@ def _help_label(text: str) -> QLabel:
 
 
 class AISettingsDialog(QDialog):
-    """AI settings dialog with grouped sections, help text, and Test connection stub."""
+    """Two-pane AI settings: left = provider list, right = detail form; Edit/Save/Cancel, masked API key, Advanced collapsible."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("aiSettingsDialog")
         self.setWindowTitle("AI-inställningar")
-        self.setMinimumWidth(520)
+        self.setMinimumSize(600, 440)
         self.setModal(True)
 
-        config = load_ai_config()
-        self.current_enabled = config.get("enabled", False)
-        self.current_provider = (config.get("provider") or "openai").lower()
-        self.current_model = config.get("model") or _default_model(self.current_provider)
-        self.current_key = config.get("api_key") or ""
-
+        self._reload_config()
         self.setup_ui()
-        self.load_settings()
-
-    def _status_text(self) -> str:
-        c = load_ai_config()
-        key = (c.get("api_key") or "").strip()
-        prov = (c.get("provider") or "openai").lower()
-        model = c.get("model") or _default_model(prov)
-        enabled = c.get("enabled", False)
-        prov_disp = "OpenAI" if prov == "openai" else "Claude"
-        if not key:
-            return "Ingen AI konfigurerad"
-        status = f"Konfigurerad: {prov_disp}, {model}"
-        status += " · Aktiverad" if enabled else " · Inaktiverad"
-        return status
-
-    def setup_ui(self):
-        layout = QVBoxLayout(self)
-
-        # --- Status ---
-        status_frame = QFrame()
-        status_frame.setObjectName("ai_settings_status")
-        status_frame.setMinimumHeight(44)
-        status_layout = QVBoxLayout(status_frame)
-        status_layout.setContentsMargins(10, 6, 10, 6)
-        self.status_label = QLabel()
-        self.status_label.setWordWrap(True)
-        status_layout.addWidget(self.status_label)
-        layout.addWidget(status_frame)
-
-        # --- Provider ---
-        provider_group = QGroupBox("Provider")
-        provider_group.setObjectName("ai_group_provider")
-        provider_layout = QVBoxLayout()
-
-        self.ai_enabled_checkbox = QCheckBox("Aktivera AI-fallback")
-        self.ai_enabled_checkbox.setToolTip(
-            "Kryssa i för att aktivera. AI används när totalsumma-konfidens under 95 %."
-        )
-        provider_layout.addWidget(self.ai_enabled_checkbox)
-
-        provider_layout.addWidget(QLabel("Välj AI-leverantör:"))
-        self.provider_combo = QComboBox()
-        self.provider_combo.addItems(["OpenAI", "Claude"])
-        self.provider_combo.currentTextChanged.connect(self._on_provider_changed)
-        provider_layout.addWidget(self.provider_combo)
-        provider_layout.addWidget(_help_label(
-            "Välj vilken AI-leverantör som ska användas för totalsumma-extraktion vid låg konfidens."
-        ))
-
-        provider_layout.addWidget(QLabel("API-nyckel:"))
-        self.api_key_input = QLineEdit()
-        self.api_key_input.setEchoMode(QLineEdit.EchoMode.Password)
-        self.api_key_input.setPlaceholderText("Ange din API-nyckel här...")
-        provider_layout.addWidget(self.api_key_input)
-        show_key_btn = QPushButton("Visa")
-        show_key_btn.setCheckable(True)
-        show_key_btn.toggled.connect(
-            lambda checked: self.api_key_input.setEchoMode(
-                QLineEdit.EchoMode.Normal if checked else QLineEdit.EchoMode.Password
-            )
-        )
-        provider_layout.addWidget(show_key_btn)
-        provider_layout.addWidget(_help_label(
-            "API-nyckeln används endast för anrop till vald leverantör. Lagras lokalt."
-        ))
-
-        provider_group.setLayout(provider_layout)
-        layout.addWidget(provider_group)
-
-        # --- Model ---
-        model_group = QGroupBox("Modell")
-        model_group.setObjectName("ai_group_model")
-        model_layout = QVBoxLayout()
-        model_layout.addWidget(QLabel("Modell:"))
-        self.model_combo = QComboBox()
-        self.model_combo.setEditable(True)
-        model_layout.addWidget(self.model_combo)
-        model_layout.addWidget(_help_label(
-            "Modellnamn enligt leverantörens API (t.ex. gpt-4o, claude-3-5-sonnet)."
-        ))
-        model_group.setLayout(model_layout)
-        layout.addWidget(model_group)
-
-        # --- Thresholds ---
-        thresholds_group = QGroupBox("Tröskelvärden")
-        thresholds_group.setObjectName("ai_group_thresholds")
-        thresholds_layout = QVBoxLayout()
-        thresholds_layout.addWidget(_help_label(
-            "AI anropas när totalsumma-konfidens är under detta värde (0–1). "
-            "Gränsvärdet styrs i motorn vid körning (för närvarande 95 %)."
-        ))
-        thresholds_group.setLayout(thresholds_layout)
-        layout.addWidget(thresholds_group)
-
-        # --- Limits ---
-        limits_group = QGroupBox("Gränser")
-        limits_group.setObjectName("ai_group_limits")
-        limits_layout = QVBoxLayout()
-        limits_layout.addWidget(_help_label(
-            "Timeout och max tokens styr hur långa AI-svar som tillåts. "
-            "Konfigureras i motor/konfiguration; stöd i denna dialog planeras."
-        ))
-        limits_group.setLayout(limits_layout)
-        layout.addWidget(limits_group)
-
-        # --- Info ---
-        info_label = QLabel(
-            "AI används innan kandidatlistan visas: om konfidens under 95 % anropas AI och ev. "
-            "förslag läggs högst upp. Spara för att aktivera/inaktivera. Gäller vid nästa körning."
-        )
-        info_label.setWordWrap(True)
-        info_label.setProperty("class", "muted")
-        layout.addWidget(info_label)
-
-        # --- Buttons ---
-        button_layout = QHBoxLayout()
-        remove_btn = QPushButton("Ta bort")
-        remove_btn.setToolTip("Ta bort konfigurerad AI (provider, modell, nyckel)")
-        remove_btn.clicked.connect(self._remove_config)
-        button_layout.addWidget(remove_btn)
-
-        test_btn = QPushButton("Testa anslutning")
-        test_btn.setToolTip("Kontrollera att API-nyckel är angiven och att nätåtkomst finns.")
-        test_btn.clicked.connect(self._on_test_connection)
-        button_layout.addWidget(test_btn)
-
-        button_layout.addStretch()
-        cancel_btn = QPushButton("Avbryt")
-        cancel_btn.clicked.connect(self.reject)
-        button_layout.addWidget(cancel_btn)
-        save_btn = QPushButton("Spara")
-        save_btn.setDefault(True)
-        save_btn.clicked.connect(self.save_settings)
-        button_layout.addWidget(save_btn)
-        layout.addLayout(button_layout)
-
-    def _on_test_connection(self) -> None:
-        """Stub: validate that API key is present and show short message (12-05)."""
-        key = (self.api_key_input.text() or "").strip() or self.current_key
-        if not key:
-            QMessageBox.information(
-                self,
-                "Testa anslutning",
-                "Ange API-nyckel först. Faktisk anslutningstest sker från motorn vid körning.",
-            )
-            return
-        if len(key) < 10:
-            QMessageBox.information(
-                self,
-                "Testa anslutning",
-                "API-nyckeln verkar för kort. Kontrollera att du klistrat in hela nyckeln.\n\n"
-                "Faktisk anslutningstest kräver engine/config-anrop och görs vid körning.",
-            )
-            return
-        QMessageBox.information(
-            self,
-            "Testa anslutning",
-            "API-nyckel angiven. Kontrollera att du har nätåtkomst till vald leverantör.\n\n"
-            "Faktisk anslutningstest görs från motorn vid körning.",
-        )
+        self._sync_from_config()
 
     def _reload_config(self) -> None:
         config = load_ai_config()
@@ -223,90 +66,278 @@ class AISettingsDialog(QDialog):
         self.current_provider = (config.get("provider") or "openai").lower()
         self.current_model = config.get("model") or _default_model(self.current_provider)
         self.current_key = config.get("api_key") or ""
+        self._pending_key: Optional[str] = None  # new key typed in "Replace" flow
 
-    def _remove_config(self) -> None:
-        clear_ai_config()
-        self._reload_config()
-        self.load_settings()
+    def _status_text(self) -> str:
+        c = load_ai_config()
+        key = (c.get("api_key") or "").strip()
+        prov = (c.get("provider") or "openai").lower()
+        model = c.get("model") or _default_model(prov)
+        enabled = c.get("enabled", False)
+        prov_disp = PROVIDER_LABELS.get(prov, prov)
+        if not key:
+            return "Ingen AI konfigurerad"
+        status = f"Konfigurerad: {prov_disp}, {model}"
+        status += " · Aktiverad" if enabled else " · Inaktiverad"
+        return status
 
-    def load_settings(self) -> None:
-        self.status_label.setText(self._status_text())
-        self.ai_enabled_checkbox.setChecked(self.current_enabled)
+    def setup_ui(self) -> None:
+        main_layout = QVBoxLayout(self)
 
-        provider_index = 0 if self.current_provider == "openai" else 1
-        self.provider_combo.setCurrentIndex(provider_index)
-        self._update_model_options()
+        # --- Status line ---
+        status_frame = QFrame()
+        status_frame.setObjectName("ai_settings_status")
+        status_frame.setMinimumHeight(36)
+        sl = QVBoxLayout(status_frame)
+        sl.setContentsMargins(8, 4, 8, 4)
+        self.status_label = QLabel()
+        self.status_label.setWordWrap(True)
+        sl.addWidget(self.status_label)
+        main_layout.addWidget(status_frame)
 
-        model_index = self.model_combo.findText(self.current_model)
-        if model_index >= 0:
-            self.model_combo.setCurrentIndex(model_index)
-        else:
-            self.model_combo.setCurrentText(self.current_model)
+        # --- Two-pane: list | form ---
+        splitter = QSplitter(Qt.Orientation.Horizontal)
 
-        if self.current_key:
-            masked = self.current_key[:8] + "..." if len(self.current_key) > 8 else "***"
-            self.api_key_input.setPlaceholderText(f"Nuvarande nyckel: {masked}")
-        else:
-            self.api_key_input.clear()
-            self.api_key_input.setPlaceholderText("Ange din API-nyckel här...")
+        # Left: provider list
+        self.provider_list = QListWidget()
+        self.provider_list.setObjectName("ai_provider_list")
+        self.provider_list.setMaximumWidth(160)
+        for pid in PROVIDER_IDS:
+            item = QListWidgetItem(PROVIDER_LABELS[pid])
+            item.setData(Qt.ItemDataRole.UserRole, pid)
+            self.provider_list.addItem(item)
+        self.provider_list.currentRowChanged.connect(self._on_provider_selected)
+        splitter.addWidget(self.provider_list)
 
-    def _on_provider_changed(self, provider_text: str) -> None:
-        self._update_model_options()
+        # Right: detail form in scroll
+        form_container = QWidget()
+        form_layout = QVBoxLayout(form_container)
+        form_layout.setContentsMargins(8, 0, 0, 0)
 
-    def _update_model_options(self) -> None:
-        provider_text = self.provider_combo.currentText()
+        self.ai_enabled_checkbox = QCheckBox("Aktivera AI-fallback")
+        self.ai_enabled_checkbox.setToolTip(
+            "Kryssa i för att aktivera. AI används när totalsumma-konfidens under 95 %."
+        )
+        form_layout.addWidget(self.ai_enabled_checkbox)
+
+        form_layout.addWidget(QLabel("Modell:"))
+        self.model_combo = QComboBox()
+        self.model_combo.setEditable(True)
+        form_layout.addWidget(self.model_combo)
+        form_layout.addWidget(_help_label(
+            "Modellnamn enligt leverantörens API (t.ex. gpt-4o, claude-3-5-sonnet)."
+        ))
+
+        form_layout.addWidget(QLabel("API-nyckel:"))
+        key_row = QHBoxLayout()
+        self.api_key_input = QLineEdit()
+        self.api_key_input.setEchoMode(QLineEdit.EchoMode.Password)
+        self.api_key_input.setPlaceholderText("Ange API-nyckel...")
+        key_row.addWidget(self.api_key_input)
+        self.replace_key_btn = QPushButton("Ersätt")
+        self.replace_key_btn.setToolTip("Klicka för att ange eller byta API-nyckel")
+        self.replace_key_btn.clicked.connect(self._on_replace_key)
+        key_row.addWidget(self.replace_key_btn)
+        self.show_key_btn = QPushButton("Visa")
+        self.show_key_btn.setCheckable(True)
+        self.show_key_btn.toggled.connect(
+            lambda c: self.api_key_input.setEchoMode(
+                QLineEdit.EchoMode.Normal if c else QLineEdit.EchoMode.Password
+            )
+        )
+        key_row.addWidget(self.show_key_btn)
+        form_layout.addLayout(key_row)
+        form_layout.addWidget(_help_label(
+            "API-nyckeln lagras lokalt och används endast för vald leverantör."
+        ))
+
+        # Advanced (collapsible)
+        self.advanced_btn = QPushButton("Avancerat ▾")
+        self.advanced_btn.setCheckable(True)
+        self.advanced_btn.setChecked(False)
+        self.advanced_btn.clicked.connect(self._toggle_advanced)
+        form_layout.addWidget(self.advanced_btn)
+
+        self.advanced_widget = QFrame()
+        self.advanced_widget.setVisible(False)
+        adv_layout = QVBoxLayout(self.advanced_widget)
+        thresholds_group = QGroupBox("Tröskelvärden")
+        thresholds_group.setObjectName("ai_group_thresholds")
+        tl = QVBoxLayout()
+        tl.addWidget(_help_label(
+            "AI anropas när totalsumma-konfidens är under 95 %. Gränsvärdet styrs i motorn."
+        ))
+        thresholds_group.setLayout(tl)
+        adv_layout.addWidget(thresholds_group)
+        limits_group = QGroupBox("Gränser")
+        limits_group.setObjectName("ai_group_limits")
+        ll = QVBoxLayout()
+        ll.addWidget(_help_label(
+            "Timeout och max tokens konfigureras i motor/konfiguration; stöd här planeras."
+        ))
+        limits_group.setLayout(ll)
+        adv_layout.addWidget(limits_group)
+        form_layout.addWidget(self.advanced_widget)
+
+        scroll = QScrollArea()
+        scroll.setWidget(form_container)
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        splitter.addWidget(scroll)
+        splitter.setSizes([140, 400])
+
+        main_layout.addWidget(splitter)
+
+        # --- Buttons ---
+        btn_layout = QHBoxLayout()
+        remove_btn = QPushButton("Ta bort")
+        remove_btn.setToolTip("Ta bort konfigurerad AI (provider, modell, nyckel)")
+        remove_btn.clicked.connect(self._remove_config)
+        btn_layout.addWidget(remove_btn)
+        test_btn = QPushButton("Testa anslutning")
+        test_btn.setToolTip("Kontrollera att API-nyckel är angiven.")
+        test_btn.clicked.connect(self._on_test_connection)
+        btn_layout.addWidget(test_btn)
+        btn_layout.addStretch()
+        cancel_btn = QPushButton("Avbryt")
+        cancel_btn.clicked.connect(self.reject)
+        btn_layout.addWidget(cancel_btn)
+        save_btn = QPushButton("Spara")
+        save_btn.setDefault(True)
+        save_btn.clicked.connect(self.save_settings)
+        btn_layout.addWidget(save_btn)
+        main_layout.addLayout(btn_layout)
+
+    def _toggle_advanced(self) -> None:
+        vis = self.advanced_btn.isChecked()
+        self.advanced_widget.setVisible(vis)
+        self.advanced_btn.setText("Avancerat ▾" if not vis else "Avancerat ▴")
+
+    def _on_replace_key(self) -> None:
+        self.api_key_input.clear()
+        self.api_key_input.setPlaceholderText("Ange din API-nyckel här...")
+        self.api_key_input.setFocus()
+        self._pending_key = None
+
+    def _on_provider_selected(self, row: int) -> None:
+        if row < 0:
+            return
+        item = self.provider_list.item(row)
+        if not item:
+            return
+        pid = item.data(Qt.ItemDataRole.UserRole) or "openai"
+        self._update_model_options(pid)
+        self._refresh_form_for_provider(pid)
+
+    def _update_model_options(self, provider_id: str) -> None:
         self.model_combo.clear()
-        if provider_text == "OpenAI":
+        if provider_id == "openai":
             self.model_combo.addItems([
                 "gpt-5-nano", "gpt-4-turbo-preview", "gpt-4", "gpt-3.5-turbo"
             ])
-        elif provider_text == "Claude":
+        else:
             self.model_combo.addItems([
                 "claude-3-opus-20240229",
                 "claude-3-sonnet-20240229",
                 "claude-3-haiku-20240307",
             ])
 
-    def save_settings(self) -> None:
-        api_key_input = self.api_key_input.text().strip()
-        if self.ai_enabled_checkbox.isChecked():
-            if not api_key_input and not self.current_key:
-                QMessageBox.warning(
-                    self,
-                    "API-nyckel saknas",
-                    "Du måste ange en API-nyckel för att aktivera AI-fallback.",
-                )
-                return
-            api_key = api_key_input if api_key_input else self.current_key
+    def _refresh_form_for_provider(self, provider_id: str) -> None:
+        """Populate form from current config when this provider is selected."""
+        self._update_model_options(provider_id)
+        if provider_id == self.current_provider:
+            self.ai_enabled_checkbox.setChecked(self.current_enabled)
+            model = self.current_model or _default_model(provider_id)
+            idx = self.model_combo.findText(model)
+            if idx >= 0:
+                self.model_combo.setCurrentIndex(idx)
+            else:
+                self.model_combo.setCurrentText(model)
+            if self.current_key:
+                self.api_key_input.clear()
+                self.api_key_input.setPlaceholderText("•••••••• (klicka Ersätt för att ändra)")
+            else:
+                self.api_key_input.clear()
+                self.api_key_input.setPlaceholderText("Ange din API-nyckel här...")
         else:
-            api_key = api_key_input if api_key_input else self.current_key
+            self.ai_enabled_checkbox.setChecked(False)
+            self.model_combo.setCurrentIndex(0)
+            self.api_key_input.clear()
+            self.api_key_input.setPlaceholderText("Ange din API-nyckel här...")
 
-        provider_text = self.provider_combo.currentText()
-        provider = "openai" if provider_text == "OpenAI" else "claude"
+    def _sync_from_config(self) -> None:
+        self.status_label.setText(self._status_text())
+        row = PROVIDER_IDS.index(self.current_provider) if self.current_provider in PROVIDER_IDS else 0
+        self.provider_list.setCurrentRow(row)
+        self._refresh_form_for_provider(self.current_provider)
+
+    def _on_test_connection(self) -> None:
+        key = (self.api_key_input.text() or "").strip() or self._effective_key()
+        if not key:
+            QMessageBox.information(
+                self, "Testa anslutning",
+                "Ange API-nyckel först (klicka Ersätt och fyll i). Faktisk anslutningstest sker från motorn vid körning.",
+            )
+            return
+        if len(key) < 10:
+            QMessageBox.information(
+                self, "Testa anslutning",
+                "API-nyckeln verkar för kort. Kontrollera att du klistrat in hela nyckeln.",
+            )
+            return
+        QMessageBox.information(
+            self, "Testa anslutning",
+            "API-nyckel angiven. Kontrollera att du har nätåtkomst till vald leverantör. Faktisk test görs vid körning.",
+        )
+
+    def _effective_key(self) -> str:
+        t = (self.api_key_input.text() or "").strip()
+        if t:
+            return t
+        row = self.provider_list.currentRow()
+        if row >= 0 and self.provider_list.item(row).data(Qt.ItemDataRole.UserRole) == self.current_provider:
+            return self.current_key or ""
+        return ""
+
+    def _remove_config(self) -> None:
+        clear_ai_config()
+        self._reload_config()
+        self._sync_from_config()
+
+    def save_settings(self) -> None:
+        row = self.provider_list.currentRow()
+        if row < 0:
+            QMessageBox.warning(self, "Välj leverantör", "Välj en leverantör i listan.")
+            return
+        provider_id = self.provider_list.item(row).data(Qt.ItemDataRole.UserRole) or "openai"
         model = self.model_combo.currentText().strip()
         if not model:
-            QMessageBox.warning(
-                self, "Modell saknas", "Du måste välja eller ange en modell."
-            )
+            QMessageBox.warning(self, "Modell saknas", "Du måste välja eller ange en modell.")
             return
 
         enabled = self.ai_enabled_checkbox.isChecked()
+        api_key_val = (self.api_key_input.text() or "").strip()
+        if enabled and not api_key_val and not (provider_id == self.current_provider and self.current_key):
+            QMessageBox.warning(
+                self, "API-nyckel saknas",
+                "Du måste ange en API-nyckel för att aktivera AI-fallback.",
+            )
+            return
+        api_key_to_save = api_key_val if api_key_val else (self.current_key if provider_id == self.current_provider else None)
+
         try:
-            api_key_to_save = api_key if api_key else None
             set_ai_config(
                 enabled=enabled,
-                provider=provider,
+                provider=provider_id,
                 model=model,
                 api_key=api_key_to_save,
             )
             QMessageBox.information(
-                self,
-                "Inställningar sparade",
+                self, "Inställningar sparade",
                 "AI-inställningarna har sparats och används vid nästa körning.",
             )
             self.accept()
         except Exception as e:
             logger.error("Failed to save AI settings: %s", e)
-            QMessageBox.critical(
-                self, "Fel", f"Kunde inte spara inställningar: {e}"
-            )
+            QMessageBox.critical(self, "Fel", f"Kunde inte spara inställningar: {e}")

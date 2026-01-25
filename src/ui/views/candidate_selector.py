@@ -5,13 +5,64 @@ from __future__ import annotations
 import logging
 from typing import Dict, List, Optional
 
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QKeyEvent
+from PySide6.QtCore import Qt, Signal, QSize
+from PySide6.QtGui import QKeyEvent, QMouseEvent
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QPushButton, QLabel, QScrollArea
+    QWidget, QVBoxLayout, QPushButton, QLabel, QScrollArea, QFrame,
 )
 
 logger = logging.getLogger(__name__)
+
+CANDIDATE_BUTTON_HEIGHT = 56
+
+
+class CandidateButton(QFrame):
+    """Fixed-height checkable item showing amount (line 1) and meta (line 2)."""
+
+    clicked = Signal()
+
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+        self.setObjectName("candidateButton")
+        self.setFixedHeight(CANDIDATE_BUTTON_HEIGHT)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._checked = False
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(10, 4, 10, 4)
+        layout.setSpacing(2)
+
+        self.amount_label = QLabel()
+        self.amount_label.setObjectName("candidateAmountLabel")
+        self.amount_label.setWordWrap(False)
+        layout.addWidget(self.amount_label)
+
+        self.meta_label = QLabel()
+        self.meta_label.setObjectName("candidateMetaLabel")
+        self.meta_label.setWordWrap(False)
+        layout.addWidget(self.meta_label)
+
+    def setChecked(self, checked: bool) -> None:
+        self._checked = checked
+        self.setProperty("checked", "true" if checked else "false")
+        self.style().unpolish(self)
+        self.style().polish(self)
+
+    def isChecked(self) -> bool:
+        return self._checked
+
+    def set_amount_text(self, text: str) -> None:
+        self.amount_label.setText(text)
+
+    def set_meta_text(self, text: str) -> None:
+        self.meta_label.setText(text)
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.clicked.emit()
+            event.accept()
+        else:
+            super().mousePressEvent(event)
 
 
 class CandidateSelector(QWidget):
@@ -36,7 +87,7 @@ class CandidateSelector(QWidget):
         # State
         self.candidates: List[Dict] = []
         self.selected_index: Optional[int] = None
-        self.candidate_buttons: List[QPushButton] = []
+        self.candidate_buttons: List[CandidateButton] = []
         
         # UI Setup
         self.setup_ui()
@@ -101,55 +152,27 @@ class CandidateSelector(QWidget):
             self.candidates_layout.insertWidget(0, no_candidates)
             return
         
-        # Create button for each candidate
+        # Create CandidateButton for each candidate (fixed height, two lines)
         for idx, candidate in enumerate(candidates):
             amount = candidate.get('amount', 0.0)
             score = candidate.get('score', 0.0)
             row_index = candidate.get('row_index', -1)
             keyword_type = candidate.get('keyword_type', 'unknown')
             
-            # Format display text
             amount_str = f"{amount:,.2f}".replace(',', ' ').replace('.', ',')
-            score_str = f"{score:.1%}"
             ai_tag = " [AI]" if keyword_type == "ai_extracted" else ""
-            button_text = f"SEK {amount_str}{ai_tag}\n(confidence: {score_str})"
-            
-            # Create button
-            button = QPushButton(button_text)
-            button.setCheckable(True)
-            button.setMinimumHeight(60)
-            button.setStyleSheet("""
-                QPushButton {
-                    text-align: left;
-                    padding: 8px;
-                    border: 2px solid #888;
-                    border-radius: 4px;
-                    background-color: #f5f5f5;
-                    color: #1a1a1a;
-                }
-                QPushButton:hover {
-                    border-color: #0078d4;
-                    background-color: #e8e8e8;
-                    color: #111;
-                }
-                QPushButton:checked {
-                    border-color: #0078d4;
-                    background-color: #cce5ff;
-                    color: #0d47a1;
-                    font-weight: bold;
-                }
-            """)
-            
-            # Tooltip with additional info
+            amount_line = f"SEK {amount_str}{ai_tag}"
+            meta_line = f"Konfidens: {score:.1%}"
             tooltip = f"Rad {row_index}, Typ: {keyword_type}"
-            button.setToolTip(tooltip)
             
-            # Connect click signal
-            button.clicked.connect(lambda checked, i=idx: self._on_candidate_clicked(i))
+            btn = CandidateButton()
+            btn.set_amount_text(amount_line)
+            btn.set_meta_text(meta_line)
+            btn.setToolTip(tooltip)
+            btn.clicked.connect(lambda i=idx: self._on_candidate_clicked(i))
             
-            # Store button
-            self.candidate_buttons.append(button)
-            self.candidates_layout.insertWidget(idx, button)
+            self.candidate_buttons.append(btn)
+            self.candidates_layout.insertWidget(idx, btn)
         
         # Select first candidate by default
         if self.candidate_buttons:

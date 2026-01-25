@@ -54,9 +54,9 @@ class MainWindow(QMainWindow):
         """Setup menu bar with settings and help."""
         menubar = self.menuBar()
         
-        # Inställningar menu
-        settings_menu = menubar.addMenu("Inställningar")
-        ai_settings_action = settings_menu.addAction("AI-inställningar...")
+        # AI menu (same dialog as toolbar Inställningar; avoid duplicate "Settings" label)
+        ai_menu = menubar.addMenu("AI")
+        ai_settings_action = ai_menu.addAction("AI-inställningar...")
         ai_settings_action.triggered.connect(self.open_ai_settings)
         
         # Hjälp menu
@@ -193,6 +193,7 @@ class MainWindow(QMainWindow):
         results_layout.addWidget(self.validation_section)
 
         self.pdf_viewer.candidate_clicked.connect(self._on_pdf_candidate_clicked)
+        self.pdf_viewer.run_requested.connect(self.start_processing)
         self.candidate_selector.candidate_selected.connect(self._on_selector_candidate_selected)
 
         self.selected_candidate_index: Optional[int] = None
@@ -249,6 +250,10 @@ class MainWindow(QMainWindow):
         self.input_label.setText(path)
         self.run_action.setEnabled(True)
         self.stacked.setCurrentIndex(1)
+        try:
+            self.pdf_viewer.load_pdf(path)
+        except Exception as e:
+            logger.warning("Could not load PDF into viewer: %s", e)
         self.log(f"Vald fil: {path}")
 
     def open_output_dir(self):
@@ -265,6 +270,7 @@ class MainWindow(QMainWindow):
         self.run_action.setEnabled(False)
         self.open_action.setEnabled(False)
         self.export_action.setEnabled(False)
+        self.pdf_viewer.set_run_button_enabled(False)
         self.progress_bar.setRange(0, 0)
         self.progress_bar.setVisible(True)
         self.log_area.clear()
@@ -299,6 +305,7 @@ class MainWindow(QMainWindow):
         self.run_action.setEnabled(True)
         self.open_action.setEnabled(True)
         self.export_action.setEnabled(True)
+        self.pdf_viewer.set_run_button_enabled(True)
 
         if success:
             self._update_status_bar("Success", self._last_run_summary)

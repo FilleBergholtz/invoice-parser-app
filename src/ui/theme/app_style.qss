@@ -168,3 +168,28 @@ QScrollBar::handle:vertical:hover {
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
     height: 0;
 }
+
+/* ---- Candidate selector (12-06): fixed-height candidate buttons ---- */
+QFrame#candidateButton {
+    background-color: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 0;
+}
+QFrame#candidateButton:hover {
+    border-color: #94a3b8;
+    background-color: #e2e8f0;
+}
+QFrame#candidateButton[checked="true"] {
+    border: 2px solid #2563eb;
+    background-color: #dbeafe;
+}
+QLabel#candidateAmountLabel {
+    color: #0f172a;
+    font-weight: bold;
+    font-size: 12px;
+}
+QLabel#candidateMetaLabel {
+    color: #64748b;
+    font-size: 10px;
+}

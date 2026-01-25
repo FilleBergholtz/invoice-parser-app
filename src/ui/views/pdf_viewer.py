@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QToolBar,
     QSizePolicy,
+    QStackedWidget,
 )
 
 if TYPE_CHECKING:
@@ -222,16 +223,43 @@ class _PDFGraphicsView(QGraphicsView):
 class PDFViewer(QWidget):
     """PDF viewer with toolbar (zoom, fit width, prev/next page, page indicator).
 
-    Wraps _PDFGraphicsView and adds a viewer toolbar. Styled via app theme (setObjectName).
+    Shows a placeholder + Run CTA when PDF is loaded but analysis has not been run (12-06).
     """
 
     candidate_clicked = Signal(int)
+    run_requested = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
+        self._has_analysis_results = False
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
+        self._stack = QStackedWidget()
+        layout.addWidget(self._stack)
+
+        # Placeholder: PDF loaded but no results yet
+        self._placeholder = QWidget()
+        place_layout = QVBoxLayout(self._placeholder)
+        place_layout.setContentsMargins(24, 24, 24, 24)
+        place_msg = QLabel("PDF laddad. Kör analys för att visa sidor och resultat.")
+        place_msg.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        place_msg.setWordWrap(True)
+        place_msg.setStyleSheet("font-size: 14px; color: #64748b;")
+        place_layout.addStretch()
+        place_layout.addWidget(place_msg)
+        self._placeholder_run_btn = QPushButton("Kör")
+        self._placeholder_run_btn.setObjectName("primary")
+        self._placeholder_run_btn.setMinimumHeight(40)
+        self._placeholder_run_btn.clicked.connect(self.run_requested.emit)
+        place_layout.addWidget(self._placeholder_run_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+        place_layout.addStretch()
+        self._stack.addWidget(self._placeholder)
+
+        # Content: toolbar + view
+        content = QWidget()
+        content_layout = QVBoxLayout(content)
+        content_layout.setContentsMargins(0, 0, 0, 0)
         toolbar = QToolBar()
         toolbar.setObjectName("pdf_viewer_toolbar")
         toolbar.setContentsMargins(2, 2, 2, 2)
@@ -259,8 +287,8 @@ class PDFViewer(QWidget):
         toolbar.addWidget(self._page_label)
 
         self._view = _PDFGraphicsView(self)
-        layout.addWidget(toolbar)
-        layout.addWidget(self._view)
+        content_layout.addWidget(toolbar)
+        content_layout.addWidget(self._view)
 
         zoom_in_btn.clicked.connect(self._view.zoom_in)
         zoom_out_btn.clicked.connect(self._view.zoom_out)
@@ -268,6 +296,9 @@ class PDFViewer(QWidget):
         prev_btn.clicked.connect(self._on_prev_page)
         next_btn.clicked.connect(self._on_next_page)
         self._view.candidate_clicked.connect(self.candidate_clicked.emit)
+
+        self._stack.addWidget(content)
+        self._stack.setCurrentWidget(self._placeholder)
 
     def _on_prev_page(self) -> None:
         if self._view.page_count == 0:
@@ -289,15 +320,32 @@ class PDFViewer(QWidget):
         self._page_label.setText(f"Sida {n} / {total}" if total else "Sida 1 / 1")
 
     def load_pdf(self, path: str) -> None:
+        self._has_analysis_results = False
         self._view.load_pdf(path)
         self._update_page_label()
+        self._update_stack()
 
     def set_candidates(
         self,
         candidates: List[Dict],
         traceability: Optional[Traceability] = None,
     ) -> None:
+        self._has_analysis_results = True
         self._view.set_candidates(candidates, traceability)
+        self._update_stack()
+
+    def _update_stack(self) -> None:
+        if self._view.pdf_doc is None:
+            self._stack.setCurrentWidget(self._placeholder)
+            return
+        if self._has_analysis_results:
+            self._stack.setCurrentWidget(self._stack.widget(1))
+        else:
+            self._stack.setCurrentWidget(self._placeholder)
+
+    def set_run_button_enabled(self, enabled: bool) -> None:
+        """Enable/disable the Run CTA in the placeholder (e.g. when engine is Running)."""
+        self._placeholder_run_btn.setEnabled(enabled)
 
     def set_page(self, page_number: int) -> None:
         self._view.set_page(page_number)

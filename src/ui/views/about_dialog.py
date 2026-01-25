@@ -98,7 +98,7 @@ class AboutDialog(QDialog):
         trouble = [
             "• Saknade resultat: Kontrollera att PDF:en innehåller text (inte bara bilder). Aktivera OCR i inställningarna om sidan skannats.",
             "• Fel eller konstiga värden: Använd \"Välj kandidat\" och spara rätt värde så lär systemet sig.",
-            "• Låg konfidens / AI: Aktivera AI-inställningar (Inställningar → AI-inställningar) om du vill att osäkra fält förbättras med AI.",
+            "• Låg konfidens / AI: Aktivera AI-inställningar (verktygsfältet Inställningar eller menyn AI → AI-inställningar) om du vill att osäkra fält förbättras med AI.",
         ]
         for t in trouble:
             lbl = QLabel(t)
