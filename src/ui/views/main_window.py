@@ -504,11 +504,12 @@ class MainWindow(QMainWindow):
             y_max=100,
             page=page,
         )
+        supplier_name = validation.get("supplier_name") or None
         self.current_invoice_header = InvoiceHeader(
             segment=segment,
             total_amount=None,
             total_confidence=0.0,
-            supplier_name=None,
+            supplier_name=supplier_name,
             total_candidates=candidates,
         )
         

@@ -908,10 +908,13 @@ def process_pdf(
                     )
                 results.append(chosen)
             else:
-                result = process_virtual_invoice(
+                out = process_virtual_invoice(
                     doc, page_start, page_end, index, extraction_path, verbose,
                     output_dir=output_dir,
                 )
+                result = out[0] if isinstance(out, tuple) else out
+                result.extraction_source = extraction_path
+                result.extraction_detail = {"method_used": extraction_path}
                 results.append(result)
         
         return results
@@ -1114,6 +1117,7 @@ def process_batch(
                         "virtual_invoice_id": virtual_result.virtual_invoice_id,
                         "quality_score": quality_score.score,
                         "extraction_source": getattr(virtual_result, "extraction_source", None),
+                        "extraction_detail": getattr(virtual_result, "extraction_detail", None),
                     })
                     
                     # Save AI artifacts if AI was attempted
@@ -1151,6 +1155,8 @@ def process_batch(
                             
                             # Export Excel for this invoice to review folder
                             invoice_excel_path = review_folder / f"{virtual_result.virtual_invoice_id}.xlsx"
+                            ed = getattr(virtual_result, "extraction_detail", None) or {}
+                            method_used = ed.get("method_used") or getattr(virtual_result, "extraction_source", None)
                             invoice_metadata = {
                                 "fakturanummer": virtual_result.invoice_header.invoice_number or "TBD",
                                 "foretag": virtual_result.invoice_header.supplier_name or "TBD",
@@ -1164,6 +1170,8 @@ def process_batch(
                                 "total_confidence": virtual_result.invoice_header.total_confidence,
                                 "fakturatotal": virtual_result.invoice_header.total_amount,
                             }
+                            if method_used:
+                                invoice_metadata["extraction_source"] = method_used
                             export_to_excel(
                                 [{
                                     "invoice_lines": virtual_result.invoice_lines,
@@ -1247,8 +1255,11 @@ def process_batch(
                 "total_confidence": invoice_header.total_confidence,
                 "fakturatotal": invoice_header.total_amount,
             }
-            if invoice_result.get("extraction_source") is not None:
-                invoice_metadata["extraction_source"] = invoice_result["extraction_source"]
+            # Använd method_used från extraction_detail om det finns (faktisk använd metod), annars extraction_source
+            ed = invoice_result.get("extraction_detail") or {}
+            preferred_source = ed.get("method_used") or invoice_result.get("extraction_source")
+            if preferred_source:
+                invoice_metadata["extraction_source"] = preferred_source
             
             excel_invoice_results.append({
                 "invoice_lines": invoice_result["invoice_lines"],
@@ -1316,6 +1327,7 @@ def process_batch(
                 "pdf_path": pdf_path,
                 "invoice_id": ir.get("virtual_invoice_id", ""),
                 "invoice_number": header.invoice_number if getattr(header, "invoice_number", None) else None,
+                "supplier_name": getattr(header, "supplier_name", None) or None,
                 "candidates": [
                     {
                         "amount": c.get("amount", 0.0),
