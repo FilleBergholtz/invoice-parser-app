@@ -689,11 +689,10 @@ def extract_total_amount(
     # 1. "with_vat" keyword type (att betala / inkl. moms)
     # 2. Validated candidates (matches line items)
     # 3. Highest score
+    # 4. Prefer AI over low-scoring heuristics: we used fallback for a reason
     if len(scored_candidates) > 1:
-        # First, try to find "with_vat" candidates
         with_vat_candidates = [c for c in scored_candidates if c.get('keyword_type') == 'with_vat']
         if with_vat_candidates:
-            # Among "with_vat" candidates, prefer validated ones
             validated_with_vat = [
                 c for c in with_vat_candidates
                 if validate_total_against_line_items(c['amount'], line_items, tolerance=1.0)
@@ -703,13 +702,15 @@ def extract_total_amount(
             else:
                 top_candidate = with_vat_candidates[0]
         else:
-            # No "with_vat" candidates, prefer validated ones
             validated_candidates = [
                 c for c in scored_candidates
                 if validate_total_against_line_items(c['amount'], line_items, tolerance=1.0)
             ]
             if validated_candidates:
                 top_candidate = validated_candidates[0]
+        ai_cand = next((c for c in scored_candidates if c.get('keyword_type') == 'ai_extracted'), None)
+        if ai_cand and ai_cand.get('score', 0) >= 0.90 and top_candidate.get('score', 0) < 0.50:
+            top_candidate = ai_cand
     
     final_amount = top_candidate['amount']
     final_score = top_candidate['score']
@@ -717,34 +718,32 @@ def extract_total_amount(
     
     # Step 4: Create traceability evidence
     page_number = footer_segment.page.page_number
-    
-    # Calculate bbox (union of all tokens in row)
-    if final_row.tokens:
-        x_coords = [t.x for t in final_row.tokens]
-        y_coords = [t.y for t in final_row.tokens]
-        x_max_coords = [t.x + t.width for t in final_row.tokens]
-        y_max_coords = [t.y + t.height for t in final_row.tokens]
-        
-        bbox = [
-            min(x_coords),  # x
-            min(y_coords),  # y
-            max(x_max_coords) - min(x_coords),  # width
-            max(y_max_coords) - min(y_coords)   # height
-        ]
+    if final_row is not None:
+        if final_row.tokens:
+            x_coords = [t.x for t in final_row.tokens]
+            y_coords = [t.y for t in final_row.tokens]
+            x_max_coords = [t.x + t.width for t in final_row.tokens]
+            y_max_coords = [t.y + t.height for t in final_row.tokens]
+            bbox = [
+                min(x_coords),
+                min(y_coords),
+                max(x_max_coords) - min(x_coords),
+                max(y_max_coords) - min(y_coords)
+            ]
+        else:
+            bbox = [final_row.x_min, final_row.y, final_row.x_max - final_row.x_min, 12.0]
+        text_excerpt = final_row.text[:120] if len(final_row.text) > 120 else final_row.text
+        tokens = []
+        for token in final_row.tokens:
+            tokens.append({
+                "text": token.text,
+                "bbox": [token.x, token.y, token.width, token.height],
+                "conf": 1.0
+            })
     else:
-        bbox = [final_row.x_min, final_row.y, final_row.x_max - final_row.x_min, 12.0]
-    
-    # Text excerpt (max 120 characters, full row if shorter)
-    text_excerpt = final_row.text[:120] if len(final_row.text) > 120 else final_row.text
-    
-    # Tokens (minimal info for JSON)
-    tokens = []
-    for token in final_row.tokens:
-        tokens.append({
-            "text": token.text,
-            "bbox": [token.x, token.y, token.width, token.height],
-            "conf": 1.0  # Default confidence (pdfplumber tokens have high confidence)
-        })
+        bbox = [0.0, 0.0, 0.0, 0.0]
+        text_excerpt = f"AI-extracted total: {final_amount}"
+        tokens = []
     
     evidence = {
         "page_number": page_number,
