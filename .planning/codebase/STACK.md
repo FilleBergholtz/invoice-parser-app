@@ -2,7 +2,7 @@
 
 **Project:** EPG PDF Extraherare (invoice-parser-app)  
 **Last updated:** 2026-01-25  
-**Source:** map-codebase
+**Source:** map-codebase, refreshed by gsd-codebase-mapper
 
 ## Runtime & Language
 

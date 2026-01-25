@@ -2,7 +2,7 @@
 
 **Project:** EPG PDF Extraherare  
 **Last updated:** 2026-01-25  
-**Source:** map-codebase
+**Source:** map-codebase, refreshed by gsd-codebase-mapper
 
 ## Framework and Config
 
@@ -51,7 +51,7 @@ Tests are grouped by component; each file typically targets one package or featu
 | test_validation.py | Validation logic (OK/PARTIAL/REVIEW) |
 | test_wrap_detection.py | Wrap detection |
 
-Roughly 221 test functions/classes across these 26 files.
+About 117 test functions/classes across these 26 files (pytest discovery: test_* functions and Test* classes).
 
 ## Running Tests
 
