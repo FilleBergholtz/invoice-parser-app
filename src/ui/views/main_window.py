@@ -276,7 +276,7 @@ class MainWindow(QMainWindow):
 
         self.runner.started.connect(lambda: self.log("Startar motor..."))
         self.runner.logLine.connect(self.log)
-        self.runner.progress.connect(self.log)
+        # progress är samma som logLine för bakåtkompatibilitet – anslut inte båda till log (ger dubbel utskrift)
         self.runner.stateChanged.connect(self._on_engine_state_changed)
         self.runner.error.connect(self._on_engine_error)
         self.runner.result_ready.connect(self.handle_result)

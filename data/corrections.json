@@ -1,1 +1,38 @@
-[]
+[
+  {
+    "invoice_id": "40615472",
+    "supplier_name": "Unknown",
+    "original_total": null,
+    "original_confidence": 0.0,
+    "corrected_total": 3717.35,
+    "corrected_confidence": 0.92,
+    "raw_confidence": null,
+    "candidate_index": 0,
+    "timestamp": "2026-01-25T13:57:24.359811",
+    "correction_type": "total_amount"
+  },
+  {
+    "invoice_id": "40640333",
+    "supplier_name": "Unknown",
+    "original_total": null,
+    "original_confidence": 0.0,
+    "corrected_total": 32891.1,
+    "corrected_confidence": 0.92,
+    "raw_confidence": null,
+    "candidate_index": 0,
+    "timestamp": "2026-01-25T13:57:46.863356",
+    "correction_type": "total_amount"
+  },
+  {
+    "invoice_id": "40673345",
+    "supplier_name": "Unknown",
+    "original_total": null,
+    "original_confidence": 0.0,
+    "corrected_total": 40531.46,
+    "corrected_confidence": 0.92,
+    "raw_confidence": null,
+    "candidate_index": 0,
+    "timestamp": "2026-01-25T13:57:59.293827",
+    "correction_type": "total_amount"
+  }
+]
