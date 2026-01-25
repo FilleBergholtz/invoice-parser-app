@@ -6,19 +6,17 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 
 **Core value:** 100% korrekt på fakturanummer och totalsumma, eller tydlig REVIEW-status. Allt som systemet exporterar som OK är garanterat korrekt. Osäkra fall går alltid till REVIEW (ingen tyst gissning).
 
-**Current focus:** v2.0 Features — Phase 10 complete; all v2.0 phases 5–11 done.
+**Current focus:** Phase 13 (About + icons) executed 2026-01-25.
 
 ## Current Position
 
-Milestone: v2.0 Features
-Phase: 10 of 11 — **Phase 10 complete** (AI Fallback Fixes: 2/2 plans)
-Plans: 10-01 Document AI fallback ✓, 10-02 Verification ✓
-Status: **✅ DONE** — 10-CONTEXT.md, 10-VERIFICATION.md, tests run (16 passed, 1 skipped).
-Last activity: 2026-01-24 — Phase 10 executed (document + verification).
+Milestone: v2.0 Features + polish
+Phase: **Phase 13 complete** (About page + app icons: 3/3 plans)
+Plans: 13-01 About + Help ✓, 13-02 Icons QRC ✓, 13-03 Windows .ico ✓
+Status: **✅ DONE** — AboutDialog, Hjälp-meny, custom icons (QRC), app.ico + spec.
+Last activity: 2026-01-25 — Phase 13 executed (13-01, 13-02, 13-03).
 
-Progress: ██████████████ 100% (11/11 phases complete) — Phase 10 and 11 done.
-
-**Projektstatus:** v1.0 komplett. v2.0 phases 5–11 implementerade.
+Progress: Phase 13 complete. v2.0 phases 5–11 plus 13 (About + branding) implemented.
 
 ## Performance Metrics
 
@@ -81,6 +79,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-24
-Stopped at: Session resumed. Phase 7 UAT gap closure done: "Bekräfta val" sparar nu till learning.db (add_correction + mönster-uppdatering). STATE visar Phase 10 complete.
+Last session: 2026-01-25
+Stopped at: Phase 13 executed (About dialog, Help menu, icons QRC, Windows app.ico + spec).
 Resume file: None
