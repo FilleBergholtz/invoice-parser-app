@@ -178,6 +178,7 @@ def _has_strong_invoice_header(
                 })
     
     # Score candidates and check for high confidence (≥0.95)
+    best_candidate_score = 0.0
     for candidate in candidates[:10]:  # Limit to top 10
         score = score_invoice_number_candidate(
             candidate['candidate'],
@@ -185,18 +186,25 @@ def _has_strong_invoice_header(
             page,
             all_rows
         )
-        
+        best_candidate_score = max(best_candidate_score, score)
         if score >= 0.95:
             return True
     
-    # Fallback: Check for strong "Faktura" keyword + alphanumeric pattern
+    # Fallback: "Faktura" + alphanumeric is NOT sufficient alone (15-DISCUSS D5).
+    # Require additional signal: label match (we have candidates and score), strong candidate score (≥0.6),
+    # or date/amount on same row.
     faktura_pattern = re.compile(r'faktura', re.IGNORECASE)
+    alphanumeric_pattern = re.compile(r'[A-Z0-9\-]{3,25}', re.IGNORECASE)
+    date_pattern = re.compile(r'\d{4}-\d{2}-\d{2}|\d{1,2}[./\-]\d{1,2}[./\-]\d{4}')
+    amount_pattern = re.compile(r'\d+(?:[.,]\d{2})?(?:\s*(?:sek|kr|:-)?)', re.IGNORECASE)
     for row in header_segment.rows:
-        if faktura_pattern.search(row.text):
-            # Check for alphanumeric pattern nearby
-            alphanumeric_pattern = re.compile(r'([A-Z0-9\-]{3,25})', re.IGNORECASE)
-            if alphanumeric_pattern.search(row.text):
-                return True  # Strong pattern found
+        if not (faktura_pattern.search(row.text) and alphanumeric_pattern.search(row.text)):
+            continue
+        # Additional signal: strong candidate score (≥0.6) or date/amount on row
+        if best_candidate_score >= 0.6:
+            return True
+        if date_pattern.search(row.text) or amount_pattern.search(row.text):
+            return True
     
     return False
 

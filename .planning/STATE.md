@@ -6,17 +6,17 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 
 **Core value:** 100% korrekt på fakturanummer och totalsumma, eller tydlig REVIEW-status. Allt som systemet exporterar som OK är garanterat korrekt. Osäkra fall går alltid till REVIEW (ingen tyst gissning).
 
-**Current focus:** Phase 15 tillagd. Status och roadmap uppdaterade 2026-01-25.
+**Current focus:** Phase 15 exekverad. Status och roadmap uppdaterade 2026-01-25.
 
 ## Current Position
 
 Milestone: v2.0 Features + polish
-Phase: **Phase 15 (nästa)** — Extraction quality hardening (OCR confidence + routing + parser robustness)
-Plans: 15-01 … 15-08 (8 planer)
-Status: Phase 14 genomförd. **Phase 15 planerad** — 15-01 … 15-08 skapade 2026-01-25.
-Last activity: 2026-01-25 — Phase 15 plan-phase: 8 PLAN-filer, CONTEXT/DISCUSS/VERIFICATION/ROADMAP uppdaterade.
+Phase: **Phase 15** — Extraction quality hardening (klar)
+Plans: 15-01 … 15-08 (8/8 genomförda; 15-07 delvis)
+Status: Phase 15 exekverad 2026-01-25. SUMMARY för 15-01 … 15-08 skrivna.
+Last activity: 2026-01-25 — Phase 15 execute-phase: D1–D6, D8 implementerade; D4 DPI-retry + D8 traceability i main; D7 delvis (refaktor uppskjuten).
 
-Progress: Phase 1–3 (v1) + Phase 5–14 (v2) genomförda. **Phase 15** planerad, redo för execute.
+Progress: Phase 1–3 (v1) + Phase 5–15 (v2) genomförda.
 
 ## Performance Metrics
 

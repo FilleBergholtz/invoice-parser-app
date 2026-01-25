@@ -31,7 +31,12 @@ from ..pipeline.reader import read_pdf, PDFReadError
 from ..pipeline.row_grouping import group_tokens_to_rows
 from ..pipeline.segment_identification import identify_segments
 from ..pipeline.tokenizer import extract_tokens_from_page
-from ..pipeline.pdf_renderer import render_page_to_image
+from ..pipeline.pdf_renderer import (
+    render_page_to_image,
+    BASELINE_DPI,
+    RETRY_DPI,
+    OCR_MEAN_CONF_RETRY_THRESHOLD,
+)
 from ..pipeline.ocr_abstraction import extract_tokens_with_ocr, ocr_page_metrics, OCRException, OCR_MEDIAN_CONF_ROUTING_THRESHOLD
 from ..pipeline.text_quality import score_text_quality, score_ocr_quality
 from ..pipeline.header_extractor import extract_header_fields
@@ -456,6 +461,7 @@ def process_virtual_invoice(
     all_segments = []
     line_number_global = 1
     last_page_tokens: List[Any] = []
+    ocr_dpi_used: Optional[int] = None  # 15-04: DPI used for last OCR page when extraction_path=="ocr"
 
     try:
         try:
@@ -464,9 +470,18 @@ def process_virtual_invoice(
                     pdfplumber_page = pdf.pages[page.page_number - 1]
                     tokens = extract_tokens_from_page(page, pdfplumber_page)
                 elif extraction_path == "ocr" and render_dir is not None:
+                    dpi_used = BASELINE_DPI
                     try:
-                        render_page_to_image(page, str(render_dir))
+                        render_page_to_image(page, str(render_dir), dpi=BASELINE_DPI)
                         tokens = extract_tokens_with_ocr(page)
+                        # R1 (15-DISCUSS D4): retry at RETRY_DPI once if mean_conf < threshold
+                        if tokens:
+                            metrics = ocr_page_metrics(tokens)
+                            if metrics.mean_conf < OCR_MEAN_CONF_RETRY_THRESHOLD:
+                                render_page_to_image(page, str(render_dir), dpi=RETRY_DPI)
+                                tokens = extract_tokens_with_ocr(page)
+                                dpi_used = RETRY_DPI
+                        ocr_dpi_used = dpi_used
                     except OCRException as e:
                         if verbose:
                             print(f"  OCR failed for page {page.page_number}: {e}")
@@ -671,7 +686,10 @@ def process_virtual_invoice(
         result.ai_error = ai_error
 
         if return_last_page_tokens:
-            return (result, {"last_page_tokens": last_page_tokens})
+            return_extra: Dict[str, Any] = {"last_page_tokens": last_page_tokens}
+            if extraction_path == "ocr" and ocr_dpi_used is not None:
+                return_extra["dpi_used"] = ocr_dpi_used
+            return (result, return_extra)
         return result
 
     except Exception as e:
@@ -810,6 +828,10 @@ def process_pdf(
                         "pdf_text_quality": pdf_text_quality,
                         "ocr_text_quality": None,
                         "ocr_median_conf": None,
+                        "ocr_mean_conf": None,
+                        "low_conf_fraction": None,
+                        "dpi_used": None,
+                        "reason_flags": [],
                         "vision_reason": None,
                     }
                     if verbose:
@@ -838,11 +860,18 @@ def process_pdf(
                 )
                 if accept_ocr:
                     r_ocr.extraction_source = "ocr"
+                    _flags = []
+                    if pdf_text_quality is not None and pdf_text_quality < TEXT_QUALITY_THRESHOLD:
+                        _flags.append("pdf_text_quality<0.5")
                     r_ocr.extraction_detail = {
                         "method_used": "ocr",
                         "pdf_text_quality": pdf_text_quality,
                         "ocr_text_quality": ocr_text_quality,
                         "ocr_median_conf": ocr_median,
+                        "ocr_mean_conf": ocr_metrics.mean_conf if ocr_metrics else None,
+                        "low_conf_fraction": ocr_metrics.low_conf_fraction if ocr_metrics else None,
+                        "dpi_used": extra_ocr.get("dpi_used"),
+                        "reason_flags": _flags,
                         "vision_reason": None,
                     }
                     if verbose:
@@ -852,11 +881,22 @@ def process_pdf(
 
                 chosen, source = _choose_best_extraction_result(r_pdf, r_ocr)
                 chosen.extraction_source = source
+                _flags = []
+                if pdf_text_quality is not None and pdf_text_quality < TEXT_QUALITY_THRESHOLD:
+                    _flags.append("pdf_text_quality<0.5")
+                if ocr_median is not None and ocr_median < OCR_MEDIAN_CONF_ROUTING_THRESHOLD:
+                    _flags.append("ocr_median_conf<70")
+                if ocr_text_quality is not None and ocr_text_quality < TEXT_QUALITY_THRESHOLD:
+                    _flags.append("text_quality<0.5")
                 chosen.extraction_detail = {
                     "method_used": source,
                     "pdf_text_quality": pdf_text_quality,
                     "ocr_text_quality": ocr_text_quality,
                     "ocr_median_conf": ocr_median if tokens_ocr else None,
+                    "ocr_mean_conf": ocr_metrics.mean_conf if ocr_metrics else None,
+                    "low_conf_fraction": ocr_metrics.low_conf_fraction if ocr_metrics else None,
+                    "dpi_used": extra_ocr.get("dpi_used"),
+                    "reason_flags": _flags,
                     "vision_reason": None,
                 }
                 if verbose:

@@ -473,19 +473,24 @@ def _appears_once_in_document(candidate: str, all_rows: List[Row]) -> bool:
 def _average_token_confidence(tokens: List[Token]) -> float:
     """Calculate average confidence from tokens.
     
+    Uses Token.confidence when set (OCR tokens, 0–100 scale). Normalized to 0.0–1.0
+    for scoring. When no token has confidence (e.g. pdfplumber path), returns 1.0.
+    Per 15-DISCUSS D1: no placeholder 1.0 when OCR token confidence is available.
+    
     Args:
         tokens: List of Token objects
         
     Returns:
-        Average confidence (0.0-1.0), defaults to 1.0 if no confidence available
+        Average confidence (0.0-1.0). 1.0 if no tokens or no confidence data.
     """
     if not tokens:
-        return 1.0  # Default high confidence if no tokens
-    
-    # Token model doesn't have confidence field yet (OCR tokens would)
-    # For now, return 1.0 (assume high confidence for pdfplumber tokens)
-    # TODO: Add confidence to Token model when OCR integration complete
-    return 1.0
+        return 1.0
+    confs = [t.confidence for t in tokens if t.confidence is not None and t.confidence >= 0]
+    if not confs:
+        return 1.0  # pdfplumber tokens: no confidence field set
+    # OCR uses 0–100; normalize to 0..1 for score weight
+    mean_100 = sum(confs) / len(confs)
+    return min(1.0, max(0.0, mean_100 / 100.0))
 
 
 def validate_and_score_invoice_line(line: InvoiceLine) -> Tuple[float, dict]:

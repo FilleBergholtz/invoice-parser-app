@@ -9,84 +9,63 @@ from ..models.segment import Segment
 from ..pipeline.wrap_detection import detect_wrapped_rows, consolidate_wrapped_description
 
 
+# HARD footer keywords: always classify as footer (15-DISCUSS D6).
+_FOOTER_HARD_KEYWORDS = frozenset([
+    'summa att betala', 'SUMMA ATT BETALA', 'att betala', 'attbetala', 'att betala sek', 'attbetala sek',
+    'totalt', 'total', 'delsumma', 'nettobelopp', 'fakturabelopp', 'total delsumma',
+    'moms', 'momspliktigt', 'exkl. moms', 'inkl. moms', 'totaltexkl', 'totaltexkl.', 'total inkl', 'total inkl.',
+])
+
+
+# SOFT footer keywords: require additional signal (footer zone, amount pattern) before classifying (15-DISCUSS D6).
+_FOOTER_SOFT_KEYWORDS = frozenset([
+    'summa', 'exkl', 'inkl', 'exklusive', 'inklusive', 'forskott', 'forskottsbetalning',
+    'godkänd', 'godkänd för', 'f-skatt', 'fakturafrågor', 'fakturafrågor skickas',
+    'förf datum', 'förf. datum', 'förfallodatum', 'förfallo datum',
+    'lista', 'spec', 'bifogad', 'bifogadspec', 'hyraställning', 'hyraställningen',
+    'fraktavgift', 'avgiftsbeskrivning', 'avgift',
+])
+
+
+def _row_has_total_like_amount(row: Row) -> bool:
+    """True if row has an amount pattern typical of totals (extra signal for SOFT footer)."""
+    result = _extract_amount_from_row_text(row)
+    if not result:
+        return False
+    total_amount, _, _ = result
+    # Total-like: significant amount, or row has SEK/kr/:- nearby
+    if total_amount > 0:
+        return True
+    return False
+
+
 def _is_footer_row(row: Row) -> bool:
     """Check if a row is a footer row (summary/total row) based on content.
+    
+    HARD keywords always classify as footer. SOFT keywords require additional
+    signal (total-like amount on row) per 15-DISCUSS D6.
     
     Args:
         row: Row object to check
         
     Returns:
         True if row appears to be a footer/summary row, False otherwise
-        
-    Footer rows typically contain:
-    - "summa", "total", "att betala", "moms", "exkl", "inkl"
-    - Summary labels that indicate totals rather than product rows
-    - Edge cases: Short descriptions with large amounts that match invoice totals
-    - Fee descriptions: "Fraktavgift", "Avgiftsbeskrivning" (Derome layout)
     """
     if not row.text:
         return False
     
     text_lower = row.text.lower()
-    text_stripped = row.text.strip()
     
-    # Footer keywords (Swedish + English)
-    # Support different layouts: "Fakturabelopp", "SUMMA ATT BETALA", "Fraktavgift"
-    footer_keywords = [
-        'summa',
-        'total',
-        'totalt',
-        'att betala',
-        'attbetala',
-        'moms',
-        'momspliktigt',
-        'exkl',
-        'inkl',
-        'exklusive',
-        'inklusive',
-        'exkl. moms',
-        'inkl. moms',
-        'totaltexkl',
-        'totaltexkl.',
-        'total inkl',
-        'total inkl.',
-        'forskott',
-        'forskottsbetalning',
-        'godkänd',
-        'godkänd för',
-        'f-skatt',
-        'fakturafrågor',
-        'fakturafrågor skickas',
-        'att betala sek',
-        'attbetala sek',
-        'förf datum',
-        'förf. datum',
-        'förfallodatum',
-        'förfallo datum',
-        # Additional keywords for edge cases
-        'lista',
-        'spec',
-        'bifogad',
-        'bifogadspec',
-        'hyraställning',
-        'hyraställningen',
-        # Fee/summary rows (Derome, etc.)
-        'fraktavgift',
-        'avgiftsbeskrivning',
-        'avgift',
-        'delsumma',
-        'total delsumma',
-        'nettobelopp',
-        'fakturabelopp',
-        'summa att betala',
-        'SUMMA ATT BETALA',  # Uppercase (CERTEX layout)
-    ]
-    
-    # Check if row text contains footer keywords
-    for keyword in footer_keywords:
-        if keyword in text_lower:
+    for keyword in _FOOTER_HARD_KEYWORDS:
+        if keyword.lower() in text_lower:
             return True
     
+    for keyword in _FOOTER_SOFT_KEYWORDS:
+        if keyword in text_lower:
+            if _row_has_total_like_amount(row):
+                return True
+    
+    # Heuristics: short description + large amount, total-like patterns (unchanged)
     # Heuristic 1: Extract amount to check if it's suspiciously large
     # This helps identify edge cases where description is short but amount is large
     amount_result = _extract_amount_from_row_text(row)
@@ -303,22 +282,16 @@ def _extract_amount_from_row_text(row: Row) -> Optional[Tuple[float, Optional[fl
     # Find which token contains the total amount (or is closest)
     amount_start_pos, amount_end_pos = total_amount_match
     
-    # Build character position mapping for tokens (reconstruct row.text)
-    # row.text is created as " ".join(token.text for token in sorted_tokens)
-    # So we need to map character positions in row.text back to token indices
+    # Build character position mapping for tokens (reconstruct row.text).
+    # Use sort by x (reading order) and enumerate to avoid O(n²) row.tokens.index(token) (15-DISCUSS D6).
     tokens = row.tokens or []
     char_pos = 0
     token_positions = []  # List of (token_idx, start_pos, end_pos)
-    
-    sorted_tokens = sorted(tokens, key=lambda t: t.x)  # Same order as row.text
-    
-    for i, token in enumerate(sorted_tokens):
+    by_x = sorted(enumerate(tokens), key=lambda ie: ie[1].x)
+    for original_idx, token in by_x:
         token_start = char_pos
         token_end = char_pos + len(token.text)
-        # Find original token index in tokens
-        original_idx = tokens.index(token)
         token_positions.append((original_idx, token_start, token_end))
-        # Add space between tokens (as in row.text: " ".join(...))
         char_pos = token_end + 1
     
     # Find token that contains or is closest to the amount

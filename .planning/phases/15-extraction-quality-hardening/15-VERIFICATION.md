@@ -11,14 +11,14 @@ Verifiering av D1–D8 och acceptanskriterier enligt 15-DISCUSS.md. Uppdateras n
 
 | Plan | Deliverable | Check | Resultat |
 |------|-------------|--------|----------|
-| 15-01 | D1 | Token.confidence, ocr metrics, confidence_scoring no placeholder 1.0 | |
-| 15-02 | D2 | use_text_flow, extra_attrs fallback, line clustering | |
-| 15-03 | D3 | score_text_quality/score_ocr_quality, R4 routing | |
-| 15-04 | D4 | DPI retry when mean_conf&lt;55, max 1, artifacts show DPI | |
-| 15-05 | D5 | Boundary: extra signal beyond faktura+alphanum | |
-| 15-06 | D6 | HARD/SOFT keywords, no O(n²), bbox amount | |
-| 15-07 | D7 | Header neg labels/bbox; Footer separation + R4 | |
-| 15-08 | D8 | method_used, metrics, reason flags, vision_reason | |
+| 15-01 | D1 | Token.confidence, ocr metrics, confidence_scoring no placeholder 1.0 | ✓ |
+| 15-02 | D2 | use_text_flow, extra_attrs fallback, line clustering | ✓ |
+| 15-03 | D3 | score_text_quality/score_ocr_quality, R4 routing | ✓ |
+| 15-04 | D4 | DPI retry when mean_conf&lt;55, max 1, artifacts show DPI | ✓ |
+| 15-05 | D5 | Boundary: extra signal beyond faktura+alphanum | ✓ |
+| 15-06 | D6 | HARD/SOFT keywords, no O(n²), bbox amount | ✓ |
+| 15-07 | D7 | Header neg labels/bbox; Footer separation + R4 | delvis (routing anv. R4; refaktor uppskjuten) |
+| 15-08 | D8 | method_used, metrics, reason flags, vision_reason | ✓ |
 
 *Uppdatera resultat efter varje plan-SUMMARY.*
 
