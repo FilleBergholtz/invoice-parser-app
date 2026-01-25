@@ -22,6 +22,7 @@ from ..services.engine_runner import EngineRunner
 from .pdf_viewer import PDFViewer
 from .candidate_selector import CandidateSelector
 from .ai_settings_dialog import AISettingsDialog
+from .about_dialog import AboutDialog
 from ...learning.correction_collector import save_correction
 from ...config import get_learning_db_path
 
@@ -48,15 +49,18 @@ class MainWindow(QMainWindow):
         self.setup_ui()
     
     def setup_menu_bar(self):
-        """Setup menu bar with settings."""
+        """Setup menu bar with settings and help."""
         menubar = self.menuBar()
         
         # Inställningar menu
         settings_menu = menubar.addMenu("Inställningar")
-        
-        # AI-inställningar action
         ai_settings_action = settings_menu.addAction("AI-inställningar...")
         ai_settings_action.triggered.connect(self.open_ai_settings)
+        
+        # Hjälp menu
+        help_menu = menubar.addMenu("Hjälp")
+        about_action = help_menu.addAction("Om EPG PDF Extraherare...")
+        about_action.triggered.connect(self.open_about)
         
     def setup_ui(self):
         """Initialize UI: toolbar, stacked empty/content, splitter, status bar."""
@@ -641,6 +645,11 @@ class MainWindow(QMainWindow):
         if dialog.exec():
             self._update_status_bar("Idle", "AI-inställningar uppdaterade")
             logger.info("AI settings updated from UI")
+
+    def open_about(self):
+        """Open About dialog (Om appen + Hjälp)."""
+        dialog = AboutDialog(self)
+        dialog.exec()
 
     def log(self, message):
         self.log_area.append(message)
