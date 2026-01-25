@@ -328,15 +328,17 @@ Plans:
 
 ### Phase 14: Extraction fallback optimization (pdfplumber → OCR → AI → vision)
 
-**Goal:** [To be planned]
+**Goal:** Robust, cost-efficient extraction with per-page fallback: pdfplumber → OCR → AI text → AI vision; text quality scoring and only-needed-pages fallback.
+
 **Depends on:** Phase 13
-**Plans:** 0 plans
+
+**Plans:** 0 plans (discuss klar 2026-01-25)
 
 Plans:
 - [ ] TBD (run `/gsd:plan-phase 14` to break down)
 
 **Details:**
-[To be added during planning]
+Se `.planning/phases/14-extraction-fallback-optimization-pdfplumber-ocr-ai-vision/14-DISCUSS.md` och `14-CONTEXT.md`. Beslut: fallback-kedja, text quality-modul, Token.confidence för OCR, per-page routing, AI text vs vision, artifacts under `output_dir/artifacts/`.
 
 ---
 

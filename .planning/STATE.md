@@ -13,10 +13,10 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 Milestone: v2.0 Features + polish
 Phase: **Phase 14 (nästa)** — Extraction fallback optimization (pdfplumber → OCR → AI → vision)
 Plans: (ej planerad än — kör `/gsd:plan-phase 14`)
-Status: Phase 13 klar. **Phase 14 tillagd** — oplanerad.
-Last activity: 2026-01-25 — Phase 14 tillagd till roadmap.
+Status: Phase 13 klar. **Phase 14 diskuterad** (14-DISCUSS.md, 14-CONTEXT.md) — redo för planering.
+Last activity: 2026-01-25 — Phase 14 discuss: fallback pdfplumber→OCR→AI→vision, text quality, artifacts.
 
-Progress: Phase 1–3 (v1) + Phase 5–13 (v2) genomförda. **Phase 14** tillagd, väntar på planering.
+Progress: Phase 1–3 (v1) + Phase 5–13 (v2) genomförda. **Phase 14** diskuterad, väntar på `/gsd:plan-phase 14`.
 
 ## Performance Metrics
 
@@ -65,6 +65,8 @@ None yet.
 - Phase 11 planned: 11-01 (OCR wiring), 11-02 (dual-run compare), 11-03 (use best downstream).
 - Phase 13 added: About page + app icons (branding & help) — Om-dialog, Hjälp-meny, fönsterikoner. Discuss-phase 13: 13-DISCUSS.md with tabbed About (Om appen + Hjälp), QRC/icons, Windows .ico. Plans: 13-01 (About + Help menu), 13-02 (QRC + apply icons), 13-03 (Windows .ico + build).
 - Phase 14 added: Extraction fallback optimization (pdfplumber → OCR → AI → vision) — optimera fallback-kedjan för textextraktion.
+- Phase 14 discussed: 14-DISCUSS.md + 14-CONTEXT.md. Beslut: per-page routing, text quality scoring, Token.confidence, AI text vs vision, artifacts; redo för plan-phase.
+- Phase 14 discuss uppdaterad: mål "robust, accurate, cost-efficient"; steg 3 uttryckligen "AI (text-only)"; fyra begränsade research-uppgifter R1–R4 (OCR-rendering, OCR-confidence, AI vision-gränser, AI-routing) med leverabler och constraints; implementation post-research (6 uppgifter); run_summary ska förklara *varför* OCR/AI användes.
 
 ### Blockers/Concerns
 
