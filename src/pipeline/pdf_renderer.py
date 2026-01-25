@@ -1,4 +1,8 @@
-"""PDF page to image conversion with standardized DPI (300) and consistent coordinates."""
+"""PDF page to image conversion with configurable DPI and consistent coordinates.
+
+R1 (14-RESEARCH): Baseline 300 DPI; retry at 400 DPI only when ocr_mean_conf < 55
+after first OCR, max 1 retry per page. Orchestration (14-06) decides when to retry.
+"""
 
 import os
 from pathlib import Path
@@ -10,18 +14,28 @@ except ImportError:
 
 from ..models.page import Page
 
+# R1 constants for orchestration (14-RESEARCH): when to use RETRY_DPI
+BASELINE_DPI = 300
+RETRY_DPI = 400
+OCR_MEAN_CONF_RETRY_THRESHOLD = 55  # retry at RETRY_DPI when ocr_mean_conf < this
+MAX_DPI_RETRIES_PER_PAGE = 1
+
 
 class PDFRenderError(Exception):
     """Raised when PDF rendering fails."""
     pass
 
 
-def render_page_to_image(page: Page, output_dir: str) -> str:
-    """Convert PDF page to image with standardized DPI (300) and consistent coordinate system.
+def render_page_to_image(page: Page, output_dir: str, dpi: int = 300) -> str:
+    """Convert PDF page to image with given DPI and consistent coordinate system.
+    
+    Default 300 DPI is baseline per R1. Use dpi=RETRY_DPI (400) for OCR retry when
+    ocr_mean_conf < OCR_MEAN_CONF_RETRY_THRESHOLD after first pass; max 1 retry per page.
     
     Args:
         page: Page object to render
         output_dir: Directory to save rendered image
+        dpi: Resolution in dots per inch (default 300; 400 for OCR retry per R1).
         
     Returns:
         Path to saved image file
@@ -52,9 +66,9 @@ def render_page_to_image(page: Page, output_dir: str) -> str:
         # Get the specific page (page_number is 1-indexed, fitz uses 0-indexed)
         fitz_page = pdf_doc[page.page_number - 1]
         
-        # Render page to pixmap at 300 DPI
-        # Matrix: scale factor for DPI (300 DPI / 72 DPI = 4.1667)
-        zoom = 300.0 / 72.0
+        # Render page to pixmap at requested DPI (default 300; 400 for OCR retry)
+        # Matrix: scale factor for DPI (dpi / 72)
+        zoom = float(dpi) / 72.0
         mat = fitz.Matrix(zoom, zoom)
         
         pix = fitz_page.get_pixmap(matrix=mat)
