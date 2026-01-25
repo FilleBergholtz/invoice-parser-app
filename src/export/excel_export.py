@@ -1,11 +1,14 @@
 """Excel export functionality with Swedish column names."""
 
+import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union, cast
 
 import pandas as pd
 
 from ..models.invoice_line import InvoiceLine
+
+logger = logging.getLogger(__name__)
 
 
 def export_to_excel(
@@ -67,6 +70,7 @@ def export_to_excel(
             invoice_number_confidence = meta.get("invoice_number_confidence", 0.0)
             total_confidence = meta.get("total_confidence", 0.0)
             extraction_source = meta.get("extraction_source") or ""
+            fakturatotal = meta.get("fakturatotal")  # Header total or validerad totalsumma
             
             # Calculate Hela summan (sum of all line totals for this invoice)
             hela_summan = sum(line.total_amount for line in invoice_lines)
@@ -85,6 +89,7 @@ def export_to_excel(
                     "Rabatt": line.discount if line.discount is not None else "",
                     "Summa": line.total_amount,
                     "Hela summan": hela_summan,
+                    "Fakturatotal": fakturatotal,  # Fakturatotal / validerad totalsumma
                     # Control columns (after existing columns)
                     "Faktura-ID": virtual_invoice_id,  # Virtual invoice ID for multi-invoice PDFs
                     "Status": status,
@@ -116,6 +121,7 @@ def export_to_excel(
         diff = metadata.get("diff", "N/A")
         invoice_number_confidence = metadata.get("invoice_number_confidence", 0.0)
         total_confidence = metadata.get("total_confidence", 0.0)
+        fakturatotal = metadata.get("fakturatotal")
         
         # Calculate Hela summan (sum of all line totals)
         hela_summan = sum(line.total_amount for line in invoice_lines)
@@ -135,6 +141,7 @@ def export_to_excel(
                 "Rabatt": line.discount if line.discount is not None else "",
                 "Summa": line.total_amount,
                 "Hela summan": hela_summan,
+                "Fakturatotal": fakturatotal,
                 # Control columns (after existing columns)
                 "Status": status,
                 "Radsumma": lines_sum,
@@ -161,63 +168,123 @@ def export_to_excel(
         # Format numeric columns
         from openpyxl.styles.numbers import FORMAT_NUMBER_00, FORMAT_PERCENTAGE_00
         
-        # Format Summa and Hela summan columns (currency)
-        for row in worksheet.iter_rows(min_row=2, max_row=worksheet.max_row):
-            # Summa column (index J = 10, 1-indexed = 11)
-            summa_cell = row[9]  # Column J (0-indexed)
-            summa_cell.number_format = FORMAT_NUMBER_00
-            
-            # Hela summan column (index K = 11, 1-indexed = 12)
-            hela_summan_cell = row[10]  # Column K (0-indexed)
-            hela_summan_cell.number_format = FORMAT_NUMBER_00
+        # Column indices by name (robust when columns are added)
+        def _idx(name: str) -> int:
+            return df.columns.get_loc(name) if name in df.columns else -1
         
-        # Format Á-pris column if exists
+        summa_idx = _idx("Summa")
+        hela_summan_idx = _idx("Hela summan")
+        fakturatotal_idx = _idx("Fakturatotal")
+        apris_idx = _idx("Á-pris")
+        radsumma_idx = _idx("Radsumma")
+        avvikelse_idx = _idx("Avvikelse")
+        fakturanummer_konfidens_idx = _idx("Fakturanummer-konfidens")
+        totalsumma_konfidens_idx = _idx("Totalsumma-konfidens")
+        
         for row in worksheet.iter_rows(min_row=2, max_row=worksheet.max_row):
-            apris_cell = row[7]  # Column H (Á-pris)
-            if apris_cell.value:
+            if summa_idx >= 0:
+                row[summa_idx].number_format = FORMAT_NUMBER_00
+            if hela_summan_idx >= 0:
+                row[hela_summan_idx].number_format = FORMAT_NUMBER_00
+            if fakturatotal_idx >= 0 and row[fakturatotal_idx].value is not None:
                 try:
-                    float(apris_cell.value)
-                    apris_cell.number_format = FORMAT_NUMBER_00
+                    float(row[fakturatotal_idx].value)
+                    row[fakturatotal_idx].number_format = FORMAT_NUMBER_00
                 except (ValueError, TypeError):
                     pass
-        
-        # Format control columns
-        # Determine column indices based on whether Faktura-ID exists
-        # Batch mode: Fakturanummer(0)...Hela summan(10), Faktura-ID(11), Status(12), Radsumma(13), Avvikelse(14), Fakturanummer-konfidens(15), Totalsumma-konfidens(16)
-        # Legacy mode: Fakturanummer(0)...Hela summan(10), Status(11), Radsumma(12), Avvikelse(13), Fakturanummer-konfidens(14), Totalsumma-konfidens(15)
-        num_columns = len(df.columns)
-        has_faktura_id = "Faktura-ID" in df.columns
-        
-        if has_faktura_id:
-            # Batch mode: Faktura-ID exists
-            radsumma_idx = 13
-            avvikelse_idx = 14
-            fakturanummer_konfidens_idx = 15
-            totalsumma_konfidens_idx = 16
-        else:
-            # Legacy mode: No Faktura-ID
-            radsumma_idx = 12
-            avvikelse_idx = 13
-            fakturanummer_konfidens_idx = 14
-            totalsumma_konfidens_idx = 15
-        
-        for row in worksheet.iter_rows(min_row=2, max_row=worksheet.max_row):
-            # Radsumma column
-            radsumma_cell = row[radsumma_idx]
-            radsumma_cell.number_format = FORMAT_NUMBER_00
-            
-            # Avvikelse column
-            avvikelse_cell = row[avvikelse_idx]
-            # Only format if numeric (not "N/A" or None)
-            if isinstance(avvikelse_cell.value, (int, float)) and avvikelse_cell.value != "N/A":
-                avvikelse_cell.number_format = FORMAT_NUMBER_00
-            
-            # Fakturanummer-konfidens column
-            fakturanummer_konfidens_cell = row[fakturanummer_konfidens_idx]
-            fakturanummer_konfidens_cell.number_format = FORMAT_PERCENTAGE_00
-            
-            # Totalsumma-konfidens column
-            totalsumma_konfidens_cell = row[totalsumma_konfidens_idx]
-            totalsumma_konfidens_cell.number_format = FORMAT_PERCENTAGE_00
+            if apris_idx >= 0 and row[apris_idx].value:
+                try:
+                    float(row[apris_idx].value)
+                    row[apris_idx].number_format = FORMAT_NUMBER_00
+                except (ValueError, TypeError):
+                    pass
+            if radsumma_idx >= 0:
+                row[radsumma_idx].number_format = FORMAT_NUMBER_00
+            if avvikelse_idx >= 0 and isinstance(row[avvikelse_idx].value, (int, float)):
+                row[avvikelse_idx].number_format = FORMAT_NUMBER_00
+            if fakturanummer_konfidens_idx >= 0:
+                row[fakturanummer_konfidens_idx].number_format = FORMAT_PERCENTAGE_00
+            if totalsumma_konfidens_idx >= 0:
+                row[totalsumma_konfidens_idx].number_format = FORMAT_PERCENTAGE_00
     
     return str(output_path)
+
+
+def apply_corrections_to_excel(
+    excel_path: Union[str, Path],
+    corrections: List[Dict[str, Any]],
+) -> bool:
+    """Update an existing Excel file with validated totals and confidence from corrections.
+
+    For each row whose Faktura-ID matches a correction's invoice_id, sets
+    Totalsumma-konfidens = corrected_confidence and Fakturatotal = corrected_total.
+    Adds Fakturatotal column if missing.
+
+    Args:
+        excel_path: Path to the Excel file (e.g. from run_summary excel_path).
+        corrections: List of correction dicts with invoice_id, corrected_total, corrected_confidence.
+
+    Returns:
+        True if the file was updated and saved, False if file missing or no changes.
+    """
+    path = Path(excel_path)
+    if not path.exists():
+        logger.debug("Excel file not found for corrections: %s", path)
+        return False
+    if not corrections:
+        return False
+
+    by_id: Dict[str, Dict[str, Any]] = {
+        str(c.get("invoice_id", "")): c for c in corrections if c.get("invoice_id")
+    }
+    if not by_id:
+        return False
+
+    try:
+        df = pd.read_excel(path, sheet_name="Invoices", engine="openpyxl")
+    except Exception as e:
+        logger.warning("Could not read Excel for corrections %s: %s", path, e)
+        return False
+
+    id_col = "Faktura-ID" if "Faktura-ID" in df.columns else None
+    if not id_col:
+        if df.index.size > 0 and len(corrections) == 1:
+            c = corrections[0]
+            id_col = df.columns[0]
+            by_id[str(df[id_col].iloc[0])] = c
+        else:
+            logger.debug("Excel has no Faktura-ID column and cannot match corrections")
+            return False
+
+    tot_col = "Totalsumma-konfidens"
+    fakturatotal_col = "Fakturatotal"
+    if tot_col not in df.columns:
+        return False
+
+    if fakturatotal_col not in df.columns:
+        df.insert(df.columns.get_loc(tot_col), fakturatotal_col, None)
+
+    updated = 0
+    for idx, inv_id in enumerate(df[id_col]):
+        inv_id_str = str(inv_id).strip() if inv_id is not None else ""
+        c = by_id.get(inv_id_str)
+        if not c:
+            continue
+        conf = c.get("corrected_confidence")
+        total = c.get("corrected_total")
+        if conf is not None:
+            df.at[idx, tot_col] = float(conf)
+            updated += 1
+        if total is not None:
+            df.at[idx, fakturatotal_col] = float(total)
+
+    if updated == 0:
+        return False
+
+    try:
+        df.to_excel(path, index=False, sheet_name="Invoices", engine="openpyxl")
+        logger.info("Updated Excel with %d correction(s): %s", updated, path)
+        return True
+    except Exception as e:
+        logger.warning("Could not write Excel after corrections %s: %s", path, e)
+        return False

@@ -1162,6 +1162,7 @@ def process_batch(
                                 "diff": virtual_result.validation_result.diff if virtual_result.validation_result.diff is not None else "N/A",
                                 "invoice_number_confidence": virtual_result.invoice_header.invoice_number_confidence,
                                 "total_confidence": virtual_result.invoice_header.total_confidence,
+                                "fakturatotal": virtual_result.invoice_header.total_amount,
                             }
                             export_to_excel(
                                 [{
@@ -1244,6 +1245,7 @@ def process_batch(
                 "diff": validation_result.diff if validation_result.diff is not None else "N/A",
                 "invoice_number_confidence": invoice_header.invoice_number_confidence,
                 "total_confidence": invoice_header.total_confidence,
+                "fakturatotal": invoice_header.total_amount,
             }
             if invoice_result.get("extraction_source") is not None:
                 invoice_metadata["extraction_source"] = invoice_result["extraction_source"]

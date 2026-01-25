@@ -24,8 +24,9 @@ from .pdf_viewer import PDFViewer
 from .candidate_selector import CandidateSelector
 from .ai_settings_dialog import AISettingsDialog
 from .about_dialog import AboutDialog
-from ...learning.correction_collector import save_correction
+from ...learning.correction_collector import save_correction, CorrectionCollector
 from ...config import get_learning_db_path, get_default_output_dir
+from ...export.excel_export import apply_corrections_to_excel
 
 class MainWindow(QMainWindow):
     """Main application window."""
@@ -639,6 +640,22 @@ class MainWindow(QMainWindow):
                 msg += " (fil + inlärningsdatabas)"
             else:
                 msg += " (fil; databas otillgänglig)"
+            # Uppdatera Excel med validerade värden
+            try:
+                all_corrections = CorrectionCollector().get_corrections()
+                if all_corrections:
+                    pr = self.processing_result or {}
+                    excel_path = pr.get("excel_path")
+                    if excel_path and Path(excel_path).exists():
+                        if apply_corrections_to_excel(excel_path, all_corrections):
+                            msg += " – Excel uppdaterad"
+                            self.log("Excel uppdaterad med validerade värden")
+                    # Uppdatera även per-faktura Excel i review-mappen om den finns
+                    review_excel = Path(self.output_dir) / "review" / str(invoice_id) / f"{invoice_id}.xlsx"
+                    if review_excel.exists() and apply_corrections_to_excel(review_excel, all_corrections):
+                        self.log(f"Review-Excel uppdaterad: {review_excel.name}")
+            except Exception as excel_err:
+                logger.warning("Kunde inte uppdatera Excel med korrigeringar: %s", excel_err)
             self.correction_status.setText(msg)
             self.log(f"Korrigering sparad för faktura {invoice_id}" + (" – även i inlärningsdatabasen" if db_ok else " – endast i fil"))
             self._finish_current_validation_and_continue()
