@@ -56,7 +56,6 @@ def test_process_invoice_returns_validation_result(minimal_pdf_path, temp_output
 
 def _mock_virtual_result(status="OK", virtual_invoice_id="test__1"):
     """Hjälp: en mock virtual result för process_batch."""
-    from types import SimpleNamespace
     r = MagicMock()
     r.status = status
     r.virtual_invoice_id = virtual_invoice_id
