@@ -328,4 +328,4 @@ Phases execute in numeric order: 5 → 6 → 7 → 8 → 9 → 10 → 11
 | 10. AI Fallback Fixes and Verification | v2.0 | 0/0 | Not planned | - |
 | 11. Pdfplumber och OCR: kör båda, jämför, använd bästa | v2.0 | 3/3 | Complete | - |
 
-**Note:** v1.0 phases complete. v2.0 phases 5–9 complete; Phase 10 not yet planned; Phase 11 planned (3 plans).
+**Note:** v1.0 phases complete. v2.0 phases 5–9 and 11 complete; Phase 10 not yet planned.
