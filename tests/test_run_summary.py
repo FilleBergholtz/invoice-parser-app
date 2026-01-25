@@ -95,8 +95,9 @@ def test_process_batch_creates_summary(mock_process_pdf, temp_input_dir, temp_ou
     mock_result.line_count = 1  # Match number of invoice_lines
     # Explicitly set ai_request to None to avoid MagicMock auto-creation
     mock_result.ai_request = None
-    # Avoid MagicMock leaking into Excel export (getattr(virtual_result, "extraction_source", None))
+    # Avoid MagicMock leaking into Excel (extraction_source / extraction_detail used when building metadata)
     mock_result.extraction_source = None
+    mock_result.extraction_detail = None  # otherwise ed.get("method_used") is MagicMock and ends up in Excel
 
     # Needs to return a list of virtual results
     mock_process_pdf.return_value = [mock_result]

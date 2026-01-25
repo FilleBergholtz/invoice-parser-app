@@ -11,6 +11,27 @@ from ..models.invoice_line import InvoiceLine
 logger = logging.getLogger(__name__)
 
 
+def _excel_safe_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    """Convert timezone-aware datetimes to strings so Excel export does not raise."""
+    import datetime as _dt
+    df = df.copy()
+    for col in df.columns:
+        if pd.api.types.is_datetime64_any_dtype(df[col]):
+            if getattr(df[col].dtype, "tz", None) is not None:
+                df[col] = df[col].dt.strftime("%Y-%m-%d %H:%M:%S")
+        else:
+            # Object or any other type: convert cells that are tz-aware datetime-like
+            def _cell(value: Any) -> Any:
+                if value is None or (isinstance(value, float) and pd.isna(value)):
+                    return value
+                tz = getattr(value, "tzinfo", None)
+                if tz is not None and hasattr(value, "strftime"):
+                    return value.strftime("%Y-%m-%d %H:%M:%S")
+                return value
+            df[col] = df[col].map(_cell, na_action="ignore")
+    return df
+
+
 def export_to_excel(
     invoice_data: Union[List[Dict], List[InvoiceLine]],
     output_path: str,
@@ -153,11 +174,12 @@ def export_to_excel(
     
     # Create DataFrame
     df = pd.DataFrame(rows)
-    
+    df = _excel_safe_dataframe(df)
+
     # Ensure output directory exists
     output_path_obj = Path(output_path)
     output_path_obj.parent.mkdir(parents=True, exist_ok=True)
-    
+
     # Write to Excel
     with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
         df.to_excel(writer, index=False, sheet_name='Invoices')

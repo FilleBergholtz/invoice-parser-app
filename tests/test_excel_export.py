@@ -76,11 +76,11 @@ def test_excel_export_with_control_columns(sample_invoice_lines, tmp_path):
     assert "Fakturanummer-konfidens" in headers
     assert "Totalsumma-konfidens" in headers
     
-    # Verify control columns are after existing columns
-    existing_cols = ["Fakturanummer", "Referenser", "Företag", "Fakturadatum", 
-                     "Beskrivning", "Antal", "Enhet", "Á-pris", "Rabatt", "Summa", "Hela summan"]
+    # Verify column order: existing + Fakturatotal, then control columns
+    existing_cols = ["Fakturanummer", "Referenser", "Företag", "Fakturadatum",
+                     "Beskrivning", "Antal", "Enhet", "Á-pris", "Rabatt", "Summa", "Hela summan", "Fakturatotal"]
     control_cols = ["Status", "Radsumma", "Avvikelse", "Fakturanummer-konfidens", "Totalsumma-konfidens"]
-    
+
     assert headers[:len(existing_cols)] == existing_cols
     assert headers[len(existing_cols):] == control_cols
 
@@ -109,12 +109,12 @@ def test_control_column_values(sample_invoice_lines, tmp_path):
     row_data = [cell.value for cell in ws[2]]
     
     # Verify control column values
-    # Column order: ... Summa (9), Hela summan (10), Status (11), Radsumma (12), Avvikelse (13), ...
-    assert row_data[11] == "OK"  # Status (Column L)
-    assert row_data[12] == 100.0  # Radsumma (Column M)
-    assert row_data[13] == 0.0  # Avvikelse (Column N)
-    assert row_data[14] == 0.96  # Fakturanummer-konfidens (Column O, Excel format converts to percentage)
-    assert row_data[15] == 0.97  # Totalsumma-konfidens (Column P, Excel format converts to percentage)
+    # Column order: ... Hela summan (10), Fakturatotal (11), Status (12), Radsumma (13), Avvikelse (14), ...
+    assert row_data[12] == "OK"  # Status
+    assert row_data[13] == 100.0  # Radsumma
+    assert row_data[14] == 0.0  # Avvikelse
+    assert row_data[15] == 0.96  # Fakturanummer-konfidens
+    assert row_data[16] == 0.97  # Totalsumma-konfidens
 
 
 def test_control_columns_formatting(sample_invoice_lines, tmp_path):
@@ -141,20 +141,20 @@ def test_control_columns_formatting(sample_invoice_lines, tmp_path):
     for row_idx in range(2, ws.max_row + 1):
         row = ws[row_idx]
         
-        # Radsumma should have currency format (FORMAT_NUMBER_00 in openpyxl is "0.00")
-        radsumma_cell = row[12]  # Column M (0-indexed, after Status)
+        # Radsumma at index 13 (after Fakturatotal 11, Status 12)
+        radsumma_cell = row[13]
         assert radsumma_cell.number_format == "0.00"
-        
-        # Avvikelse should have currency format (when numeric, but may be 0.0)
-        avvikelse_cell = row[13]  # Column N
+
+        # Avvikelse at index 14
+        avvikelse_cell = row[14]
         if isinstance(avvikelse_cell.value, (int, float)):
             assert avvikelse_cell.number_format == "0.00"
-        
-        # Confidence columns should have percentage format
-        fakturanummer_konfidens_cell = row[14]  # Column O
+
+        # Confidence columns at 15, 16
+        fakturanummer_konfidens_cell = row[15]
         assert fakturanummer_konfidens_cell.number_format == "0.00%"
-        
-        totalsumma_konfidens_cell = row[15]  # Column P
+
+        totalsumma_konfidens_cell = row[16]
         assert totalsumma_konfidens_cell.number_format == "0.00%"
 
 
@@ -180,12 +180,11 @@ def test_diff_n_a_handling(sample_invoice_lines, tmp_path):
     
     # Check that diff shows "N/A"
     row_data = [cell.value for cell in ws[2]]
-    # Avvikelse is at index 13 (Column N, after Radsumma which is at index 12)
-    # Column order: ... Hela summan (10), Status (11), Radsumma (12), Avvikelse (13)
-    assert row_data[13] == "N/A"  # Avvikelse
-    
-    # Verify "N/A" cell value is correct (formatting may vary but value should be "N/A")
-    avvikelse_cell = ws[2][13]  # Column N (Avvikelse)
+    # Column order: ... Hela summan (10), Fakturatotal (11), Status (12), Radsumma (13), Avvikelse (14)
+    assert row_data[14] == "N/A"  # Avvikelse
+
+    # Verify "N/A" cell value is correct
+    avvikelse_cell = ws[2][14]  # Avvikelse
     assert avvikelse_cell.value == "N/A"
     # Cell should contain text "N/A", not a number
     assert isinstance(avvikelse_cell.value, str)
@@ -207,13 +206,13 @@ def test_backward_compatibility(sample_invoice_lines, tmp_path):
     wb = openpyxl.load_workbook(output_file)
     ws = wb['Invoices']
     
-    # Verify control columns use defaults
+    # Verify control columns use defaults (indices 12–16 after Fakturatotal 11)
     row_data = [cell.value for cell in ws[2]]
-    assert row_data[11] == "REVIEW"  # Status default
-    assert row_data[12] == 0.0  # lines_sum default
-    assert row_data[13] == "N/A"  # diff default
-    assert row_data[14] == 0.0  # invoice_number_confidence default
-    assert row_data[15] == 0.0  # total_confidence default
+    assert row_data[12] == "REVIEW"  # Status default
+    assert row_data[13] == 0.0  # lines_sum default
+    assert row_data[14] == "N/A"  # diff default
+    assert row_data[15] == 0.0  # invoice_number_confidence default
+    assert row_data[16] == 0.0  # total_confidence default
 
 
 def test_control_columns_repeat_per_invoice(sample_invoice_lines, tmp_path):
@@ -236,12 +235,12 @@ def test_control_columns_repeat_per_invoice(sample_invoice_lines, tmp_path):
     wb = openpyxl.load_workbook(output_file)
     ws = wb['Invoices']
     
-    # Verify all rows have same control column values (2 invoice lines)
+    # Verify all rows have same control column values (2 invoice lines); indices 12–16
     for row_idx in range(2, ws.max_row + 1):
         row_data = [cell.value for cell in ws[row_idx]]
-        
-        assert row_data[11] == "OK"  # Status
-        assert row_data[12] == 100.0  # Radsumma
-        assert row_data[13] == 0.0  # Avvikelse
-        assert row_data[14] == 0.96  # Fakturanummer-konfidens (Excel format converts to percentage)
-        assert row_data[15] == 0.97  # Totalsumma-konfidens (Excel format converts to percentage)
+
+        assert row_data[12] == "OK"  # Status
+        assert row_data[13] == 100.0  # Radsumma
+        assert row_data[14] == 0.0  # Avvikelse
+        assert row_data[15] == 0.96  # Fakturanummer-konfidens
+        assert row_data[16] == 0.97  # Totalsumma-konfidens
