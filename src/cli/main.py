@@ -787,10 +787,16 @@ def process_pdf(
         results = []
         for index, (page_start, page_end) in enumerate(boundaries, start=1):
             if compare_extraction:
+                if verbose and index == 1:
+                    print("  Compare: pdfplumber → OCR per faktura, väljer bästa. AI-fallback vid behov under extraktion.")
+                if verbose:
+                    print(f"  Compare: kör pdfplumber för sidor {page_start}-{page_end} …")
                 r_pdf = process_virtual_invoice(
                     doc, page_start, page_end, index, "pdfplumber", verbose,
                     output_dir=output_dir,
                 )
+                if verbose:
+                    print(f"  Compare: kör OCR för sidor {page_start}-{page_end} …")
                 r_ocr = process_virtual_invoice(
                     doc, page_start, page_end, index, "ocr", verbose,
                     output_dir=output_dir,

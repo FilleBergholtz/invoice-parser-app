@@ -106,7 +106,8 @@ class EngineRunner(QObject):
                 if line:
                     emit_log(line.rstrip("\n"))
 
-            exit_code = self.process.poll() or -1
+            # Wait for process to guarantee exit code is available (avoids -1 on Windows)
+            exit_code = self.process.wait()
             emit_log(f"Motor avslutad med exit code {exit_code}")
 
             if exit_code == 0 or exit_code == 1:
