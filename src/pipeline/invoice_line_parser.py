@@ -92,9 +92,9 @@ def _is_footer_row(row: Row) -> bool:
     amount_result = _extract_amount_from_row_text(row)
     if amount_result:
         total_amount, _, amount_token_idx = amount_result
-        
+        tokens = row.tokens or []
         # Extract description (text before amount)
-        description_tokens = row.tokens[:amount_token_idx] if amount_token_idx else row.tokens
+        description_tokens = tokens[:amount_token_idx] if amount_token_idx is not None else tokens
         description = " ".join(t.text for t in description_tokens).strip()
         description_lower = description.lower()
         
@@ -137,7 +137,7 @@ def _is_footer_row(row: Row) -> bool:
     return False
 
 
-def _extract_amount_from_row_text(row: Row) -> Optional[Tuple[float, Optional[float], int]]:
+def _extract_amount_from_row_text(row: Row) -> Optional[Tuple[float, Optional[float], Optional[int]]]:
     """Extract total amount and discount from row.text with support for thousand separators.
     
     Args:
@@ -251,7 +251,7 @@ def _extract_amount_from_row_text(row: Row) -> Optional[Tuple[float, Optional[fl
                     total_amount_pos = start_pos
                     total_amount_match = (start_pos, end_pos)
     
-    if total_amount is None or total_amount < 0:
+    if total_amount is None or total_amount < 0 or total_amount_match is None:
         return None
     
     # Find discount: negative amounts, percentages, or standalone values before total_amount
@@ -306,16 +306,17 @@ def _extract_amount_from_row_text(row: Row) -> Optional[Tuple[float, Optional[fl
     # Build character position mapping for tokens (reconstruct row.text)
     # row.text is created as " ".join(token.text for token in sorted_tokens)
     # So we need to map character positions in row.text back to token indices
+    tokens = row.tokens or []
     char_pos = 0
     token_positions = []  # List of (token_idx, start_pos, end_pos)
     
-    sorted_tokens = sorted(row.tokens, key=lambda t: t.x)  # Same order as row.text
+    sorted_tokens = sorted(tokens, key=lambda t: t.x)  # Same order as row.text
     
     for i, token in enumerate(sorted_tokens):
         token_start = char_pos
         token_end = char_pos + len(token.text)
-        # Find original token index in row.tokens
-        original_idx = row.tokens.index(token)
+        # Find original token index in tokens
+        original_idx = tokens.index(token)
         token_positions.append((original_idx, token_start, token_end))
         # Add space between tokens (as in row.text: " ".join(...))
         char_pos = token_end + 1
@@ -427,13 +428,14 @@ def _extract_line_from_row(
         return None
     
     total_amount, discount, amount_token_idx = result
-    
+    tokens = row.tokens or []
+
     # Extract description: leftmost text before amount column
     # Skip common column headers/prefixes that appear at start:
     # - Line numbers: "1", "001", "Pos 1"
     # - Article numbers: "3838969", "2406CSX1P10.10"
     # - Position markers: "Pos", "Rad"
-    description_tokens = row.tokens[:amount_token_idx] if amount_token_idx else row.tokens
+    description_tokens = tokens[:amount_token_idx] if amount_token_idx is not None else tokens
     
     # Skip leading numeric tokens that look like line numbers or article numbers
     # Line numbers are typically: single digit or 3-digit with leading zeros (001, 002)
@@ -495,8 +497,8 @@ def _extract_line_from_row(
     # First, try to find unit token - use it as anchor for quantity/unit_price extraction
     # Support "Plockat Enh" format: "10 ST" (quantity + unit together)
     unit_token_idx = None
-    for i, token in enumerate(row.tokens):
-        if i >= amount_token_idx:
+    for i, token in enumerate(tokens):
+        if amount_token_idx is not None and i >= amount_token_idx:
             break
         token_text = token.text.strip()
         token_lower = token_text.lower()
@@ -507,7 +509,7 @@ def _extract_line_from_row(
             unit_token_idx = i
             # Check if previous token is a number (quantity + unit pattern: "10 ST")
             if i > 0:
-                prev_token = row.tokens[i - 1].text.strip()
+                prev_token = tokens[i - 1].text.strip()
                 if re.match(r'^\d+$', prev_token):
                     try:
                         potential_quantity = float(prev_token)
@@ -524,7 +526,7 @@ def _extract_line_from_row(
                 unit_token_idx = i
                 # Check if previous token is a number (quantity + unit pattern: "10 ST")
                 if i > 0:
-                    prev_token = row.tokens[i - 1].text.strip()
+                    prev_token = tokens[i - 1].text.strip()
                     if re.match(r'^\d+$', prev_token):
                         try:
                             potential_quantity = float(prev_token)
@@ -539,7 +541,7 @@ def _extract_line_from_row(
             unit_token_idx = i
             # Check if previous token is a number
             if i > 0:
-                prev_token = row.tokens[i - 1].text.strip()
+                prev_token = tokens[i - 1].text.strip()
                 if re.match(r'^\d+$', prev_token):
                     try:
                         potential_quantity = float(prev_token)
@@ -560,7 +562,7 @@ def _extract_line_from_row(
     # Also check for article numbers that might be in separate column (before description)
     # Look at tokens before description_start_idx
     if description_start_idx > 0:
-        article_tokens = row.tokens[:description_start_idx]
+        article_tokens = tokens[:description_start_idx]
         for token in article_tokens:
             token_text = token.text.strip()
             # Check if token looks like article number (alphanumeric 4+ chars or 6+ digits)
@@ -590,7 +592,7 @@ def _extract_line_from_row(
     if unit_token_idx is not None:
         # First, try to extract quantity from text (handles thousand separators across tokens)
         # Get text before unit token
-        before_unit_tokens = row.tokens[:unit_token_idx]
+        before_unit_tokens = tokens[:unit_token_idx]
         before_unit_text = " ".join(t.text for t in before_unit_tokens)
         
         # Pattern for quantity with thousand separators: "2 108", "1 260", "4 708", "1 085"
@@ -644,9 +646,9 @@ def _extract_line_from_row(
         # If no thousand-separator quantity found, look for single numeric token
         if quantity is None:
             for i in range(unit_token_idx - 1, -1, -1):  # Go backwards from unit
-                if i >= amount_token_idx:
+                if amount_token_idx is not None and i >= amount_token_idx:
                     break
-                token = row.tokens[i]
+                token = tokens[i]
                 token_text = token.text.strip()
                 
                 # Check if token is a pure number
@@ -663,8 +665,8 @@ def _extract_line_from_row(
                             elif numeric_value >= 10000 or len(str(int(numeric_value))) >= 5:
                                 is_article_or_line_number = True
                             elif i == 0 and numeric_value < 100 and numeric_value == int(numeric_value):
-                                if len(row.tokens) > 1 and i + 1 < len(row.tokens):
-                                    next_token = row.tokens[i + 1].text.strip()
+                                if len(tokens) > 1 and i + 1 < len(tokens):
+                                    next_token = tokens[i + 1].text.strip()
                                     if re.match(r'^\d+', next_token):
                                         is_article_or_line_number = True
                         
@@ -679,9 +681,9 @@ def _extract_line_from_row(
         # Look for numeric token AFTER unit but BEFORE amount (this is unit_price)
         # Handle amounts with thousand separators (e.g., "1 034,00")
         # Extract text between unit and amount, then find amount pattern
-        if unit_token_idx + 1 < amount_token_idx:
+        if amount_token_idx is not None and unit_token_idx + 1 < amount_token_idx:
             # Get text between unit and amount
-            unit_to_amount_tokens = row.tokens[unit_token_idx + 1:amount_token_idx]
+            unit_to_amount_tokens = tokens[unit_token_idx + 1:amount_token_idx]
             unit_to_amount_text = " ".join(t.text for t in unit_to_amount_tokens)
             
             # Pattern for amounts with thousand separators (spaces or dots)
@@ -722,25 +724,26 @@ def _extract_line_from_row(
                     pass
             else:
                 # Fallback: look for single numeric token
-                for i in range(unit_token_idx + 1, amount_token_idx):
-                    token = row.tokens[i]
-                    token_text = token.text.strip()
-                    if re.match(r'^\d+([.,]\d+)?$', token_text.replace(' ', '')):
-                        cleaned = token_text.replace(',', '.').replace(' ', '')
-                        try:
-                            numeric_value = float(cleaned)
-                            if 0.01 <= numeric_value <= 1000000:
-                                unit_price = numeric_value
-                                break
-                        except ValueError:
-                            pass
+                if amount_token_idx is not None:
+                    for i in range(unit_token_idx + 1, amount_token_idx):
+                        token = tokens[i]
+                        token_text = token.text.strip()
+                        if re.match(r'^\d+([.,]\d+)?$', token_text.replace(' ', '')):
+                            cleaned = token_text.replace(',', '.').replace(' ', '')
+                            try:
+                                numeric_value = float(cleaned)
+                                if 0.01 <= numeric_value <= 1000000:
+                                    unit_price = numeric_value
+                                    break
+                            except ValueError:
+                                pass
     
     # Strategy 2: If no unit found, use old heuristic (fallback)
     if unit_token_idx is None:
         # Look for numeric tokens before amount (potential quantity or unit_price)
         numeric_tokens_before_amount = []
-        for i, token in enumerate(row.tokens):
-            if i >= amount_token_idx:
+        for i, token in enumerate(tokens):
+            if amount_token_idx is not None and i >= amount_token_idx:
                 break
             
             token_text = token.text.strip()
@@ -787,7 +790,7 @@ def _extract_line_from_row(
         
         # Look for unit tokens after quantity token (fallback)
         if quantity is not None:
-            for token in row.tokens:
+            for token in tokens:
                 token_text = token.text.strip().lower()
                 if token_text in unit_keywords:
                     unit = token_text

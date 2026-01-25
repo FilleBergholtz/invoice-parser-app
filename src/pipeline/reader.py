@@ -1,7 +1,7 @@
 """PDF reading functionality using pdfplumber."""
 
 import pdfplumber
-from typing import List
+from typing import List, cast
 
 from ..models.document import Document
 from ..models.page import Page
@@ -38,18 +38,17 @@ def read_pdf(filepath: str) -> Document:
         pages = []
         # Create a placeholder doc reference first (we'll update it after)
         # Use a temporary object pattern to avoid circular dependency
-        from ..models.document import Document as DocClass
-        temp_doc = object()  # Temporary placeholder
-        
+        temp_doc = cast(Document, object())  # Placeholder; document set on pages after Document creation
+
         for i, pdfplumber_page in enumerate(pdf.pages, start=1):
             # Get page dimensions (width, height in points)
             width = float(pdfplumber_page.width)
             height = float(pdfplumber_page.height)
-            
-            # Create Page object (document will be set after Document creation)
+
+            # Create Page object (document reference updated after Document creation below)
             page = Page(
                 page_number=i,
-                document=temp_doc,  # Temporary, will be replaced
+                document=temp_doc,
                 width=width,
                 height=height,
                 tokens=[],  # Initially empty, populated later

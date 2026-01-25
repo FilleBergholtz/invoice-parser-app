@@ -1,7 +1,7 @@
 """PDF type detection and routing logic."""
 
 from enum import Enum
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 from ..models.document import Document
 from ..pipeline.reader import read_pdf
@@ -94,7 +94,7 @@ def route_extraction_path(document: Document) -> str:
         return "ocr"
 
 
-def get_detection_info(document: Document) -> Dict[str, any]:
+def get_detection_info(document: Document) -> Dict[str, Any]:
     """Get detailed detection information.
     
     Args:

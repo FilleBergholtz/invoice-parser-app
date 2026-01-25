@@ -218,8 +218,9 @@ def load_ground_truth_data(path: str | Path) -> Tuple[List[float], List[bool]]:
         with open(path, 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             
-            # Check required columns
-            if 'raw_confidence' not in reader.fieldnames or 'actual_correct' not in reader.fieldnames:
+            # Check required columns (fieldnames can be None for empty CSV)
+            fieldnames = reader.fieldnames or ()
+            if 'raw_confidence' not in fieldnames or 'actual_correct' not in fieldnames:
                 raise ValueError(
                     "CSV must have 'raw_confidence' and 'actual_correct' columns"
                 )

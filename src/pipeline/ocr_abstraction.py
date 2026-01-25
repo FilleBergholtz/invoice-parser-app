@@ -168,10 +168,11 @@ class TesseractOCREngine(OCREngine):
             # Use TSV output to get bbox + confidence (output_type 4 = TSV, robust across pytesseract versions)
             # TSV format: level page_num block_num par_num line_num word_num left top width height conf text
             output_tsv = getattr(getattr(pytesseract, "Output", None), "TSV", 4)
+            out_type: str | int = output_tsv if isinstance(output_tsv, (str, int)) else 4
             tsv_data = pytesseract.image_to_data(
                 img,
                 lang=self.lang,
-                output_type=output_tsv,
+                output_type=out_type,  # type: ignore[arg-type]
                 config='--psm 6'  # Assume uniform block of text
             )
             

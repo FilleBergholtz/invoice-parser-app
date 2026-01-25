@@ -549,12 +549,12 @@ def validate_and_score_invoice_line(line: InvoiceLine) -> Tuple[float, dict]:
     has_discount = discount is not None
     
     # Calculate expected total based on extracted fields
-    if has_quantity and has_unit_price:
+    if has_quantity and has_unit_price and quantity is not None and unit_price is not None:
         # Calculate base total (before discount)
         base_total = quantity * unit_price
         
         # Try to determine discount type and validate
-        if has_discount:
+        if has_discount and discount is not None:
             # Check if discount is percentage (0.0-1.0) or amount (SEK)
             # Percentage: typically 0.0-1.0 (e.g., 0.10 = 10%, 1.0 = 100%)
             # Amount: typically > 1.0 (e.g., 50.00 SEK, -474.30 SEK)
@@ -658,7 +658,7 @@ def validate_and_score_invoice_line(line: InvoiceLine) -> Tuple[float, dict]:
                         validation_info['calculated_fields']['quantity'] = round(corrected_quantity)
     else:
         # Missing quantity or unit_price - try to calculate from total_amount
-        if has_quantity and not has_unit_price:
+        if has_quantity and not has_unit_price and quantity is not None:
             # Calculate unit_price from total_amount and quantity
             if quantity > 0:
                 calculated_unit_price = total_amount / quantity
@@ -667,7 +667,7 @@ def validate_and_score_invoice_line(line: InvoiceLine) -> Tuple[float, dict]:
                     f"A-pris saknas, beräknat: {calculated_unit_price:.2f} SEK"
                 )
                 score += 0.15  # Partial credit for having quantity
-        elif has_unit_price and not has_quantity:
+        elif has_unit_price and not has_quantity and unit_price is not None:
             # Calculate quantity from total_amount and unit_price
             if unit_price > 0:
                 calculated_quantity = total_amount / unit_price
@@ -687,19 +687,19 @@ def validate_and_score_invoice_line(line: InvoiceLine) -> Tuple[float, dict]:
             )
     
     # Step 3: Additional validation (field presence and reasonableness)
-    if has_quantity:
+    if has_quantity and quantity is not None:
         if 0.001 <= quantity <= 1000000:  # Reasonable range
             score += 0.10  # 10% weight for reasonable quantity
         else:
             validation_info['warnings'].append(f"Antal verkar orimligt: {quantity}")
     
-    if has_unit_price:
+    if has_unit_price and unit_price is not None:
         if 0.01 <= unit_price <= 10000000:  # Reasonable range
             score += 0.10  # 10% weight for reasonable unit_price
         else:
             validation_info['warnings'].append(f"A-pris verkar orimligt: {unit_price:.2f}")
     
-    if has_discount:
+    if has_discount and discount is not None:
         if discount >= 0:  # Discount should be non-negative
             score += 0.10  # 10% weight for having discount
         else:
