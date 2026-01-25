@@ -1,5 +1,6 @@
 """Token extraction from pdfplumber (searchable PDFs)."""
 
+import statistics
 from typing import List, TYPE_CHECKING
 
 import pdfplumber
@@ -11,6 +12,43 @@ if TYPE_CHECKING:
     from pdfplumber.page import Page as PDFPlumberPage
 else:
     PDFPlumberPage = object  # type: ignore
+
+# extra_attrs can cause edge cases on some PDFs; we try with them first and fall back.
+_EXTRA_ATTRS = ["fontname", "size"]
+
+
+def _tokens_reading_order(tokens: List[Token]) -> List[Token]:
+    """Sort tokens by reading order using line clustering.
+    Groups tokens with similar y (within a line threshold), sorts lines by y,
+    tokens within each line by x. Avoids mixing lines when vertical spacing is uneven.
+    """
+    if not tokens:
+        return []
+    if len(tokens) == 1:
+        return list(tokens)
+    # Line threshold: fraction of median token height; clamp to sensible range
+    heights = [t.height for t in tokens if t.height > 0]
+    if heights:
+        line_threshold = max(2.0, min(0.5 * statistics.median(heights), 15.0))
+    else:
+        line_threshold = 5.0
+    # Sort by y then x for grouping
+    by_xy = sorted(tokens, key=lambda t: (t.y, t.x))
+    lines: List[List[Token]] = []
+    current_line: List[Token] = [by_xy[0]]
+    for t in by_xy[1:]:
+        if abs(t.y - current_line[0].y) <= line_threshold:
+            current_line.append(t)
+        else:
+            current_line.sort(key=lambda o: o.x)
+            lines.append(current_line)
+            current_line = [t]
+    current_line.sort(key=lambda o: o.x)
+    lines.append(current_line)
+    out: List[Token] = []
+    for line in lines:
+        out.extend(line)
+    return out
 
 
 def extract_tokens_from_page(page: Page, pdfplumber_page: PDFPlumberPage) -> List[Token]:
@@ -30,16 +68,20 @@ def extract_tokens_from_page(page: Page, pdfplumber_page: PDFPlumberPage) -> Lis
     tokens = []
     
     try:
-        # Extract words/characters with their bounding boxes
-        # Using chars gives more granular control over position
-        chars = pdfplumber_page.chars
-        
-        # Group characters into tokens (words)
-        # A token is typically a word or number, but we'll use pdfplumber's word grouping
-        words = pdfplumber_page.extract_words(
-            x_tolerance=3,  # Tolerance for grouping characters into words
-            y_tolerance=3
-        )
+        # extract_words: use_text_flow=True improves reading order for multi-column/complex layouts.
+        # extra_attrs=["fontname","size"] can trigger edge cases on some PDFs — try first, fall back.
+        kwargs: dict = {
+            "x_tolerance": 3,
+            "y_tolerance": 3,
+            "use_text_flow": True,
+        }
+        try:
+            words = pdfplumber_page.extract_words(**kwargs, extra_attrs=_EXTRA_ATTRS)
+        except Exception:
+            words = pdfplumber_page.extract_words(**kwargs)
+        if not words and _EXTRA_ATTRS:
+            # some PDFs return empty when extra_attrs is used
+            words = pdfplumber_page.extract_words(**kwargs)
         
         for word in words:
             # Extract text content
@@ -81,9 +123,8 @@ def extract_tokens_from_page(page: Page, pdfplumber_page: PDFPlumberPage) -> Lis
             
             tokens.append(token)
         
-        # Sort tokens by reading order (top-to-bottom, left-to-right)
-        # First by Y (top), then by X (left)
-        tokens.sort(key=lambda t: (t.y, t.x))
+        # Reading order via line clustering (avoids mixing lines when spacing is uneven)
+        tokens = _tokens_reading_order(tokens)
         
         # Add tokens to page for traceability
         page.tokens.extend(tokens)
