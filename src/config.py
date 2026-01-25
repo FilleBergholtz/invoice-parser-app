@@ -1,6 +1,7 @@
 """Central configuration for EPG PDF Extraherare."""
 
 import os
+import sys
 import json
 import logging
 from pathlib import Path
@@ -28,23 +29,26 @@ def get_app_version() -> str:
 
 
 def get_default_output_dir() -> Path:
-    """Get default output directory based on OS.
-    
+    """Get default output directory based on run context and OS.
+
+    - Running from source (dev): uses project root / "out".
+    - Running from built app (frozen/PyInstaller): uses Documents/... on Windows,
+      ~/.epg-pdf-extraherare/output on Linux/Mac.
+
     Returns:
         Path object to default output directory (created if needed)
     """
-    if os.name == 'nt':  # Windows
-        userprofile = os.getenv('USERPROFILE', '')
-        if userprofile:
-            base = Path(userprofile) / 'Documents' / 'EPG PDF Extraherare'
+    if getattr(sys, "frozen", False):
+        # Built app: use user-facing locations
+        if os.name == "nt":  # Windows
+            userprofile = os.getenv("USERPROFILE", "")
+            base = Path(userprofile) / "Documents" / "EPG PDF Extraherare" if userprofile else Path.home() / "Documents" / "EPG PDF Extraherare"
         else:
-            # Fallback to home directory
-            base = Path.home() / 'Documents' / 'EPG PDF Extraherare'
+            base = Path.home() / ".epg-pdf-extraherare"
+        output_dir = base / "output"
     else:
-        # Linux/Mac
-        base = Path.home() / '.epg-pdf-extraherare'
-    
-    output_dir = base / 'output'
+        # Dev/source: use project root / out
+        output_dir = Path(__file__).resolve().parent.parent / "out"
     output_dir.mkdir(parents=True, exist_ok=True)
     return output_dir
 

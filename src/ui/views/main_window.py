@@ -25,7 +25,7 @@ from .candidate_selector import CandidateSelector
 from .ai_settings_dialog import AISettingsDialog
 from .about_dialog import AboutDialog
 from ...learning.correction_collector import save_correction
-from ...config import get_learning_db_path
+from ...config import get_learning_db_path, get_default_output_dir
 
 class MainWindow(QMainWindow):
     """Main application window."""
@@ -39,7 +39,7 @@ class MainWindow(QMainWindow):
         
         # State
         self.input_path = None
-        self.output_dir = str(Path.home() / "Documents" / "EPG PDF Extraherare" / "output")
+        self.output_dir = str(get_default_output_dir())
         self.runner_thread = None
         self.runner = None
         self.processing_result = None
