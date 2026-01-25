@@ -97,17 +97,21 @@ def test_process_batch_collects_invoice_results(mock_process_pdf, temp_input_dir
     assert data["processed_files"] == 1
 
 
+@patch("src.cli.main.create_review_package")
+@patch("src.cli.main.create_review_report")
 @patch("src.cli.main.process_pdf")
-def test_process_batch_creates_review_reports(mock_process_pdf, temp_input_dir, temp_output_dir):
-    """Vid REVIEW skapas review-mapp med metadata.json."""
+def test_process_batch_creates_review_reports(mock_process_pdf, mock_create_review, mock_create_package, temp_input_dir, temp_output_dir):
+    """Vid REVIEW anropas create_review_report och summary får review_count."""
     mock_process_pdf.return_value = [_mock_virtual_result(status="REVIEW")]
+    review_folder = temp_output_dir / "review" / "test__1"
+    review_folder.mkdir(parents=True)
+    (review_folder / "metadata.json").write_text("{}", encoding="utf-8")
+    mock_create_review.return_value = review_folder
     process_batch(str(temp_input_dir), str(temp_output_dir))
-    review_dir = temp_output_dir / "review"
-    assert review_dir.exists()
-    subdirs = [d for d in review_dir.iterdir() if d.is_dir()]
-    assert len(subdirs) >= 1
-    metadata_path = subdirs[0] / "metadata.json"
-    assert metadata_path.exists()
+    assert mock_create_review.called
+    with open(temp_output_dir / "run_summary.json", "r", encoding="utf-8") as f:
+        data = json.load(f)
+    assert data.get("review_count", 0) >= 1
 
 
 @patch("src.cli.main.process_pdf")
