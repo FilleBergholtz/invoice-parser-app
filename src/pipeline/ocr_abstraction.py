@@ -243,8 +243,13 @@ class TesseractOCREngine(OCREngine):
             return tokens
             
         except Exception as e:
+            # Include type and full message; Tesseract exit codes: 1=no file, 2=bad args, 3=out of mem, 4=open/read error
+            err = f"{type(e).__name__}: {e}" if str(e).strip() else f"{type(e).__name__}"
+            rc = getattr(e, "returncode", None)
+            if rc is not None:
+                err += f" (exit_code={rc})"
             raise OCRException(
-                f"OCR processing failed for page {page.page_number}: {str(e)}"
+                f"OCR processing failed for page {page.page_number}: {err}"
             ) from e
 
 
