@@ -277,6 +277,13 @@ def set_ai_config(
         os.environ['AI_KEY'] = api_key
 
 
+def clear_ai_config() -> None:
+    """Remove all AI configuration (provider, model, key, enabled)."""
+    save_ai_config({})
+    for k in ('AI_ENABLED', 'AI_PROVIDER', 'AI_MODEL', 'AI_KEY'):
+        os.environ.pop(k, None)
+
+
 def _load_ai_config_from_file() -> None:
     """Load AI config from file and set environment variables.
     Called at module import to initialize from saved config.

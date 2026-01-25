@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 
-from ...config import load_ai_config, set_ai_config
+from ...config import load_ai_config, set_ai_config, clear_ai_config
 
 logger = logging.getLogger(__name__)
 
@@ -51,9 +51,32 @@ class AISettingsDialog(QDialog):
         # Load values into UI
         self.load_settings()
     
+    def _status_text(self) -> str:
+        """Current AI config status for display."""
+        c = load_ai_config()
+        key = (c.get("api_key") or "").strip()
+        prov = (c.get("provider") or "openai").lower()
+        model = c.get("model") or _default_model(prov)
+        enabled = c.get("enabled", False)
+        prov_disp = "OpenAI" if prov == "openai" else "Claude"
+        if not key:
+            return f"Ingen AI konfigurerad"
+        status = f"Konfigurerad: {prov_disp}, {model}"
+        if enabled:
+            status += " · Aktiverad"
+        else:
+            status += " · Inaktiverad"
+        return status
+    
     def setup_ui(self):
         """Setup UI components."""
         layout = QVBoxLayout(self)
+        
+        # --- Status (vilken AI som är tillagd) ---
+        self.status_label = QLabel()
+        self.status_label.setStyleSheet("font-weight: bold; padding: 6px; background: #f0f0f0; border-radius: 4px;")
+        self.status_label.setWordWrap(True)
+        layout.addWidget(self.status_label)
         
         # --- AI Enabled ---
         self.ai_enabled_checkbox = QCheckBox("Aktivera AI-fallback")
@@ -118,7 +141,8 @@ class AISettingsDialog(QDialog):
         
         # --- Info ---
         info_label = QLabel(
-            "AI-fallback aktiveras automatiskt när confidence < 0.95.\n"
+            "AI används innan kandidatlistan visas: om confidence < 95 % anropas AI och ev. "
+            "förslag läggs högst upp bland alternativen.\n"
             "Inställningarna sparas lokalt och används vid nästa körning."
         )
         info_label.setWordWrap(True)
@@ -127,6 +151,10 @@ class AISettingsDialog(QDialog):
         
         # --- Buttons ---
         button_layout = QHBoxLayout()
+        remove_btn = QPushButton("Ta bort")
+        remove_btn.setToolTip("Ta bort konfigurerad AI (provider, modell, nyckel)")
+        remove_btn.clicked.connect(self._remove_config)
+        button_layout.addWidget(remove_btn)
         button_layout.addStretch()
         
         cancel_btn = QPushButton("Avbryt")
@@ -140,8 +168,23 @@ class AISettingsDialog(QDialog):
         
         layout.addLayout(button_layout)
     
+    def _reload_config(self):
+        """Reload config from file into current_* and refresh UI."""
+        config = load_ai_config()
+        self.current_enabled = config.get("enabled", False)
+        self.current_provider = (config.get("provider") or "openai").lower()
+        self.current_model = config.get("model") or _default_model(self.current_provider)
+        self.current_key = config.get("api_key") or ""
+    
+    def _remove_config(self):
+        """Remove AI configuration and refresh dialog."""
+        clear_ai_config()
+        self._reload_config()
+        self.load_settings()
+    
     def load_settings(self):
         """Load current settings into UI."""
+        self.status_label.setText(self._status_text())
         # AI enabled
         self.ai_enabled_checkbox.setChecked(self.current_enabled)
         
@@ -159,11 +202,11 @@ class AISettingsDialog(QDialog):
         
         # API key (only show if already set, don't reveal full key)
         if self.current_key:
-            # Show masked version
             masked_key = self.current_key[:8] + "..." if len(self.current_key) > 8 else "***"
             self.api_key_input.setPlaceholderText(f"Nuvarande nyckel: {masked_key}")
         else:
             self.api_key_input.clear()
+            self.api_key_input.setPlaceholderText("Ange din API-nyckel här...")
     
     def _on_provider_changed(self, provider_text: str):
         """Handle provider selection change.
