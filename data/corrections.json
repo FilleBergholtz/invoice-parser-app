@@ -25,14 +25,14 @@
   },
   {
     "invoice_id": "40673345",
-    "supplier_name": "Unknown",
+    "supplier_name": "Ramirent AB",
     "original_total": null,
     "original_confidence": 0.0,
     "corrected_total": 40531.46,
-    "corrected_confidence": 0.92,
+    "corrected_confidence": 0.93,
     "raw_confidence": null,
     "candidate_index": 0,
-    "timestamp": "2026-01-25T15:57:56.728831",
+    "timestamp": "2026-01-25T16:09:28.766600",
     "correction_type": "total_amount"
   }
 ]
