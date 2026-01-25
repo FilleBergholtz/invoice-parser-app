@@ -361,7 +361,10 @@ def extract_total_amount(
         r"totalsumma",
         r"Totalsumma",
         r"totalsumma\s+sek",
-        r"Totalsumma\s+SEK"
+        r"Totalsumma\s+SEK",
+        r"nettobelopp",
+        r"nettobeloppet",
+        r"Nettobelopp",
     ]
     
     # Combined patterns for keyword detection
@@ -400,7 +403,13 @@ def extract_total_amount(
         
         # Extract numeric amounts from row text (better than token-by-token for thousand separators)
         row_text = row.text
-        amount_matches = amount_pattern.finditer(row_text)
+        amount_matches = list(amount_pattern.finditer(row_text))
+        use_row, use_idx = row, row_index
+        # If keyword row has no amount, check next row (e.g. "Nettobelopp" label, amount below)
+        if has_keyword and not amount_matches and row_index + 1 < len(footer_segment.rows):
+            next_row = footer_segment.rows[row_index + 1]
+            amount_matches = list(amount_pattern.finditer(next_row.text))
+            use_row, use_idx = next_row, row_index + 1
         
         for match in amount_matches:
             amount_text = match.group(0)
@@ -442,7 +451,7 @@ def extract_total_amount(
                     match_end = match.end()
                     matching_token = None
                     char_pos = 0
-                    for token in row.tokens:
+                    for token in use_row.tokens:
                         token_end = char_pos + len(token.text)
                         if match_start >= char_pos and match_end <= token_end:
                             matching_token = token
@@ -451,8 +460,8 @@ def extract_total_amount(
                     
                     candidates.append({
                         'amount': amount,
-                        'row': row,
-                        'row_index': row_index,
+                        'row': use_row,
+                        'row_index': use_idx,
                         'token': matching_token or row.tokens[0] if row.tokens else None,
                         'has_keyword': has_keyword,
                         'keyword_type': keyword_type  # 'with_vat', 'without_vat', 'generic', or None

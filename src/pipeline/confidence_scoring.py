@@ -63,7 +63,8 @@ def score_total_amount_candidate(
     # Medium priority: generic totals
     medium_priority_keywords = [
         "totalt", "total", "summa", "belopp", "slutsumma",
-        "fakturabelopp", "fakturabeloppet"
+        "fakturabelopp", "fakturabeloppet",
+        "nettobelopp", "nettobeloppet",
     ]
     
     # Lower priority: "exkl. moms" (subtotal, not final total)

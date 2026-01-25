@@ -122,17 +122,20 @@ class CandidateSelector(QWidget):
                 QPushButton {
                     text-align: left;
                     padding: 8px;
-                    border: 2px solid #ccc;
+                    border: 2px solid #888;
                     border-radius: 4px;
-                    background-color: white;
+                    background-color: #f5f5f5;
+                    color: #1a1a1a;
                 }
                 QPushButton:hover {
                     border-color: #0078d4;
-                    background-color: #f0f0f0;
+                    background-color: #e8e8e8;
+                    color: #111;
                 }
                 QPushButton:checked {
                     border-color: #0078d4;
-                    background-color: #e3f2fd;
+                    background-color: #cce5ff;
+                    color: #0d47a1;
                     font-weight: bold;
                 }
             """)
