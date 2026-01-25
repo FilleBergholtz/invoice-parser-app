@@ -51,6 +51,7 @@ exe = EXE(
     a.datas,
     [],
     name='InvoiceParserGUI',
+    icon=str(project_root / 'src' / 'ui' / 'assets' / 'icons' / 'app.ico'),
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
