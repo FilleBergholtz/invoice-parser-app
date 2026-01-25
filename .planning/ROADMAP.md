@@ -351,14 +351,24 @@ Se `.planning/phases/14-extraction-fallback-optimization-pdfplumber-ocr-ai-visio
 
 ### Phase 15: Extraction quality hardening (OCR confidence + routing + parser robustness)
 
-**Goal:** Hårdna extraktionskvaliteten: konsekvent OCR confidence-användning, stabil routing utan flipp, och parsers tåliga mot tom/brusig/konstig text.
+**Goal:** Hårdna extraktionskvaliteten: D1–D8 enligt 15-DISCUSS (OCR confidence, tokenizer, text quality + routing, DPI retry, boundary, line parser, header/footer, traceability).
 
 **Depends on:** Phase 14
 
-**Plans:** [To be planned]
+**Plans:** 8 plans
+
+Plans:
+- [ ] 15-01: Token confidence plumbing (D1) — Token.confidence, ocr metrics, confidence_scoring
+- [ ] 15-02: pdfplumber tokenizer (D2) — use_text_flow, extra_attrs, line clustering
+- [ ] 15-03: Text quality + R4 routing (D3) — score_text_quality/score_ocr_quality, routing integration
+- [ ] 15-04: OCR DPI retry R1 (D4) — retry at 400 when mean_conf&lt;55, artifacts show DPI
+- [ ] 15-05: Invoice boundary hardening (D5) — extra signal beyond faktura+alphanum
+- [ ] 15-06: Line parser robustness (D6) — HARD/SOFT footer, no O(n²), bbox amount
+- [ ] 15-07: Header/Footer (D7) — negative labels, bbox; footer refactor + R4 thresholds
+- [ ] 15-08: Traceability (D8) — run_summary method_used, metrics, reason flags, vision_reason
 
 **Details:**
-Se `.planning/phases/15-extraction-quality-hardening/15-DISCUSS.md` (full spec), `15-CONTEXT.md`, `15-VERIFICATION.md`. Deliverables D1–D8, R1–R4-konstanter, filer i scope och acceptanskriterier i 15-DISCUSS. Planer skapas med `/gsd:plan-phase 15`.
+Se `.planning/phases/15-extraction-quality-hardening/15-DISCUSS.md`, `15-CONTEXT.md`, `15-VERIFICATION.md`. Planer: `15-01-PLAN.md` … `15-08-PLAN.md`.
 
 ---
 
@@ -366,7 +376,7 @@ Se `.planning/phases/15-extraction-quality-hardening/15-DISCUSS.md` (full spec),
 
 **Senast uppdaterad:** 2026-01-25
 
-**Execution order:** 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12 → 13 → 14
+**Execution order:** 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12 → 13 → 14 → 15
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -384,6 +394,6 @@ Se `.planning/phases/15-extraction-quality-hardening/15-DISCUSS.md` (full spec),
 | 12. UI Polish (PySide6) – theme + layout + engine states | v2.0 | 5/5 | Complete | 2026-01-24 |
 | 13. About page + app icons (branding & help) | v2.0 | 3/3 | Complete | 2026-01-25 |
 | 14. Extraction fallback optimization (pdfplumber → OCR → AI → vision) | v2.0 | 6/6 | In progress / Complete | – |
-| 15. Extraction quality hardening (OCR confidence + routing + parser robustness) | v2.0 | 0/? | To be planned | – |
+| 15. Extraction quality hardening (OCR confidence + routing + parser robustness) | v2.0 | 0/8 | Planned | – |
 
-**Sammanfattning:** v1.0 (Phase 1–3) klar. v2.0 phases 5–14 klara eller pågår. **Phase 15 tillagd, oplanerad.**
+**Sammanfattning:** v1.0 (Phase 1–3) klar. v2.0 phases 5–14 klara eller pågår. **Phase 15 planerad** — 8 planer (15-01 … 15-08), redo för execute.

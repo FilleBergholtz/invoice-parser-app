@@ -171,20 +171,18 @@ All routing and quality decisions **must** use these; define in one place and im
 
 ---
 
-## PLAN MAPPING (to be filled by plan-phase)
+## PLAN MAPPING
 
-| Deliverable | Suggested plan(s) | Notes |
-|-------------|-------------------|--------|
-| D1 Token confidence | 15-01 | Token + ocr_abstraction + confidence_scoring |
-| D2 pdfplumber tokenizer | 15-02 | tokenizer.py only |
-| D3 Text quality + routing | 15-03 | text_quality.py + routing integration |
-| D4 DPI retry | 15-04 | pdf_renderer + orchestration, R1 |
-| D5 Boundary hardening | 15-05 | invoice_boundary_detection.py |
-| D6 Line parser | 15-06 | invoice_line_parser.py |
-| D7 Header/Footer | 15-07 | header_extractor + footer_extractor |
-| D8 Traceability | 15-08 or folded into 15-03/15-04 | run_summary, vision_reason, reason flags |
-
-*Actual plan IDs and grouping to be decided in /gsd:plan-phase 15.*
+| Deliverable | Plan | Notes |
+|-------------|------|--------|
+| D1 Token confidence | 15-01 | Token + ocr_abstraction + confidence_scoring; wave 1 |
+| D2 pdfplumber tokenizer | 15-02 | tokenizer.py; wave 1 |
+| D3 Text quality + routing | 15-03 | text_quality.py + routing; wave 2, depends 15-01, 15-02 |
+| D4 DPI retry | 15-04 | pdf_renderer + orchestration R1; wave 2, depends 15-01 |
+| D5 Boundary hardening | 15-05 | invoice_boundary_detection.py; wave 1 |
+| D6 Line parser | 15-06 | invoice_line_parser.py; wave 1 |
+| D7 Header/Footer | 15-07 | header_extractor + footer_extractor; wave 2 |
+| D8 Traceability | 15-08 | run_summary method_used, metrics, reason flags, vision_reason; wave 3, depends 15-03 |
 
 ---
 

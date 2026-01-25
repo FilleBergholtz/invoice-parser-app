@@ -12,11 +12,11 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 
 Milestone: v2.0 Features + polish
 Phase: **Phase 15 (nästa)** — Extraction quality hardening (OCR confidence + routing + parser robustness)
-Plans: [To be planned]
-Status: Phase 14 genomförd. **Phase 15 tillagd** — CONTEXT och VERIFICATION skapade 2026-01-25.
-Last activity: 2026-01-25 — Phase 15 add-phase: 15-CONTEXT.md, 15-VERIFICATION.md, ROADMAP/STATE uppdaterade.
+Plans: 15-01 … 15-08 (8 planer)
+Status: Phase 14 genomförd. **Phase 15 planerad** — 15-01 … 15-08 skapade 2026-01-25.
+Last activity: 2026-01-25 — Phase 15 plan-phase: 8 PLAN-filer, CONTEXT/DISCUSS/VERIFICATION/ROADMAP uppdaterade.
 
-Progress: Phase 1–3 (v1) + Phase 5–14 (v2) genomförda. **Phase 15** tillagd, redo för plan-phase.
+Progress: Phase 1–3 (v1) + Phase 5–14 (v2) genomförda. **Phase 15** planerad, redo för execute.
 
 ## Performance Metrics
 
@@ -71,6 +71,7 @@ None yet.
 - Phase 14 planerad: 6 planer (14-01…14-06). Wave 1: Token+OCR confidence, pdfplumber tokenizer. Wave 2: text_quality, rendering DPI. Wave 3: AI vision+retry. Wave 4: orchestration + run_summary/vision_reason.
 - Phase 15 tillagd: Extraction quality hardening (OCR confidence + routing + parser robustness). 15-CONTEXT.md, 15-VERIFICATION.md skapade. Redo för /gsd:plan-phase 15.
 - Phase 15 discuss genomförd (15-DISCUSS.md): OBJECTIVE (D1–D8), SCOPE, FILES IN SCOPE, REQUIRED CONSTANTS (R1–R4), DELIVERABLES, NON-GOALS, TESTING/VERIFICATION, ACCEPTANCE CRITERIA. CONTEXT och VERIFICATION uppdaterade att peka på DISCUSS. Redo för /gsd:plan-phase 15.
+- Phase 15 plan-phase genomförd: 8 planer (15-01 … 15-08). Wave 1: 15-01 (D1), 15-02 (D2), 15-05 (D5), 15-06 (D6). Wave 2: 15-03 (D3), 15-04 (D4), 15-07 (D7). Wave 3: 15-08 (D8). CONTEXT Plans-tabell, DISCUSS PLAN MAPPING, VERIFICATION per-plan-tabell, ROADMAP Phase 15-planlista uppdaterade.
 
 ### Blockers/Concerns
 

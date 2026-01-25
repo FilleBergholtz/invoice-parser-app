@@ -2,7 +2,7 @@
 
 **Gathered:** 2026-01-25  
 **Updated:** 2026-01-25  
-**Status:** Ready for planning  
+**Status:** Planned (8 plans)  
 **Full spec:** see **15-DISCUSS.md**  
 **Depends on:** Phase 14 (Extraction fallback optimization)
 
@@ -42,6 +42,23 @@ Implement the agreed improvements from R1–R4 and code review so extraction is 
 ## Required Constants (Phase 14 R1–R4)
 
 All thresholds must come from Phase 14 research: `BASELINE_DPI=300`, `RETRY_DPI=400`, `OCR_MEAN_CONF_RETRY_THRESHOLD=55`, `OCR_MEDIAN_CONF_ROUTING_THRESHOLD=70`, `OCR_LOW_CONF_FRACTION_THRESHOLD=0.25`, `TEXT_QUALITY_THRESHOLD=0.5`, `CRITICAL_FIELDS_CONF_THRESHOLD=0.95`, `AI_JSON_RETRY_COUNT=1`, `VISION_MAX_PIXELS_LONGEST_SIDE=4096`, `VISION_MAX_FILE_BYTES=20MB`. See 15-DISCUSS for full table.
+
+---
+
+## Plans (15-01 … 15-08)
+
+| Plan | Deliverable | Summary |
+|------|-------------|--------|
+| 15-01 | D1 | Token confidence plumbing: Token.confidence, ocr_abstraction metrics, confidence_scoring uses real confidence |
+| 15-02 | D2 | pdfplumber tokenizer: use_text_flow, extra_attrs fallback, line-clustering reading order |
+| 15-03 | D3 | Text quality module + R4 routing integration (depends: 15-01, 15-02) |
+| 15-04 | D4 | OCR DPI retry R1 + artifacts show DPI (depends: 15-01) |
+| 15-05 | D5 | Invoice boundary hardening |
+| 15-06 | D6 | Line parser: HARD/SOFT footer, no O(n²), bbox amount |
+| 15-07 | D7 | Header/Footer: negative labels, bbox; footer refactor + R4 thresholds |
+| 15-08 | D8 | Traceability: run_summary method_used, metrics, reason flags, vision_reason (depends: 15-03) |
+
+**Waves:** 1 → 15-01, 15-02, 15-05, 15-06 (parallel). 2 → 15-03, 15-04, 15-07. 3 → 15-08.
 
 ---
 
