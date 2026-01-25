@@ -1308,6 +1308,19 @@ def main():
         help="Limit pattern operations to specific supplier name"
     )
     
+    parser.add_argument(
+        "--import-corrections",
+        action="store_true",
+        help="Import corrections from JSON into learning database and extract patterns. Use --corrections-file for path (default: data/corrections.json)."
+    )
+    
+    parser.add_argument(
+        "--corrections-file",
+        type=str,
+        default=None,
+        help="Path to corrections JSON (with --import-corrections); default is data/corrections.json"
+    )
+    
     args = parser.parse_args()
     
     # Handle --validate-confidence command
@@ -1318,6 +1331,11 @@ def main():
     # Handle pattern maintenance commands
     if args.consolidate_patterns or args.cleanup_patterns:
         _handle_pattern_maintenance(args)
+        return
+    
+    # Handle import-corrections command
+    if args.import_corrections:
+        _handle_import_corrections(args)
         return
     
     # Require --input for normal processing
@@ -1476,6 +1494,36 @@ def _handle_query(args: argparse.Namespace) -> None:
         print(f"Error: {e}", file=sys.stderr)
         import traceback
         traceback.print_exc()
+        sys.exit(1)
+
+
+def _handle_import_corrections(args: argparse.Namespace) -> None:
+    """Import corrections from JSON into learning database and extract patterns.
+    
+    Args:
+        args: Parsed command-line arguments (import_corrections, corrections_file)
+    """
+    from ..learning.database import LearningDatabase
+    from ..learning.pattern_extractor import extract_patterns_from_corrections
+    from ..config import get_learning_db_path
+    
+    db_path = get_learning_db_path()
+    json_path = Path(args.corrections_file) if args.corrections_file else (db_path.parent / "corrections.json")
+    
+    try:
+        db = LearningDatabase(db_path)
+        n = db.import_corrections_from_json(json_path)
+        print(f"✓ Imported {n} corrections from {json_path}")
+        corrections = db.get_corrections()
+        patterns = extract_patterns_from_corrections(corrections)
+        for p in patterns:
+            db.save_pattern(p)
+        print(f"✓ Extracted and saved {len(patterns)} patterns")
+    except FileNotFoundError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+    except ValueError as e:
+        print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 
 
