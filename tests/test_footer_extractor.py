@@ -66,11 +66,24 @@ def sample_footer_segment(sample_page):
     return segment
 
 
-@pytest.fixture
-def sample_invoice_lines():
-    """Create sample invoice lines for validation."""
-    # Simplified for testing (requires Row/Segment setup, can be minimal)
-    pytest.skip("Requires full InvoiceLine setup - integration test")
+def _make_line_items(sample_page, totals):
+    """Bygg minimala InvoiceLine med given total_amount per rad."""
+    rows = []
+    for i, amount in enumerate(totals, start=1):
+        t = Token(text=f"x{i}", x=50, y=200 + i * 20, width=30, height=12, page=sample_page)
+        r = Row(tokens=[t], text=f"Rad {i}", x_min=50, x_max=200, y=200 + i * 20, page=sample_page)
+        rows.append(r)
+    segment = Segment(
+        segment_type="items",
+        rows=rows,
+        y_min=200,
+        y_max=200 + len(rows) * 20,
+        page=sample_page
+    )
+    return [
+        InvoiceLine(rows=[r], description=f"Rad {i}", total_amount=float(amt), line_number=i, segment=segment)
+        for i, (r, amt) in enumerate(zip(rows, totals), start=1)
+    ]
 
 
 @pytest.fixture(autouse=True)
@@ -108,16 +121,20 @@ def test_extract_total_amount_from_footer(sample_footer_segment, sample_page):
 
 def test_mathematical_validation(sample_page):
     """Test mathematical validation against line item sums."""
-    # Create invoice lines with totals
-    # This requires full setup - simplified test
-    line_items = []  # Would contain InvoiceLine objects
-    
-    # Test validation function
-    assert validate_total_against_line_items(100.0, line_items, tolerance=1.0) == False  # No line items
-    
-    # With matching line items
-    # Would test: validate_total_against_line_items(100.0, [line with total=100.0]) == True
-    pytest.skip("Requires InvoiceLine setup - integration test")
+    # Ingen radsumma ger False
+    assert validate_total_against_line_items(100.0, [], tolerance=1.0) is False
+
+    # Summa 60+40=100, total 100 → inom tolerance 1.0
+    line_items = _make_line_items(sample_page, [60.0, 40.0])
+    assert validate_total_against_line_items(100.0, line_items, tolerance=1.0) is True
+    assert validate_total_against_line_items(100.0, line_items, tolerance=0.0) is True
+
+    # Total 99 eller 101 inom tolerance 1.0
+    assert validate_total_against_line_items(99.0, line_items, tolerance=1.0) is True
+    assert validate_total_against_line_items(101.0, line_items, tolerance=1.0) is True
+
+    # Total 98 utanför tolerance 1.0
+    assert validate_total_against_line_items(98.0, line_items, tolerance=1.0) is False
 
 
 def test_traceability_created_for_total(sample_footer_segment, sample_page):
