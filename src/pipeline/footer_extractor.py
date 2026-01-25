@@ -161,16 +161,16 @@ def _apply_pattern_boosts(
     if not database:
         return
     
-    if not invoice_header.supplier_name:
-        logger.debug("No supplier name for pattern matching")
-        return
-    
     try:
         from ..learning.pattern_matcher import PatternMatcher
         from ..learning.pattern_extractor import PatternExtractor
         
+        # Use "Unknown" when supplier missing so we match patterns from corrections (often stored as unknown)
+        supplier_raw = (invoice_header.supplier_name or "").strip() or "Unknown"
+        supplier_for_matching = PatternExtractor.normalize_supplier(supplier_raw)
+        
         # Calculate layout hash
-        layout_hash = PatternExtractor.calculate_layout_hash(invoice_header.supplier_name)
+        layout_hash = PatternExtractor.calculate_layout_hash(supplier_for_matching)
         
         # Get position from traceability if available
         position = None
@@ -187,14 +187,14 @@ def _apply_pattern_boosts(
         # Match patterns
         matcher = PatternMatcher(database)
         matched_patterns = matcher.match_patterns(
-            invoice_header.supplier_name,
+            supplier_for_matching,
             layout_hash=layout_hash,
             position=position,
             similarity_threshold=0.5
         )
         
         if not matched_patterns:
-            logger.debug(f"No patterns matched for supplier {invoice_header.supplier_name}")
+            logger.debug(f"No patterns matched for supplier {supplier_for_matching}")
             return
         
         # Apply boost to candidates that match patterns

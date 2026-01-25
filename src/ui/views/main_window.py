@@ -176,6 +176,16 @@ class MainWindow(QMainWindow):
         self.selected_candidate_amount: Optional[float] = None
         self.correction_saved: bool = False
         self.current_invoice_header = None  # Will store InvoiceHeader when available
+        self._validation_queue: List[dict] = []
+        self._validation_queue_index: int = 0
+        self._current_validation_invoice_id: Optional[str] = None
+        
+        self.next_invoice_btn = QPushButton("Nästa faktura")
+        self.next_invoice_btn.setMinimumHeight(40)
+        self.next_invoice_btn.setStyleSheet(_btn_style)
+        self.next_invoice_btn.clicked.connect(self._advance_to_next_validation)
+        action_layout.addWidget(self.next_invoice_btn)
+        self.next_invoice_btn.setVisible(False)
         
         # Initially hide validation section
         self.validation_widget.setVisible(False)
@@ -278,42 +288,83 @@ class MainWindow(QMainWindow):
             self._show_validation_ui()
     
     def _show_validation_ui(self):
-        """Show validation UI with PDF viewer and candidate selector."""
+        """Show validation UI with PDF viewer and candidate selector.
+        Initializes validation queue from processing_result and shows first item.
+        """
         try:
-            validation = (self.processing_result or {}).get("validation") or {}
-            pdf_path = validation.get("pdf_path") or self.processing_result.get("input_path") or self.input_path
-            pdf_path = str(Path(pdf_path).resolve()) if pdf_path else None
-            if not pdf_path or not Path(pdf_path).exists():
-                pdf_path = self.input_path
-            if not pdf_path or not Path(pdf_path).exists():
-                self.log_error("Kunde inte hitta PDF att validera (saknad pdf_path).")
-                return
-            self.pdf_viewer.load_pdf(pdf_path)
-            self.log(f"Validerar PDF: {pdf_path}")
-            
-            candidates, traceability = self._load_candidates_from_result()
-            
-            if candidates:
-                self.candidate_selector.set_candidates(candidates)
-                self.pdf_viewer.set_candidates(candidates, traceability)
-                page = 1
-                if traceability and getattr(traceability, "evidence", None):
-                    page = traceability.evidence.get("page_number", 1)
-                try:
-                    self.pdf_viewer.set_page(int(page))
-                except Exception:
-                    pass
-            else:
-                self.log("Inga kandidater hittades - validering kan inte utföras")
-            
-            self.validation_widget.setVisible(True)
-            self.log("Valideringsläge aktiverat - välj korrekt totalsumma från listan")
-            
-            # Set focus to candidate selector for keyboard navigation
-            self.candidate_selector.setFocus()
-            
+            self._validation_queue = (self.processing_result or {}).get("validation_queue") or []
+            self._validation_queue_index = 0
+            if self._validation_queue and not (self.processing_result or {}).get("validation"):
+                self.processing_result["validation"] = self._validation_queue[0]
+            self._refresh_validation_view()
+            self._update_next_button_visibility()
         except Exception as e:
             self.log_error(f"Kunde inte ladda PDF för validering: {e}")
+
+    def _refresh_validation_view(self) -> None:
+        """Load current processing_result['validation'] into PDF viewer and candidate selector."""
+        validation = (self.processing_result or {}).get("validation") or {}
+        pdf_path = validation.get("pdf_path") or (self.processing_result or {}).get("input_path") or self.input_path
+        pdf_path = str(Path(pdf_path).resolve()) if pdf_path else None
+        if not pdf_path or not Path(pdf_path).exists():
+            pdf_path = self.input_path
+        if not pdf_path or not Path(pdf_path).exists():
+            self.log_error("Kunde inte hitta PDF att validera (saknad pdf_path).")
+            return
+        self.pdf_viewer.load_pdf(pdf_path)
+        self.log(f"Validerar PDF: {pdf_path}")
+        candidates, traceability = self._load_candidates_from_result()
+        if candidates:
+            self.candidate_selector.set_candidates(candidates)
+            self.pdf_viewer.set_candidates(candidates, traceability)
+            page = 1
+            if traceability and getattr(traceability, "evidence", None):
+                page = traceability.evidence.get("page_number", 1)
+            try:
+                self.pdf_viewer.set_page(int(page))
+            except Exception:
+                pass
+        else:
+            self.log("Inga kandidater hittades - validering kan inte utföras")
+        self.validation_widget.setVisible(True)
+        self.log("Valideringsläge aktiverat - välj korrekt totalsumma från listan")
+        self.candidate_selector.setFocus()
+
+    def _update_next_button_visibility(self) -> None:
+        """Show 'Nästa faktura' when there is a next item in the validation queue."""
+        visible = (
+            len(self._validation_queue) > 1
+            and self._validation_queue_index < len(self._validation_queue) - 1
+        )
+        self.next_invoice_btn.setVisible(visible)
+
+    def _advance_to_next_validation(self) -> None:
+        """Switch to next item in validation queue, or close UI if none left."""
+        self._validation_queue_index += 1
+        if self._validation_queue_index < len(self._validation_queue):
+            self.processing_result["validation"] = self._validation_queue[self._validation_queue_index]
+            self.selected_candidate_index = None
+            self.selected_candidate_amount = None
+            self.correction_saved = False
+            self.confirm_btn.setEnabled(False)
+            self.correction_status.setText("")
+            self._refresh_validation_view()
+            self._update_next_button_visibility()
+        else:
+            self._close_validation_ui()
+
+    def _close_validation_ui(self) -> None:
+        """Hide validation widget and clear status."""
+        self.validation_widget.setVisible(False)
+        self.correction_status.setText("")
+        self.log("Validering avslutad")
+
+    def _finish_current_validation_and_continue(self) -> None:
+        """After skip or confirm: show next validation item or close UI."""
+        if self._validation_queue and self._validation_queue_index < len(self._validation_queue) - 1:
+            self._advance_to_next_validation()
+        else:
+            self._close_validation_ui()
     
     def _load_candidates_from_result(self) -> Tuple[List[dict], Any]:
         """Load candidates and traceability from processing result (run_summary.validation).
@@ -329,6 +380,7 @@ class MainWindow(QMainWindow):
             return candidates, traceability_for_viewer
         
         validation = self.processing_result.get("validation") or {}
+        self._current_validation_invoice_id = validation.get("invoice_id")
         raw = validation.get("candidates") or []
         if not raw:
             return candidates, traceability_for_viewer
@@ -425,8 +477,9 @@ class MainWindow(QMainWindow):
             return
         
         try:
-            # Generate invoice ID from filename
-            invoice_id = Path(self.input_path).stem if self.input_path else "unknown"
+            invoice_id = self._current_validation_invoice_id or (
+                Path(self.input_path).stem if self.input_path else "unknown"
+            )
             
             # For now, we don't have InvoiceHeader loaded from processing result
             # Create a minimal mock InvoiceHeader for correction saving
@@ -493,10 +546,9 @@ class MainWindow(QMainWindow):
             logger.error(f"Failed to save correction: {e}", exc_info=True)
     
     def _skip_validation(self) -> None:
-        """Skip validation without saving correction."""
-        self.validation_widget.setVisible(False)
-        self.correction_status.setText("")
+        """Skip validation without saving correction; show next or close."""
         self.log("Validering hoppades över")
+        self._finish_current_validation_and_continue()
     
     def open_ai_settings(self):
         """Open AI settings dialog."""

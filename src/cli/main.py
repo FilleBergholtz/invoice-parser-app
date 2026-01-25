@@ -1160,28 +1160,32 @@ def process_batch(
         if verbose:
             print(f"Warning: Failed to check artifact compatibility: {e}")
     
-    # Validation payload for GUI (single-PDF, first REVIEW)
-    if len(pdf_files) == 1 and invoice_results:
-        processed_pdf_path = str(Path(pdf_files[0]).resolve())
-        for ir in invoice_results:
-            if ir["validation_result"].status == "REVIEW":
-                header = ir["invoice_header"]
-                candidates = header.total_candidates or []
-                summary.validation = {
-                    "pdf_path": processed_pdf_path,
-                    "candidates": [
-                        {
-                            "amount": c.get("amount", 0.0),
-                            "score": c.get("score", 0.0),
-                            "row_index": c.get("row_index", -1),
-                            "keyword_type": c.get("keyword_type", "unknown"),
-                        }
-                        for c in candidates
-                    ],
-                    "traceability": header.total_traceability.to_dict() if header.total_traceability else None,
-                    "extraction_source": ir.get("extraction_source"),
-                }
-                break
+    # Validation payload for GUI: one blob per REVIEW (validation_queue); first is summary.validation for backward compat
+    validation_queue = []
+    for ir in invoice_results:
+        if ir["validation_result"].status == "REVIEW":
+            header = ir["invoice_header"]
+            candidates = header.total_candidates or []
+            pdf_path = str(Path(ir.get("pdf_path", pdf_files[0] if pdf_files else "")).resolve())
+            blob = {
+                "pdf_path": pdf_path,
+                "invoice_id": ir.get("virtual_invoice_id", ""),
+                "candidates": [
+                    {
+                        "amount": c.get("amount", 0.0),
+                        "score": c.get("score", 0.0),
+                        "row_index": c.get("row_index", -1),
+                        "keyword_type": c.get("keyword_type", "unknown"),
+                    }
+                    for c in candidates
+                ],
+                "traceability": header.total_traceability.to_dict() if header.total_traceability else None,
+                "extraction_source": ir.get("extraction_source"),
+            }
+            validation_queue.append(blob)
+    if validation_queue:
+        summary.validation_queue = validation_queue
+        summary.validation = validation_queue[0]
     
     # Save run summary
     summary.complete(status="FAILED" if summary.failed_count > 0 else "COMPLETED")
