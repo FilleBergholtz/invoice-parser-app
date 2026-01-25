@@ -131,7 +131,7 @@ Explicitly excluded. Documented to prevent scope creep.
 
 | Feature | Reason |
 |---------|--------|
-| Web UI in v1 | CLI sufficient for batch processing. Web UI adds complexity and delays core functionality. Add later once pipeline is stable. |
+| Web UI / Phase 4 | **Borttagen – används inte.** Phase 4 (Web UI) är borttagen från roadmapen. Vi använder desktop-GUI (Phase 6, run_gui.py) för validering och review. CLI räcker för batch; GUI levereras som desktop-app. |
 | Real-time processing | v1 dimensioned for batch processing (some to hundreds per week). Real-time adds unnecessary complexity. |
 | Generic PDF parser | Focus is invoice-specific parsing with domain optimizations. Generic parser loses accuracy and Swedish-specific features. |
 | Automatic correction of low-confidence fields | Violates 100% accuracy guarantee. Would introduce false positives. Hard gate with REVIEW status is the correct approach. |

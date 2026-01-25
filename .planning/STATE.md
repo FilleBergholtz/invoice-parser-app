@@ -34,7 +34,7 @@ Progress: ██████████████ 100% (11/11 phases complete
 | 1. Document Normalization | 5 | ~1.5h | ~17min |
 | 2. Header + Wrap | 5 | ~0.5h | ~11min |
 | 3. Validation | 4 | ~1h | ~15min |
-| 4. Web UI | 3 | ~1h | ~20min |
+| 4. Web UI (borttagen) | – | – | Används inte; desktop-GUI (Phase 6) i stället. |
 | 5. Improved Confidence Scoring | 3 | ~75min | ~25min |
 | 6. Manual Validation UI | 3 | ~90min | ~30min |
 | 7. Learning System | 3 | ~95min | ~32min |

@@ -1,7 +1,9 @@
 # Phase 4: Web UI - Context
 
+> **BORTTAGEN – ANVÄNDS INTE.** Phase 4 (Web UI) är borttagen från roadmapen. Vi använder desktop-GUI (Phase 6, run_gui.py) för validering och review. Detta dokument är arkiv.
+
 **Datum:** 2026-01-17  
-**Status:** Planning
+**Status:** Borttagen (arkiv)
 
 ---
 

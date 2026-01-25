@@ -6,7 +6,7 @@ This roadmap delivers a Swedish invoice parsing system that transforms PDF invoi
 
 ## Milestones
 
-- ✅ **v1.0 MVP** - Phases 1-4 (shipped 2026-01-17)
+- ✅ **v1.0 MVP** - Phases 1-3 (shipped 2026-01-17). *Phase 4 (Web UI) är borttagen – vi använder den inte; desktop-GUI (Phase 6) används i stället.*
 - 📋 **v2.0 Features** - Phases 5-11 (planned)
 
 ## Phases
@@ -16,12 +16,12 @@ This roadmap delivers a Swedish invoice parsing system that transforms PDF invoi
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
 <details>
-<summary>✅ v1.0 MVP (Phases 1-4) - SHIPPED 2026-01-17</summary>
+<summary>✅ v1.0 MVP (Phases 1-3) - SHIPPED 2026-01-17</summary>
 
 - [x] **Phase 1: Document Normalization** - Establish stable PDF representation with spatial traceability
 - [x] **Phase 2: Header + Wrap** - Extract critical fields (invoice number, total) with confidence scoring and handle multi-line items
 - [x] **Phase 3: Validation** - Mathematical validation, hard gates, and Excel export with status columns
-- [x] **Phase 4: Web UI** - Web-based interface for invoice processing, review workflow, and API integration
+- ~~**Phase 4: Web UI**~~ **Borttagen** – används inte. Desktop-GUI (Phase 6) används i stället.
 
 </details>
 
@@ -40,7 +40,7 @@ This roadmap delivers a Swedish invoice parsing system that transforms PDF invoi
 ## Phase Details
 
 <details>
-<summary>✅ v1.0 MVP Phases (1-4) - SHIPPED 2026-01-17</summary>
+<summary>✅ v1.0 MVP Phases (1-3) - SHIPPED 2026-01-17</summary>
 
 ### Phase 1: Document Normalization
 
@@ -114,30 +114,9 @@ Plans:
 - [x] 03-03: Review Report Generation (JSON + PDF for REVIEW invoices)
 - [x] 03-04: CLI Integration (connect all components in pipeline)
 
-### Phase 4: Web UI
+### ~~Phase 4: Web UI~~ (Borttagen – används inte)
 
-**Goal**: System provides web-based interface for invoice processing, review workflow with clickable PDF links, and API for external system integration.
-
-**Depends on**: Phase 3
-
-**Requirements**: UI-01, UI-02, UI-03
-
-**Success Criteria** (what must be TRUE):
-1. Users can upload PDF invoices via web browser
-2. System shows processing status in real-time
-3. Users can view list of processed invoices with status (OK/PARTIAL/REVIEW)
-4. Users can filter and sort invoices by status
-5. Users can click on invoices to see detailed information
-6. Review workflow: Clickable links open PDF at correct page/position for verification
-7. Users can download Excel files and review reports
-8. API available for external system integration
-
-**Plans**: 3 plans (all complete)
-
-Plans:
-- [x] 04-01: Streamlit MVP - Grundläggande UI och Filuppladdning
-- [x] 04-02: Streamlit MVP - Detaljvy och Review Workflow
-- [x] 04-03: API Endpoints för Extern Integration
+Phase 4 (Web UI) är borttagen. Vi använder inte webbgränssnitt; validerings- och review-UI levereras via **Phase 6: Manual Validation UI** (desktop-GUI med run_gui.py). Planerna under `.planning/phases/04-web-ui/` är arkiv och används inte i roadmapen.
 
 </details>
 
@@ -147,7 +126,7 @@ Plans:
 
 **Goal**: System has improved confidence scoring for total amount extraction, resulting in fewer invoices with REVIEW status due to low confidence.
 
-**Depends on**: Phase 4 (v1.0 complete)
+**Depends on**: Phase 3 (v1.0 complete). *Phase 4 är borttagen.*
 
 **Requirements**: CONF-01, CONF-02, CONF-03, CONF-04, CONF-05
 
