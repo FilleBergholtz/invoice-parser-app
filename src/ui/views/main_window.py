@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QPushButton, QFileDialog, QTextEdit,
     QProgressBar, QGroupBox, QLineEdit, QSplitter, QMenuBar, QMenu,
-    QToolBar, QStatusBar, QStackedWidget, QFrame,
+    QToolBar, QStatusBar, QStackedWidget, QFrame, QMessageBox,
 )
 from PySide6.QtCore import Qt, QThread
 from PySide6.QtGui import QDragEnterEvent, QDropEvent, QAction, QKeySequence
@@ -41,7 +41,8 @@ class MainWindow(QMainWindow):
         self.runner = None
         self.processing_result = None
         self._last_run_summary: Optional[str] = None
-        
+        self._run_error_details: List[str] = []
+
         # UI Setup
         self.setup_menu_bar()
         self.setup_ui()
@@ -64,10 +65,10 @@ class MainWindow(QMainWindow):
         toolbar.setObjectName("main_toolbar")
         self.addToolBar(toolbar)
 
-        open_act = QAction("Öppna PDF", self)
-        open_act.setShortcut(QKeySequence.StandardKey.Open)
-        open_act.triggered.connect(self.browse_file)
-        toolbar.addAction(open_act)
+        self.open_action = QAction("Öppna PDF", self)
+        self.open_action.setShortcut(QKeySequence.StandardKey.Open)
+        self.open_action.triggered.connect(self.browse_file)
+        toolbar.addAction(self.open_action)
 
         self.run_action = QAction("Kör", self)
         self.run_action.setShortcut(QKeySequence("Ctrl+R"))
@@ -75,10 +76,10 @@ class MainWindow(QMainWindow):
         self.run_action.setEnabled(False)
         toolbar.addAction(self.run_action)
 
-        export_act = QAction("Export", self)
-        export_act.setShortcut(QKeySequence("Ctrl+E"))
-        export_act.triggered.connect(self.open_output_dir)
-        toolbar.addAction(export_act)
+        self.export_action = QAction("Export", self)
+        self.export_action.setShortcut(QKeySequence("Ctrl+E"))
+        self.export_action.triggered.connect(self.open_output_dir)
+        toolbar.addAction(self.export_action)
 
         settings_act = QAction("Inställningar", self)
         settings_act.triggered.connect(self.open_ai_settings)
@@ -134,8 +135,19 @@ class MainWindow(QMainWindow):
         self.progress_bar = QProgressBar()
         results_layout.addWidget(self.progress_bar)
 
+        # Expandable log (12-03): collapsed by default
+        log_header = QHBoxLayout()
+        self.log_toggle_btn = QPushButton("Visa logg")
+        self.log_toggle_btn.setCheckable(True)
+        self.log_toggle_btn.setChecked(False)
+        self.log_toggle_btn.clicked.connect(self._toggle_log_visibility)
+        log_header.addWidget(self.log_toggle_btn)
+        log_header.addStretch()
+        results_layout.addLayout(log_header)
         self.log_area = QTextEdit()
         self.log_area.setReadOnly(True)
+        self.log_area.setMinimumHeight(80)
+        self.log_area.setVisible(False)
         results_layout.addWidget(self.log_area)
 
         # Validation section (hidden until needed)
@@ -197,6 +209,12 @@ class MainWindow(QMainWindow):
             parts.append(summary)
         self.statusBar().showMessage("  |  ".join(parts))
 
+    def _toggle_log_visibility(self) -> None:
+        """Toggle expandable log panel (12-03)."""
+        vis = self.log_toggle_btn.isChecked()
+        self.log_area.setVisible(vis)
+        self.log_toggle_btn.setText("Dölj logg" if vis else "Visa logg")
+
     def dragEnterEvent(self, event: QDragEnterEvent):
         if event.mimeData().hasUrls():
             event.accept()
@@ -228,33 +246,39 @@ class MainWindow(QMainWindow):
             path.mkdir(parents=True, exist_ok=True)
         os.startfile(str(path))
 
-    def start_processing(self):
+    def start_processing(self) -> None:
         if not self.input_path:
             return
 
+        self._run_error_details = []
         self.run_action.setEnabled(False)
+        self.open_action.setEnabled(False)
+        self.export_action.setEnabled(False)
         self.progress_bar.setRange(0, 0)
+        self.progress_bar.setVisible(True)
         self.log_area.clear()
         self._update_status_bar("Running", None)
-        
-        # Create Runner
+
         self.runner_thread = QThread()
         self.runner = EngineRunner(self.input_path, self.output_dir)
         self.runner.moveToThread(self.runner_thread)
-        
-        # Connect signals
+
         self.runner.started.connect(lambda: self.log("Startar motor..."))
+        self.runner.logLine.connect(self.log)
         self.runner.progress.connect(self.log)
+        self.runner.stateChanged.connect(self._on_engine_state_changed)
         self.runner.error.connect(self._on_engine_error)
         self.runner.result_ready.connect(self.handle_result)
         self.runner.finished.connect(self.processing_finished)
-        
+
         self.runner_thread.started.connect(self.runner.run)
-        
-        # Start
         self.runner_thread.start()
 
-    def processing_finished(self, exit_code):
+    def _on_engine_state_changed(self, state: str) -> None:
+        """React to engine state (12-03)."""
+        self._update_status_bar(state, self._last_run_summary if state != "Running" else None)
+
+    def processing_finished(self, success: bool, paths: Any) -> None:
         if self.runner_thread:
             self.runner_thread.quit()
             self.runner_thread.wait()
@@ -262,11 +286,28 @@ class MainWindow(QMainWindow):
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(100)
         self.run_action.setEnabled(True)
+        self.open_action.setEnabled(True)
+        self.export_action.setEnabled(True)
 
-        if exit_code == 0:
+        if success:
             self._update_status_bar("Success", self._last_run_summary)
         else:
-            self._update_status_bar("Error", self._last_run_summary or f"Exit code {exit_code}")
+            self._update_status_bar("Error", self._last_run_summary)
+            self._show_run_error_dialog()
+
+    def _show_run_error_dialog(self) -> None:
+        """Show user-friendly error dialog with expandable details (12-03)."""
+        short = (
+            "Körningen misslyckades. Kontrollera att motorn är installerad och att PDF-filen är giltig."
+        )
+        details = "\n".join(self._run_error_details) if self._run_error_details else short
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Icon.Critical)
+        box.setWindowTitle("Körfel")
+        box.setText(short)
+        box.setDetailedText(details)
+        box.setStandardButtons(QMessageBox.StandardButton.Ok)
+        box.exec()
 
     def handle_result(self, summary):
         self.log("-" * 40)
@@ -607,4 +648,5 @@ class MainWindow(QMainWindow):
 
     def _on_engine_error(self, message: str) -> None:
         self.log_error(message)
+        self._run_error_details.append(message)
         self._update_status_bar("Error", message)
