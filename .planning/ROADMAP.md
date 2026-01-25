@@ -313,7 +313,7 @@ Implementera både pdfplumber- och OCR-extraktion, köra båda per faktura/PDF, 
 - **Layout:** Tydligare uppdelning av paneler (input/output, PDF-viewer, validering), resizable/QLayout, möjligtvis sparad layout.
 - **Engine states:** UI visar tydligt pipeline-tillstånd: t.ex. “Redo”, “Kör …”, “Klar”, “Fel” med ev. progress eller spinner; knappar och fält disable/enable per tillstånd så att användaren inte triggar dubbelkörningar eller missar feedback.
 
-**Plans:** 5 plans (see 12-DISCUSS.md + 12-01 … 12-05)
+**Plans:** 6 plans (see 12-DISCUSS.md + 12-01 … 12-06)
 
 Plans:
 - [x] 12-01: Global theme – src/ui/theme/ (tokens, app_style.qss, apply_theme), apply in app.py
@@ -321,8 +321,9 @@ Plans:
 - [x] 12-03: Engine runner UX – states/signals, progress, log panel, error dialog "Show details"
 - [x] 12-04: PDF viewer polish – zoom/fit/prev/next, page indicator, theme
 - [x] 12-05: AI settings dialog – grouped settings, help text, Test connection stub, theme
+- [ ] 12-06: UI fixes – candidate selector height, single Settings, AI settings edit, PDF placeholder, Run near Open
 
-**Details:** `.planning/phases/12-ui-polish-pyside6/12-CONTEXT.md`, `12-DISCUSS.md`, `12-01-PLAN.md` … `12-05-PLAN.md`.
+**Details:** `.planning/phases/12-ui-polish-pyside6/12-CONTEXT.md`, `12-DISCUSS.md`, `12-01-PLAN.md` … `12-06-PLAN.md`.
 
 ---
 
