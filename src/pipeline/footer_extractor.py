@@ -107,6 +107,7 @@ def _try_ai_fallback(
     invoice_header: InvoiceHeader,
     candidates: Optional[List[Dict[str, Any]]] = None,
     page_context: Optional[str] = None,
+    image_path_for_ai: Optional[str] = None,
 ) -> Optional[Dict[str, Any]]:
     """Try AI fallback for total amount extraction.
     
@@ -116,6 +117,7 @@ def _try_ai_fallback(
         invoice_header: InvoiceHeader for context
         candidates: Optional heuristic candidates (amount, keyword_type).
         page_context: Full page text (header/items/footer) so AI sees PDF hela data.
+        image_path_for_ai: Optional path to rendered page image for vision API when text quality is low.
         
     Returns:
         AI result dict with total_amount, confidence, reasoning, validation_passed, or None if fails
@@ -131,7 +133,8 @@ def _try_ai_fallback(
         if candidates:
             cand = [{"amount": c.get("amount"), "keyword_type": c.get("keyword_type")} for c in candidates[:10]]
         ai_result = extract_total_with_ai(
-            footer_text, line_items_sum, candidates=cand, page_context=page_context
+            footer_text, line_items_sum, candidates=cand, page_context=page_context,
+            image_path=image_path_for_ai,
         )
         
         if ai_result:
@@ -253,6 +256,7 @@ def extract_total_amount(
     strategy: Optional[str] = None,
     rows_above_footer: Optional[List[Row]] = None,
     page_context_for_ai: Optional[str] = None,
+    image_path_for_ai: Optional[str] = None,
 ) -> None:
     """Extract total amount from footer segment using keyword matching and confidence scoring.
     
@@ -266,6 +270,7 @@ def extract_total_amount(
             put labels in items and amounts in footer).
         page_context_for_ai: Full page text (header/items/footer) for AI so it sees
             PDF:ens hela data; används vid AI-fallback när kandidater kan vara fel.
+        image_path_for_ai: Optional path to rendered page image for AI vision when text quality is low.
         
     Algorithm:
     1. Extract all amount candidates from footer segment rows
@@ -622,6 +627,7 @@ def extract_total_amount(
                     footer_segment, line_items, invoice_header,
                     candidates=scored_candidates[:10],
                     page_context=page_context_for_ai,
+                    image_path_for_ai=image_path_for_ai,
                 )
                 if ai_result:
                     ai_confidence = ai_result.get('confidence', 0.0)
@@ -659,6 +665,7 @@ def extract_total_amount(
                 footer_segment, line_items, invoice_header,
                 candidates=None,
                 page_context=page_context_for_ai,
+                image_path_for_ai=image_path_for_ai,
             )
             if ai_result:
                 logger.info("AI fallback used: no heuristic candidates, AI extracted total")
