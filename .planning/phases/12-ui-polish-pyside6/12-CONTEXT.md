@@ -73,7 +73,7 @@ Enligt 12-DISCUSS.md:
 - **12-04:** PDF viewer polish – zoom/fit/prev/next, sidindikator, tema.
 - **12-05:** AI settings dialog – grupperade inställningar, hjälptexter, “Test connection”-stub, tema.
 
-Planerna kan skrivas ut i egna PLAN-filer när fasen prioriteras.
+PLAN-filer: 12-01-PLAN.md … 12-05-PLAN.md. 12-02–12-05 beroende på 12-01.
 
 ---
 

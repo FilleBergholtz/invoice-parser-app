@@ -299,9 +299,16 @@ Implementera både pdfplumber- och OCR-extraktion, köra båda per faktura/PDF, 
 - **Layout:** Tydligare uppdelning av paneler (input/output, PDF-viewer, validering), resizable/QLayout, möjligtvis sparad layout.
 - **Engine states:** UI visar tydligt pipeline-tillstånd: t.ex. “Redo”, “Kör …”, “Klar”, “Fel” med ev. progress eller spinner; knappar och fält disable/enable per tillstånd så att användaren inte triggar dubbelkörningar eller missar feedback.
 
-**Plans:** TBD (t.ex. 12-01 Theme, 12-02 Layout, 12-03 Engine states).
+**Plans:** 5 plans (see 12-DISCUSS.md + 12-01 … 12-05)
 
-**Details:** Se `.planning/phases/12-ui-polish-pyside6/12-CONTEXT.md` när planer skapats.
+Plans:
+- [ ] 12-01: Global theme – src/ui/theme/ (tokens, app_style.qss, apply_theme), apply in app.py
+- [ ] 12-02: MainWindow layout – toolbar, QSplitter, status bar, empty state, Ctrl+O/R/E
+- [ ] 12-03: Engine runner UX – states/signals, progress, log panel, error dialog "Show details"
+- [ ] 12-04: PDF viewer polish – zoom/fit/prev/next, page indicator, theme
+- [ ] 12-05: AI settings dialog – grouped settings, help text, Test connection stub, theme
+
+**Details:** `.planning/phases/12-ui-polish-pyside6/12-CONTEXT.md`, `12-DISCUSS.md`, `12-01-PLAN.md` … `12-05-PLAN.md`.
 
 ---
 
@@ -323,6 +330,6 @@ Phases execute in numeric order: 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12
 | 9. AI Data Analysis | v2.0 | 3/3 | Complete | - |
 | 10. AI Fallback Fixes and Verification | v2.0 | 2/2 | Complete | - |
 | 11. Pdfplumber och OCR: kör båda, jämför, använd bästa | v2.0 | 3/3 | Complete | - |
-| 12. UI Polish (PySide6) – theme + layout + engine states | v2.0 | 0/– | Planned | - |
+| 12. UI Polish (PySide6) – theme + layout + engine states | v2.0 | 0/5 | Planned | - |
 
 **Note:** v1.0 phases complete. v2.0 phases 5–11 complete. Phase 12 added (UI Polish).
