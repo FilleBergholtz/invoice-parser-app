@@ -332,13 +332,18 @@ Plans:
 
 **Depends on:** Phase 13
 
-**Plans:** 0 plans (discuss klar 2026-01-25)
+**Plans:** 6 plans
 
 Plans:
-- [ ] TBD (run `/gsd:plan-phase 14` to break down)
+- [ ] 14-01: Token model + OCR confidence (Token.confidence, exclude conf&lt;0, mean/median/low_conf_fraction)
+- [ ] 14-02: pdfplumber tokenizer (use_text_flow, extra_attrs safe fallback, line clustering)
+- [ ] 14-03: Text quality module (score_text_quality, score_ocr_quality [0..1])
+- [ ] 14-04: Rendering DPI (300 baseline, 400 retry when mean_conf&lt;55)
+- [ ] 14-05: AI vision + retry (image input, 4096px/20MB, 1 retry on invalid JSON)
+- [ ] 14-06: Orchestration + run_summary (page-level routing, vision_reason, artifacts)
 
 **Details:**
-Se `.planning/phases/14-extraction-fallback-optimization-pdfplumber-ocr-ai-vision/14-DISCUSS.md` och `14-CONTEXT.md`. Beslut: fallback-kedja, text quality-modul, Token.confidence för OCR, per-page routing, AI text vs vision, artifacts under `output_dir/artifacts/`.
+Se `.planning/phases/14-extraction-fallback-optimization-pdfplumber-ocr-ai-vision/14-DISCUSS.md`, `14-CONTEXT.md`, `14-RESEARCH.md`. Planer: `14-01-PLAN.md` … `14-06-PLAN.md`.
 
 ---
 
@@ -363,6 +368,6 @@ Se `.planning/phases/14-extraction-fallback-optimization-pdfplumber-ocr-ai-visio
 | 11. Pdfplumber och OCR: kör båda, jämför, använd bästa | v2.0 | 3/3 | Complete | 2026-01-24 |
 | 12. UI Polish (PySide6) – theme + layout + engine states | v2.0 | 5/5 | Complete | 2026-01-24 |
 | 13. About page + app icons (branding & help) | v2.0 | 3/3 | Complete | 2026-01-25 |
-| 14. Extraction fallback optimization (pdfplumber → OCR → AI → vision) | v2.0 | 0/? | Not planned | – |
+| 14. Extraction fallback optimization (pdfplumber → OCR → AI → vision) | v2.0 | 0/6 | Planned | – |
 
 **Sammanfattning:** v1.0 (Phase 1–3) klar. v2.0 phases 5–13 klara. **Phase 14 tillagd, oplanerad.**

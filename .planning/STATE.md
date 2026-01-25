@@ -12,11 +12,11 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 
 Milestone: v2.0 Features + polish
 Phase: **Phase 14 (nästa)** — Extraction fallback optimization (pdfplumber → OCR → AI → vision)
-Plans: (ej planerad än — kör `/gsd:plan-phase 14`)
-Status: Phase 13 klar. **Phase 14 diskuterad + research R1–R4 klar** — redo för plan-phase.
-Last activity: 2026-01-25 — Phase 14 research R1–R4 (14-RESEARCH.md): DPI, OCR-conf, vision-gränser, routing.
+Plans: 14-01 … 14-06 (planerade 2026-01-25)
+Status: Phase 13 klar. **Phase 14 planerad** — 6 planer, 4 waves.
+Last activity: 2026-01-25 — Phase 14 plan-phase: 14-01…14-06 skapade.
 
-Progress: Phase 1–3 (v1) + Phase 5–13 (v2) genomförda. **Phase 14** diskuterad, väntar på `/gsd:plan-phase 14`.
+Progress: Phase 1–3 (v1) + Phase 5–13 (v2) genomförda. **Phase 14** planerad, redo för execute-phase.
 
 ## Performance Metrics
 
@@ -68,6 +68,7 @@ None yet.
 - Phase 14 discussed: 14-DISCUSS.md + 14-CONTEXT.md. Beslut: per-page routing, text quality scoring, Token.confidence, AI text vs vision, artifacts; redo för plan-phase.
 - Phase 14 discuss uppdaterad: mål "robust, accurate, cost-efficient"; steg 3 uttryckligen "AI (text-only)"; fyra begränsade research-uppgifter R1–R4 (OCR-rendering, OCR-confidence, AI vision-gränser, AI-routing) med leverabler och constraints; implementation post-research (6 uppgifter); run_summary ska förklara *varför* OCR/AI användes.
 - Phase 14 research R1–R4 genomförd (14-RESEARCH.md): R1 baseline 300 DPI, retry 400 vid mean_conf<55; R2 median_conf, exkl. conf<0, tröskel 70; R3 vision PNG/JPEG max 4096px 20MB; R4 routing-tabell + text_quality 0.5 + retry-regler. Konstanter klara för implementation.
+- Phase 14 planerad: 6 planer (14-01…14-06). Wave 1: Token+OCR confidence, pdfplumber tokenizer. Wave 2: text_quality, rendering DPI. Wave 3: AI vision+retry. Wave 4: orchestration + run_summary/vision_reason.
 
 ### Blockers/Concerns
 
