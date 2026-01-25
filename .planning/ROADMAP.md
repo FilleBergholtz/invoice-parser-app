@@ -1,13 +1,25 @@
 # Roadmap: Invoice Parser App
 
+## Var vi är nu (2026-01-25)
+
+| Status | Beskrivning |
+|--------|-------------|
+| **v1.0 MVP** | Klar (Phase 1–3). Shipped 2026-01-17. |
+| **v2.0 Features** | **Alla faser 5–13 klara.** Confidence, validerings-UI, inlärning, AI, dual extraction, UI polish, About + ikoner. |
+| **Nästa steg** | Ingen ny fas planerad. Kör `/gsd:complete-milestone` för att avsluta milestone, eller planera nya faser. |
+
+**Progress:** Phases 1–3 (v1) + 5–13 (v2) = **alla planerade faser genomförda.**
+
+---
+
 ## Overview
 
 This roadmap delivers a Swedish invoice parsing system that transforms PDF invoices into structured Excel tables with 100% accuracy on critical fields (invoice number and total) or explicit REVIEW status. v1.0 established the core pipeline. v2.0 focuses on improving confidence scoring, adding manual validation with learning, and integrating AI to reduce REVIEW status and handle unusual patterns.
 
 ## Milestones
 
-- ✅ **v1.0 MVP** - Phases 1-3 (shipped 2026-01-17). *Phase 4 (Web UI) är borttagen – vi använder den inte; desktop-GUI (Phase 6) används i stället.*
-- 📋 **v2.0 Features** - Phases 5-11 (planned)
+- ✅ **v1.0 MVP** - Phases 1-3 (shipped 2026-01-17). *Phase 4 (Web UI) är borttagen – desktop-GUI (Phase 6) används i stället.*
+- ✅ **v2.0 Features** - Phases 5-13 (alla klara 2026-01-25)
 
 ## Phases
 
@@ -25,18 +37,18 @@ This roadmap delivers a Swedish invoice parsing system that transforms PDF invoi
 
 </details>
 
-### 📋 v2.0 Features (Planned)
+### ✅ v2.0 Features (Complete 2026-01-25)
 
-**Milestone Goal:** Förbättra totalsumma-confidence, lägga till manuell validering med inlärning, och integrera AI för att minska REVIEW-status och hantera ovanliga mönster.
+**Milestone Goal:** Förbättra totalsumma-confidence, manuell validering med inlärning, AI-integration, dual extraction, UI polish, About + ikoner. **Uppnådd.**
 
-- [ ] **Phase 5: Improved Confidence Scoring** - Enhanced multi-factor confidence scoring for total amount to reduce REVIEW status
-- [ ] **Phase 6: Manual Validation UI** - Clickable PDF viewer with candidate selection for user corrections
-- [ ] **Phase 7: Learning System** - SQLite database and pattern matching to learn from user corrections
-- [ ] **Phase 8: AI Integration** - AI fallback when confidence < 0.95 to improve extraction for edge cases
-- [ ] **Phase 9: AI Data Analysis** (Optional) - Natural language queries and data analysis over processed invoices
-- [ ] **Phase 10: AI Fallback Fixes and Verification** - Document fixes, address gaps, and verify AI fallback works well
-- [ ] **Phase 11: Pdfplumber och OCR: kör båda, jämför, använd bästa** - Dual extraction; compare results; use best
-- [ ] **Phase 12: UI Polish (PySide6)** - Theme + layout + engine states för desktop-GUI
+- [x] **Phase 5: Improved Confidence Scoring** - Enhanced multi-factor confidence scoring for total amount to reduce REVIEW status ✅
+- [x] **Phase 6: Manual Validation UI** - Clickable PDF viewer with candidate selection for user corrections ✅
+- [x] **Phase 7: Learning System** - SQLite database and pattern matching to learn from user corrections ✅
+- [x] **Phase 8: AI Integration** - AI fallback when confidence < 0.95 to improve extraction for edge cases ✅
+- [x] **Phase 9: AI Data Analysis** (Optional) - Natural language queries and data analysis over processed invoices ✅
+- [x] **Phase 10: AI Fallback Fixes and Verification** - Document fixes, address gaps, and verify AI fallback works well ✅
+- [x] **Phase 11: Pdfplumber och OCR: kör båda, jämför, använd bästa** - Dual extraction; compare results; use best ✅
+- [x] **Phase 12: UI Polish (PySide6)** - Theme + layout + engine states för desktop-GUI ✅
 - [x] **Phase 13: About page + app icons (branding & help)** - Om-dialog, Hjälp-meny, fönsterikoner ✅ 2026-01-25
 
 ## Phase Details
@@ -303,11 +315,11 @@ Implementera både pdfplumber- och OCR-extraktion, köra båda per faktura/PDF, 
 **Plans:** 5 plans (see 12-DISCUSS.md + 12-01 … 12-05)
 
 Plans:
-- [ ] 12-01: Global theme – src/ui/theme/ (tokens, app_style.qss, apply_theme), apply in app.py
-- [ ] 12-02: MainWindow layout – toolbar, QSplitter, status bar, empty state, Ctrl+O/R/E
-- [ ] 12-03: Engine runner UX – states/signals, progress, log panel, error dialog "Show details"
-- [ ] 12-04: PDF viewer polish – zoom/fit/prev/next, page indicator, theme
-- [ ] 12-05: AI settings dialog – grouped settings, help text, Test connection stub, theme
+- [x] 12-01: Global theme – src/ui/theme/ (tokens, app_style.qss, apply_theme), apply in app.py
+- [x] 12-02: MainWindow layout – toolbar, QSplitter, status bar, empty state, Ctrl+O/R/E
+- [x] 12-03: Engine runner UX – states/signals, progress, log panel, error dialog "Show details"
+- [x] 12-04: PDF viewer polish – zoom/fit/prev/next, page indicator, theme
+- [x] 12-05: AI settings dialog – grouped settings, help text, Test connection stub, theme
 
 **Details:** `.planning/phases/12-ui-polish-pyside6/12-CONTEXT.md`, `12-DISCUSS.md`, `12-01-PLAN.md` … `12-05-PLAN.md`.
 
@@ -315,22 +327,24 @@ Plans:
 
 ## Progress
 
-**Execution Order:**
-Phases execute in numeric order: 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12
+**Senast uppdaterad:** 2026-01-25
+
+**Execution order:** 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12 → 13
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 1. Document Normalization | v1.0 | 5/5 | Complete | 2026-01-17 |
 | 2. Header + Wrap | v1.0 | 5/5 | Complete | 2026-01-17 |
 | 3. Validation | v1.0 | 4/4 | Complete | 2026-01-17 |
-| 4. Web UI | v1.0 | 3/3 | Complete | 2026-01-17 |
+| 4. Web UI | v1.0 | 3/3 | (borttagen) | – |
 | 5. Improved Confidence Scoring | v2.0 | 3/3 | Complete | 2026-01-24 |
-| 6. Manual Validation UI | v2.0 | 3/3 | Complete | - |
-| 7. Learning System | v2.0 | 3/3 | Complete | - |
-| 8. AI Integration | v2.0 | 3/3 | Complete | - |
-| 9. AI Data Analysis | v2.0 | 3/3 | Complete | - |
-| 10. AI Fallback Fixes and Verification | v2.0 | 2/2 | Complete | - |
-| 11. Pdfplumber och OCR: kör båda, jämför, använd bästa | v2.0 | 3/3 | Complete | - |
-| 12. UI Polish (PySide6) – theme + layout + engine states | v2.0 | 0/5 | Planned | - |
+| 6. Manual Validation UI | v2.0 | 4/4 | Complete | 2026-01-24 |
+| 7. Learning System | v2.0 | 6/6 | Complete | 2026-01-24 |
+| 8. AI Integration | v2.0 | 3/3 | Complete | 2026-01-24 |
+| 9. AI Data Analysis | v2.0 | 3/3 | Complete | 2026-01-24 |
+| 10. AI Fallback Fixes and Verification | v2.0 | 2/2 | Complete | 2026-01-24 |
+| 11. Pdfplumber och OCR: kör båda, jämför, använd bästa | v2.0 | 3/3 | Complete | 2026-01-24 |
+| 12. UI Polish (PySide6) – theme + layout + engine states | v2.0 | 5/5 | Complete | 2026-01-24 |
+| 13. About page + app icons (branding & help) | v2.0 | 3/3 | Complete | 2026-01-25 |
 
-**Note:** v1.0 phases complete. v2.0 phases 5–11 complete. Phase 12 added (UI Polish).
+**Sammanfattning:** v1.0 (Phase 1–3) klar. v2.0 phases 5–13 klara. **Alla planerade faser är genomförda.**

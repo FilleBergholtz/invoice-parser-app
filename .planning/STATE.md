@@ -6,45 +6,39 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 
 **Core value:** 100% korrekt på fakturanummer och totalsumma, eller tydlig REVIEW-status. Allt som systemet exporterar som OK är garanterat korrekt. Osäkra fall går alltid till REVIEW (ingen tyst gissning).
 
-**Current focus:** Phase 13 (About + icons) executed 2026-01-25.
+**Current focus:** Alla planerade faser (v1 + v2) genomförda. Status och roadmap uppdaterade 2026-01-25.
 
 ## Current Position
 
 Milestone: v2.0 Features + polish
-Phase: **Phase 13 complete** (About page + app icons: 3/3 plans)
-Plans: 13-01 About + Help ✓, 13-02 Icons QRC ✓, 13-03 Windows .ico ✓
-Status: **✅ DONE** — AboutDialog, Hjälp-meny, custom icons (QRC), app.ico + spec.
-Last activity: 2026-01-25 — Phase 13 executed (13-01, 13-02, 13-03).
+Phase: **Phase 13 (sista) — klar**
+Plans: 13-01 ✓, 13-02 ✓, 13-03 ✓
+Status: **✅ ALLA FASER KLARA** — v1.0 (1–3) + v2.0 (5–13). Senast: About-dialog, Hjälp-meny, ikoner (QRC), Windows app.ico.
+Last activity: 2026-01-25 — Phase 13 exekverad; därefter ROADMAP/STATE uppdaterade.
 
-Progress: Phase 13 complete. v2.0 phases 5–11 plus 13 (About + branding) implemented.
+Progress: ████████████████████ 100% — Phase 1–3 (v1) + Phase 5–13 (v2) genomförda. Ingen oplanerad fas kvar.
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 26
-- Average duration: ~15 min
-- Total execution time: ~7 hours
+- Total plans completed: 48 (Phase 1–3, 5–13; Phase 4 borttagen)
+- v2.0 phases 5–13: alla genomförda (5→6→7→8→9→10→11→12→13)
 
-**By Phase:**
+**By Phase (v2.0):**
 
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| 1. Document Normalization | 5 | ~1.5h | ~17min |
-| 2. Header + Wrap | 5 | ~0.5h | ~11min |
-| 3. Validation | 4 | ~1h | ~15min |
-| 4. Web UI (borttagen) | – | – | Används inte; desktop-GUI (Phase 6) i stället. |
-| 5. Improved Confidence Scoring | 3 | ~75min | ~25min |
-| 6. Manual Validation UI | 3 | ~90min | ~30min |
-| 7. Learning System | 3 | ~95min | ~32min |
-| 8. AI Integration | 3 | ~90min | ~30min |
-| 9. AI Data Analysis | 3 | ~105min | ~35min |
-| 11. Pdfplumber och OCR | 3 | complete | ~60min |
+| Phase | Plans | Status |
+|-------|-------|--------|
+| 5. Confidence Scoring | 3/3 | ✓ |
+| 6. Manual Validation UI | 4/4 | ✓ |
+| 7. Learning System | 6/6 | ✓ |
+| 8. AI Integration | 3/3 | ✓ |
+| 9. AI Data Analysis | 3/3 | ✓ |
+| 10. AI Fallback Fixes | 2/2 | ✓ |
+| 11. Pdfplumber/OCR compare | 3/3 | ✓ |
+| 12. UI Polish | 5/5 | ✓ |
+| 13. About + icons | 3/3 | ✓ |
 
-**Recent Trend:**
-- Last 4 plans: 03-01 (20min), 03-02 (15min), 03-03 (15min), 03-04 (15min)
-- Trend: Consistent execution pace, all v1.0 plans completed successfully
-
-*Updated after v2.0 roadmap creation - 2026-01-24*
+*Uppdaterad 2026-01-25 — progress/roadmap-synk*
 
 ## Accumulated Context
 

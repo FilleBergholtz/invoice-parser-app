@@ -22,6 +22,8 @@ pytest tests/test_footer_extractor.py tests/test_ai_client.py -v
 
 **Note:** These tests disable AI (e.g. monkeypatch `get_ai_enabled` and calibration/learning) so they exercise the heuristic path in a stable way. Passing them ensures the footer extractor and AI client are not broken. **AI-on behaviour is not covered by these tests** and is verified manually or via the steps in section 3.
 
+**Senast kört:** 2026-01-25 — `pytest tests/test_footer_extractor.py tests/test_ai_client.py -v` → **16 passed, 1 skipped.**
+
 ---
 
 ## 3. Manual verification

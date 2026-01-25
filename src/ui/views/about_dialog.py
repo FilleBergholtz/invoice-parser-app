@@ -12,7 +12,7 @@ from ...config import get_app_version, get_app_name
 
 def _author_name() -> str:
     """Creator credit. Placeholder when not in pyproject."""
-    return "EPG"
+    return "Filip Bergholtz"
 
 
 class AboutDialog(QDialog):
