@@ -14,6 +14,7 @@ from ..config import (
 )
 from ..models.invoice_header import InvoiceHeader
 from ..models.invoice_line import InvoiceLine
+from ..models.row import Row
 from ..models.segment import Segment
 from ..models.traceability import Traceability
 from ..pipeline.confidence_calibration import CalibrationModel, calibrate_confidence
@@ -243,7 +244,8 @@ def extract_total_amount(
     footer_segment: Optional[Segment],
     line_items: List[InvoiceLine],
     invoice_header: InvoiceHeader,
-    strategy: Optional[str] = None
+    strategy: Optional[str] = None,
+    rows_above_footer: Optional[List[Row]] = None,
 ) -> None:
     """Extract total amount from footer segment using keyword matching and confidence scoring.
     
@@ -251,6 +253,10 @@ def extract_total_amount(
         footer_segment: Footer segment (or None if not found)
         line_items: List of InvoiceLine objects for mathematical validation
         invoice_header: InvoiceHeader to update with extracted total amount
+        rows_above_footer: Optional rows immediately above footer (e.g. last items rows).
+            If the first footer row has amounts but no keywords, we check the last row
+            here for labels like "Att betala: SEK" / "Nettobelopp" (footer threshold can
+            put labels in items and amounts in footer).
         
     Algorithm:
     1. Extract all amount candidates from footer segment rows
@@ -393,6 +399,24 @@ def extract_total_amount(
     # Combined patterns for keyword detection
     keyword_patterns = total_with_vat_patterns + total_without_vat_patterns + generic_total_patterns
     
+    # Keyword type from rows immediately above footer (rubrikerna ovanför ramen)
+    # If labels like "Att betala: SEK" / "Nettobelopp" sit in items (just above 70%) and
+    # amounts in footer, we use the last row above for keyword_type when first footer row
+    # has amounts only.
+    keyword_type_above: Optional[str] = None
+    if rows_above_footer:
+        for r in reversed(rows_above_footer):
+            t = r.text.lower()
+            if any(re.search(p, t, re.IGNORECASE) for p in total_with_vat_patterns):
+                keyword_type_above = "with_vat"
+                break
+            if any(re.search(p, t, re.IGNORECASE) for p in total_without_vat_patterns):
+                keyword_type_above = "without_vat"
+                break
+            if any(re.search(p, t, re.IGNORECASE) for p in generic_total_patterns):
+                keyword_type_above = "generic"
+                break
+    
     # Improved amount pattern. Dot-thousands FIRST (require at least one .XXX) so "2.973,88"
     # matches whole. Then dot-decimal so "743.47" matches whole.
     amount_pattern = re.compile(
@@ -432,6 +456,11 @@ def extract_total_amount(
             next_row = footer_segment.rows[row_index + 1]
             amount_matches = list(amount_pattern.finditer(next_row.text))
             use_row, use_idx = next_row, row_index + 1
+        
+        # Use keyword from row above footer when first footer row has amounts only (labels in items)
+        use_keyword_type = keyword_type
+        if not has_keyword and amount_matches and row_index == 0 and keyword_type_above is not None:
+            use_keyword_type = keyword_type_above
         
         for match in amount_matches:
             amount_text = match.group(0)
@@ -484,9 +513,9 @@ def extract_total_amount(
                         'amount': amount,
                         'row': use_row,
                         'row_index': use_idx,
-                        'token': matching_token or row.tokens[0] if row.tokens else None,
-                        'has_keyword': has_keyword,
-                        'keyword_type': keyword_type  # 'with_vat', 'without_vat', 'generic', or None
+                        'token': matching_token or (use_row.tokens[0] if use_row.tokens else None),
+                        'has_keyword': has_keyword or (use_keyword_type is not None),
+                        'keyword_type': use_keyword_type,
                     })
             except ValueError:
                 continue

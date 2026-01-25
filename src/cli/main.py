@@ -171,6 +171,7 @@ def process_invoice(
         
         # Find footer segment (prefer last page, but search all pages if needed)
         footer_segment = None
+        last_page_segments = []
         if doc.pages:
             # First, try last page (most common case - totalsumma is usually on last page)
             last_page_segments = [s for s in all_segments if s.page == doc.pages[-1]]
@@ -183,7 +184,15 @@ def process_invoice(
                     page_segments = [s for s in all_segments if s.page == page]
                     footer_segment = next((s for s in page_segments if s.segment_type == "footer"), None)
                     if footer_segment:
+                        last_page_segments = page_segments
                         break
+        
+        # Rows immediately above footer (rubrikerna); labels like "Att betala: SEK" can sit in items
+        rows_above_footer = []
+        if footer_segment and last_page_segments:
+            items_on_footer_page = next((s for s in last_page_segments if s.segment_type == "items"), None)
+            if items_on_footer_page and items_on_footer_page.rows:
+                rows_above_footer = items_on_footer_page.rows[-2:]  # last 1–2 rows
         
         # Create InvoiceHeader
         invoice_header = None
@@ -205,7 +214,10 @@ def process_invoice(
             from ..pipeline.retry_extraction import extract_with_retry
             
             def extract_total(strategy=None):
-                extract_total_amount(footer_segment, all_invoice_lines, invoice_header, strategy=strategy)
+                extract_total_amount(
+                    footer_segment, all_invoice_lines, invoice_header,
+                    strategy=strategy, rows_above_footer=rows_above_footer
+                )
                 return invoice_header
             
             if verbose:
@@ -430,10 +442,17 @@ def process_virtual_invoice(
         
         # Find footer segment (from last page of this invoice)
         footer_segment = None
+        last_page_segments = []
         if invoice_pages:
             last_page = invoice_pages[-1]
             last_page_segments = [s for s in all_segments if s.page == last_page]
             footer_segment = next((s for s in last_page_segments if s.segment_type == "footer"), None)
+        
+        rows_above_footer = []
+        if footer_segment and last_page_segments:
+            items_on_footer_page = next((s for s in last_page_segments if s.segment_type == "items"), None)
+            if items_on_footer_page and items_on_footer_page.rows:
+                rows_above_footer = items_on_footer_page.rows[-2:]
         
         # Create InvoiceHeader
         invoice_header = None
@@ -450,7 +469,10 @@ def process_virtual_invoice(
             from ..pipeline.retry_extraction import extract_with_retry
             
             def extract_total(strategy=None):
-                extract_total_amount(footer_segment, all_invoice_lines, invoice_header, strategy=strategy)
+                extract_total_amount(
+                    footer_segment, all_invoice_lines, invoice_header,
+                    strategy=strategy, rows_above_footer=rows_above_footer
+                )
                 return invoice_header
             
             if verbose:
