@@ -15,7 +15,7 @@ class VirtualInvoiceResult:
     """Result for a single virtual invoice extracted from a PDF.
     
     Attributes:
-        virtual_invoice_id: Unique identifier (format: "{file_stem}__{index}")
+        virtual_invoice_id: Unique identifier; extraherade fakturanummer när det finns, annars "{file_stem}__{index}"
         source_pdf: Source PDF filename
         virtual_invoice_index: Index of this invoice within the PDF (1-based)
         page_start: Starting page number for this invoice

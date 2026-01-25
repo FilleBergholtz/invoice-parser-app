@@ -383,6 +383,7 @@ class MainWindow(QMainWindow):
         
         validation = self.processing_result.get("validation") or {}
         self._current_validation_invoice_id = validation.get("invoice_id")
+        self._current_validation_invoice_number = validation.get("invoice_number")
         raw = validation.get("candidates") or []
         if not raw:
             return candidates, traceability_for_viewer

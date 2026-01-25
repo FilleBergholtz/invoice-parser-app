@@ -1,7 +1,7 @@
 """Excel export functionality with Swedish column names."""
 
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, cast
 
 import pandas as pd
 
@@ -42,30 +42,31 @@ def export_to_excel(
     - Invoice metadata repeated per row
     - Line item data from InvoiceLine objects
     - Control columns with validation data (after existing columns)
-    - Faktura-ID column shows virtual_invoice_id for multi-invoice PDFs (format: "{file_stem}__{index}")
+    - Faktura-ID column shows virtual_invoice_id (extraherade fakturanummer när det finns, annars "{file_stem}__{index}")
     """
     # Determine if invoice_data is batch mode (list of dicts) or legacy mode (list of InvoiceLine)
     if invoice_data and isinstance(invoice_data[0], dict) and "invoice_lines" in invoice_data[0]:
         # Batch mode: list of invoice result dicts
+        batch_list = cast(List[Dict[str, Any]], invoice_data)
         all_rows = []
-        for invoice_result in invoice_data:
+        for invoice_result in batch_list:
             invoice_lines = invoice_result["invoice_lines"]
-            invoice_metadata = invoice_result["invoice_metadata"]
+            meta = invoice_result.get("invoice_metadata") or {}
             
             # Extract metadata
-            fakturanummer = invoice_metadata.get("fakturanummer", "TBD")
-            foretag = invoice_metadata.get("foretag", "TBD")
-            fakturadatum = invoice_metadata.get("fakturadatum", "TBD")
-            referenser = invoice_metadata.get("referenser", "")
-            virtual_invoice_id = invoice_metadata.get("virtual_invoice_id", "")
+            fakturanummer = meta.get("fakturanummer", "TBD")
+            foretag = meta.get("foretag", "TBD")
+            fakturadatum = meta.get("fakturadatum", "TBD")
+            referenser = meta.get("referenser", "")
+            virtual_invoice_id = meta.get("virtual_invoice_id", "")
             
             # Extract validation fields
-            status = invoice_metadata.get("status", "REVIEW")
-            lines_sum = invoice_metadata.get("lines_sum", 0.0)
-            diff = invoice_metadata.get("diff", "N/A")
-            invoice_number_confidence = invoice_metadata.get("invoice_number_confidence", 0.0)
-            total_confidence = invoice_metadata.get("total_confidence", 0.0)
-            extraction_source = invoice_metadata.get("extraction_source", "") or ""
+            status = meta.get("status", "REVIEW")
+            lines_sum = meta.get("lines_sum", 0.0)
+            diff = meta.get("diff", "N/A")
+            invoice_number_confidence = meta.get("invoice_number_confidence", 0.0)
+            total_confidence = meta.get("total_confidence", 0.0)
+            extraction_source = meta.get("extraction_source") or ""
             
             # Calculate Hela summan (sum of all line totals for this invoice)
             hela_summan = sum(line.total_amount for line in invoice_lines)
@@ -98,7 +99,7 @@ def export_to_excel(
         rows = all_rows
     else:
         # Legacy mode: list of InvoiceLine objects with single metadata dict
-        invoice_lines = invoice_data  # type: ignore
+        invoice_lines = cast(List[InvoiceLine], invoice_data)
         if not invoice_lines:
             raise ValueError("Cannot export empty invoice lines list")
         

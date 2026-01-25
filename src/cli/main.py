@@ -60,6 +60,15 @@ class InvoiceProcessingError(Exception):
     pass
 
 
+def _sanitize_invoice_id_for_path(s: str) -> str:
+    """Gör id säkert för filsystem: ersätt \\ / : * ? \" < > | med _."""
+    if not s or not isinstance(s, str):
+        return ""
+    for c in '\\/:*?"<>|':
+        s = s.replace(c, "_")
+    return (s.strip() or "").replace("\x00", "")
+
+
 def _is_likely_garbled(row_text: str) -> bool:
     """Utelämn rader som ser ut som revers/vattensstämpel (t.ex. |TEKREVSGNINRYTSIMONOKE, nigirO, ecruoS)."""
     import re
@@ -639,6 +648,14 @@ def process_virtual_invoice(
             status = validation_result.status
         else:
             status = "REVIEW"
+        
+        # Använd extraherade fakturanummer som virtual_invoice_id när det finns (INV-ID-01; samma id i run_summary, corrections, DB)
+        if invoice_header and getattr(invoice_header, "invoice_number", None):
+            raw = str(invoice_header.invoice_number).strip()
+            if raw:
+                tid = _sanitize_invoice_id_for_path(raw)
+                if tid:
+                    virtual_invoice_id = tid
         
         result = VirtualInvoiceResult(
             virtual_invoice_id=virtual_invoice_id,
