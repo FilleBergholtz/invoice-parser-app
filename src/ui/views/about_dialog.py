@@ -4,7 +4,9 @@ from PySide6.QtWidgets import (
     QDialog, QTabWidget, QWidget, QVBoxLayout, QLabel, QPushButton,
 )
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QIcon
 
+from .. import resources_rc  # noqa: F401 - register icons
 from ...config import get_app_version, get_app_name
 
 
@@ -20,6 +22,7 @@ class AboutDialog(QDialog):
         super().__init__(parent)
         self.setObjectName("aboutDialog")
         self.setWindowTitle("Om EPG PDF Extraherare")
+        self.setWindowIcon(QIcon(":/icons/app.svg"))
         self.setMinimumSize(420, 380)
         self.setModal(True)
 
