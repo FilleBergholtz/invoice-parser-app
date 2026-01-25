@@ -222,6 +222,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 - Mapped to phases: 25
 - Unmapped: 0 ✓
 
+### Backlog / användarrapporterade förbättringar
+
+- [x] **INV-ID-01** (2026-01-25): I corrections.json och learning.db ska vi spara **extraherade fakturanummer** som identifierare när dessa finns, inte bara PDF-filnamn. En PDF kan innehålla flera fakturor med olika fakturanummer – varje ska identifieras med sitt fakturanummer. **Implementerat:** validation-blob innehåller `invoice_number`; GUI använder det vid "Bekräfta val" som `invoice_id` när det finns.
+- [ ] **MULTIPAGE-01**: Fakturor som sträcker sig över flera sidor ska kunna lokaliseras och slås ihop: (a) hitta samma fakturanummer på flera sidor, (b) använd sidnummer i hörn (oftast övre högra) för att veta vilka sidor som hör ihop, (c) flera line items kan ligga på flera sidor för samma faktura – dessa ska behandlas som en logisk faktura.
+
 ---
 *Requirements defined: 2025-01-27*
-*Last updated: 2026-01-24 — Added v2.0 requirements*
+*Last updated: 2026-01-25 — INV-ID-01 impl., MULTIPAGE-01 backlog*

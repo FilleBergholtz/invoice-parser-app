@@ -1170,6 +1170,7 @@ def process_batch(
             blob = {
                 "pdf_path": pdf_path,
                 "invoice_id": ir.get("virtual_invoice_id", ""),
+                "invoice_number": header.invoice_number if getattr(header, "invoice_number", None) else None,
                 "candidates": [
                     {
                         "amount": c.get("amount", 0.0),

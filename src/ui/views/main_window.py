@@ -180,7 +180,8 @@ class MainWindow(QMainWindow):
         self._validation_queue: List[dict] = []
         self._validation_queue_index: int = 0
         self._current_validation_invoice_id: Optional[str] = None
-        
+        self._current_validation_invoice_number: Optional[str] = None  # Extraherade fakturanummer (prioritet över filnamn)
+
         self.next_invoice_btn = QPushButton("Nästa faktura")
         self.next_invoice_btn.setMinimumHeight(40)
         self.next_invoice_btn.setStyleSheet(_btn_style)
@@ -478,7 +479,9 @@ class MainWindow(QMainWindow):
             return
         
         try:
-            invoice_id = self._current_validation_invoice_id or (
+            # Använd extraherade fakturanummer som identifierare när det finns (en PDF kan innehålla flera fakturor med olika nummer)
+            n = self._current_validation_invoice_number
+            invoice_id = (n if n and str(n).strip() else None) or self._current_validation_invoice_id or (
                 Path(self.input_path).stem if self.input_path else "unknown"
             )
             
