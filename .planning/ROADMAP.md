@@ -37,6 +37,7 @@ This roadmap delivers a Swedish invoice parsing system that transforms PDF invoi
 - [ ] **Phase 10: AI Fallback Fixes and Verification** - Document fixes, address gaps, and verify AI fallback works well
 - [ ] **Phase 11: Pdfplumber och OCR: kör båda, jämför, använd bästa** - Dual extraction; compare results; use best
 - [ ] **Phase 12: UI Polish (PySide6)** - Theme + layout + engine states för desktop-GUI
+- [ ] **Phase 13: About page + app icons (branding & help)** - Om-dialog, Hjälp-meny, fönsterikoner
 
 ## Phase Details
 

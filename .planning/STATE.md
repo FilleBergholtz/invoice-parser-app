@@ -71,6 +71,7 @@ None yet.
 - Phase 10 added: AI Fallback Fixes and Verification — document fixes, address gaps, verify AI fallback works well.
 - Phase 11 added: Pdfplumber och OCR: kör båda, jämför, använd bästa — dual extraction, compare results, use best.
 - Phase 11 planned: 11-01 (OCR wiring), 11-02 (dual-run compare), 11-03 (use best downstream).
+- Phase 13 added: About page + app icons (branding & help) — Om-dialog, Hjälp-meny, fönsterikoner. Discuss-phase 13: 13-DISCUSS.md with tabbed About (Om appen + Hjälp), QRC/icons, Windows .ico. Plans: 13-01 (About + Help menu), 13-02 (QRC + apply icons), 13-03 (Windows .ico + build).
 
 ### Blockers/Concerns
 
