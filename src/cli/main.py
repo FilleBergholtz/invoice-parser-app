@@ -309,8 +309,9 @@ def process_invoice(
                     if verbose:
                         print(f"  Warning: Unexpected AI error: {e}")
             else:
-                if verbose:
-                    print("  Warning: AI_ENABLED=true but AI_ENDPOINT not set")
+                # AI_ENDPOINT används endast för AI-enrichment. AI-fallback (totalsumma) använder API-nyckel.
+                if verbose and not get_ai_key():
+                    print("  Warning: AI_ENABLED=true but neither AI_ENDPOINT nor API key set")
         
         # Step 8: Run validation
         validation_result = None
@@ -565,8 +566,8 @@ def process_virtual_invoice(
                     if verbose:
                         print(f"  Warning: Unexpected AI error: {e}")
             else:
-                if verbose:
-                    print("  Warning: AI_ENABLED=true but AI_ENDPOINT not set")
+                if verbose and not get_ai_key():
+                    print("  Warning: AI_ENABLED=true but neither AI_ENDPOINT nor API key set")
         
         # Step 8: Run validation
         validation_result = None
