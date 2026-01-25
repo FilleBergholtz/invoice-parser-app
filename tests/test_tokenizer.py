@@ -4,8 +4,6 @@ import pytest
 import pdfplumber
 from pathlib import Path
 
-from src.models.document import Document
-from src.models.page import Page
 from src.pipeline.reader import read_pdf
 from src.pipeline.tokenizer import extract_tokens_from_page
 
@@ -39,28 +37,6 @@ def doc_and_pdfplumber_page(minimal_pdf_path):
     with pdfplumber.open(minimal_pdf_path) as pdf:
         pp_page = pdf.pages[0]
         yield doc, page, pp_page
-
-
-@pytest.fixture
-def sample_document():
-    """Create a sample Document for testing (utan PDF-fil)."""
-    doc = Document(
-        filename="test.pdf",
-        filepath="/nonexistent/path/test.pdf",
-        page_count=0,
-        pages=[],
-        metadata={}
-    )
-    page = Page(
-        page_number=1,
-        document=doc,
-        width=595.0,
-        height=842.0,
-        tokens=[],
-        rendered_image_path=None
-    )
-    doc.pages = [page]
-    return doc, page
 
 
 def test_extract_tokens_requires_pdfplumber_page(doc_and_pdfplumber_page):
