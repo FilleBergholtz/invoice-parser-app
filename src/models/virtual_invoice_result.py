@@ -38,7 +38,8 @@ class VirtualInvoiceResult:
     invoice_lines: List[InvoiceLine] = field(default_factory=list)
     validation_result: Optional[ValidationResult] = None
     error: Optional[str] = None
-    extraction_source: Optional[str] = None  # "pdfplumber" | "ocr" when --compare-extraction chose one
+    extraction_source: Optional[str] = None  # "pdfplumber" | "ocr" | "ai_text" | "ai_vision" when fallback chain used
+    extraction_detail: Optional[Dict[str, Any]] = None  # method_used, vision_reason, text_quality, artifact_paths (14-06)
     ai_request: Optional[Dict[str, Any]] = None
     ai_response: Optional[Dict[str, Any]] = None
     ai_error: Optional[str] = None

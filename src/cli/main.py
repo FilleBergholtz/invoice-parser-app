@@ -8,7 +8,7 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 # Fix encoding for Windows console (reconfigure exists on 3.7+)
 if sys.platform == "win32":
@@ -32,7 +32,8 @@ from ..pipeline.row_grouping import group_tokens_to_rows
 from ..pipeline.segment_identification import identify_segments
 from ..pipeline.tokenizer import extract_tokens_from_page
 from ..pipeline.pdf_renderer import render_page_to_image
-from ..pipeline.ocr_abstraction import extract_tokens_with_ocr, OCRException
+from ..pipeline.ocr_abstraction import extract_tokens_with_ocr, ocr_page_metrics, OCRException, OCR_MEDIAN_CONF_ROUTING_THRESHOLD
+from ..pipeline.text_quality import score_text_quality, score_ocr_quality
 from ..pipeline.header_extractor import extract_header_fields
 from ..pipeline.footer_extractor import extract_total_amount
 from ..pipeline.validation import validate_invoice
@@ -422,30 +423,20 @@ def process_virtual_invoice(
     extraction_path: str,
     verbose: bool = False,
     output_dir: Optional[str] = None,
-) -> VirtualInvoiceResult:
+    ocr_render_dir: Optional[str] = None,
+    return_last_page_tokens: bool = False,
+):
     """Process a single virtual invoice within a PDF (given page range).
-    
-    Args:
-        doc: Document object
-        page_start: Starting page number (1-based)
-        page_end: Ending page number (1-based, inclusive)
-        virtual_invoice_index: Index of this invoice within PDF (1-based)
-        extraction_path: "pdfplumber" or "ocr"
-        verbose: Enable verbose output
-        output_dir: Output directory (required for OCR path, for ocr_render subdir)
-        
+
     Returns:
-        VirtualInvoiceResult object
+        VirtualInvoiceResult, or (VirtualInvoiceResult, {"last_page_tokens": list}) when return_last_page_tokens=True.
     """
-    # Generate virtual_invoice_id
     file_stem = Path(doc.filename).stem
     virtual_invoice_id = f"{file_stem}__{virtual_invoice_index}"
-    
-    # Extract pages for this virtual invoice
     invoice_pages = [p for p in doc.pages if page_start <= p.page_number <= page_end]
-    
+
     if not invoice_pages:
-        return VirtualInvoiceResult(
+        out = VirtualInvoiceResult(
             virtual_invoice_id=virtual_invoice_id,
             source_pdf=doc.filename,
             virtual_invoice_index=virtual_invoice_index,
@@ -454,27 +445,27 @@ def process_virtual_invoice(
             status="FAILED",
             error=f"No pages found in range {page_start}-{page_end}"
         )
-    
-    try:
-        # Extract tokens from pages in range
-        all_invoice_lines = []
-        all_segments = []
-        line_number_global = 1
-        
-        # Open PDF once for all pages (pdfplumber path only)
-        pdf = None
-        if extraction_path == "pdfplumber":
-            pdf = pdfplumber.open(doc.filepath)
-        ocr_render_dir = (Path(output_dir) / "ocr_render") if (extraction_path == "ocr" and output_dir) else None
+        return (out, {"last_page_tokens": []}) if return_last_page_tokens else out
 
+    pdf = None
+    if extraction_path == "pdfplumber":
+        pdf = pdfplumber.open(doc.filepath)
+    render_dir = Path(ocr_render_dir) if ocr_render_dir else ((Path(output_dir) / "ocr_render") if (extraction_path == "ocr" and output_dir) else None)
+
+    all_invoice_lines = []
+    all_segments = []
+    line_number_global = 1
+    last_page_tokens: List[Any] = []
+
+    try:
         try:
             for page in invoice_pages:
                 if extraction_path == "pdfplumber" and pdf:
                     pdfplumber_page = pdf.pages[page.page_number - 1]
                     tokens = extract_tokens_from_page(page, pdfplumber_page)
-                elif extraction_path == "ocr" and ocr_render_dir is not None:
+                elif extraction_path == "ocr" and render_dir is not None:
                     try:
-                        render_page_to_image(page, str(ocr_render_dir))
+                        render_page_to_image(page, str(render_dir))
                         tokens = extract_tokens_with_ocr(page)
                     except OCRException as e:
                         if verbose:
@@ -486,32 +477,27 @@ def process_virtual_invoice(
                         tokens = []
                 else:
                     tokens = []
-                
+
+                if return_last_page_tokens and page == invoice_pages[-1]:
+                    last_page_tokens = tokens or []
+
                 if not tokens:
                     continue
-                
-                # Group tokens to rows
+
                 rows = group_tokens_to_rows(tokens)
-                
-                # Identify segments
                 segments = identify_segments(rows, page)
                 all_segments.extend(segments)
-                
-                # Extract line items from items segment
                 items_segment = next((s for s in segments if s.segment_type == "items"), None)
-                
                 if items_segment:
                     invoice_lines = extract_invoice_lines(items_segment)
-                    
                     for line in invoice_lines:
                         line.line_number = line_number_global
                         line_number_global += 1
-                    
                     all_invoice_lines.extend(invoice_lines)
         finally:
             if pdf:
                 pdf.close()
-        
+
         # Find header segment (from first page of this invoice)
         header_segment = None
         if invoice_pages:
@@ -683,11 +669,13 @@ def process_virtual_invoice(
         result.ai_request = ai_request_data
         result.ai_response = ai_response_data
         result.ai_error = ai_error
-        
+
+        if return_last_page_tokens:
+            return (result, {"last_page_tokens": last_page_tokens})
         return result
-        
+
     except Exception as e:
-        return VirtualInvoiceResult(
+        err_result = VirtualInvoiceResult(
             virtual_invoice_id=virtual_invoice_id,
             source_pdf=doc.filename,
             virtual_invoice_index=virtual_invoice_index,
@@ -696,6 +684,9 @@ def process_virtual_invoice(
             status="FAILED",
             error=f"Processing error: {str(e)}"
         )
+        if return_last_page_tokens:
+            return (err_result, {"last_page_tokens": last_page_tokens})
+        return err_result
 
 
 def _validation_passed(r: VirtualInvoiceResult) -> bool:
@@ -783,26 +774,91 @@ def process_pdf(
             # Fail-safe: treat entire PDF as one invoice
             boundaries = [(1, len(doc.pages))]
         
-        # Step 4: Process each virtual invoice
+        # R4 routing constants (14-RESEARCH)
+        TEXT_QUALITY_THRESHOLD = 0.5
+        CRITICAL_FIELDS_CONF_THRESHOLD = 0.95
+
+        # Step 4: Process each virtual invoice (with optional R4 fallback routing when compare_extraction)
         results = []
+        artifacts_pages_dir = Path(output_dir) / "artifacts" / "pages" if output_dir else None
+        if compare_extraction and artifacts_pages_dir:
+            artifacts_pages_dir.mkdir(parents=True, exist_ok=True)
+
         for index, (page_start, page_end) in enumerate(boundaries, start=1):
             if compare_extraction:
                 if verbose and index == 1:
                     print("  Compare: pdfplumber → OCR per faktura, väljer bästa. AI-fallback vid behov under extraktion.")
                 if verbose:
                     print(f"  Compare: kör pdfplumber för sidor {page_start}-{page_end} …")
-                r_pdf = process_virtual_invoice(
+                out_pdf = process_virtual_invoice(
                     doc, page_start, page_end, index, "pdfplumber", verbose,
-                    output_dir=output_dir,
+                    output_dir=output_dir, return_last_page_tokens=True,
                 )
+                r_pdf = out_pdf[0] if isinstance(out_pdf, tuple) else out_pdf
+                extra_pdf = out_pdf[1] if isinstance(out_pdf, tuple) else {}
+                tokens_pdf = extra_pdf.get("last_page_tokens") or []
+                pdf_text_quality = score_text_quality(" ".join(getattr(t, "text", "") for t in tokens_pdf), tokens_pdf) if tokens_pdf else 0.0
+                inc = _invoice_number_confidence(r_pdf)
+                tc = _total_confidence(r_pdf)
+                critical_conf = min(inc, tc) if (r_pdf.invoice_header and inc is not None and tc is not None) else 0.0
+
+                accept_pdf = critical_conf >= CRITICAL_FIELDS_CONF_THRESHOLD and pdf_text_quality >= TEXT_QUALITY_THRESHOLD
+                if accept_pdf:
+                    r_pdf.extraction_source = "pdfplumber"
+                    r_pdf.extraction_detail = {
+                        "method_used": "pdfplumber",
+                        "pdf_text_quality": pdf_text_quality,
+                        "ocr_text_quality": None,
+                        "ocr_median_conf": None,
+                        "vision_reason": None,
+                    }
+                    if verbose:
+                        print(f"  [{r_pdf.virtual_invoice_id}] accept pdfplumber (conf={critical_conf:.2f}, pdf_tq={pdf_text_quality:.2f})")
+                    results.append(r_pdf)
+                    continue
+
                 if verbose:
                     print(f"  Compare: kör OCR för sidor {page_start}-{page_end} …")
-                r_ocr = process_virtual_invoice(
+                ocr_render = str(artifacts_pages_dir) if artifacts_pages_dir else (str(Path(output_dir) / "ocr_render") if output_dir else None)
+                out_ocr = process_virtual_invoice(
                     doc, page_start, page_end, index, "ocr", verbose,
-                    output_dir=output_dir,
+                    output_dir=output_dir, ocr_render_dir=ocr_render, return_last_page_tokens=True,
                 )
+                r_ocr = out_ocr[0] if isinstance(out_ocr, tuple) else out_ocr
+                extra_ocr = out_ocr[1] if isinstance(out_ocr, tuple) else {}
+                tokens_ocr = extra_ocr.get("last_page_tokens") or []
+                ocr_text_quality = score_ocr_quality(tokens_ocr) if tokens_ocr else 0.0
+                ocr_metrics = ocr_page_metrics(tokens_ocr) if tokens_ocr else None
+                ocr_median = (ocr_metrics.median_conf if ocr_metrics else 0.0) or 0.0
+                critical_conf_ocr = min(_invoice_number_confidence(r_ocr), _total_confidence(r_ocr)) if r_ocr.invoice_header else 0.0
+                accept_ocr = (
+                    critical_conf_ocr >= CRITICAL_FIELDS_CONF_THRESHOLD
+                    and ocr_median >= OCR_MEDIAN_CONF_ROUTING_THRESHOLD
+                    and ocr_text_quality >= TEXT_QUALITY_THRESHOLD
+                )
+                if accept_ocr:
+                    r_ocr.extraction_source = "ocr"
+                    r_ocr.extraction_detail = {
+                        "method_used": "ocr",
+                        "pdf_text_quality": pdf_text_quality,
+                        "ocr_text_quality": ocr_text_quality,
+                        "ocr_median_conf": ocr_median,
+                        "vision_reason": None,
+                    }
+                    if verbose:
+                        print(f"  [{r_ocr.virtual_invoice_id}] accept OCR (conf={critical_conf:.2f}, ocr_tq={ocr_text_quality:.2f}, median={ocr_median:.1f})")
+                    results.append(r_ocr)
+                    continue
+
                 chosen, source = _choose_best_extraction_result(r_pdf, r_ocr)
                 chosen.extraction_source = source
+                chosen.extraction_detail = {
+                    "method_used": source,
+                    "pdf_text_quality": pdf_text_quality,
+                    "ocr_text_quality": ocr_text_quality,
+                    "ocr_median_conf": ocr_median if tokens_ocr else None,
+                    "vision_reason": None,
+                }
                 if verbose:
                     vp = _validation_passed(chosen)
                     conf = _total_confidence(chosen)
@@ -881,7 +937,8 @@ def process_batch(
     
     summary.pipeline_version = get_app_version()
     summary.compare_extraction_used = compare_extraction
-    
+    summary.extraction_details = []
+
     # Determine input files
     input_path_obj = Path(input_path)
     
@@ -1003,6 +1060,11 @@ def process_batch(
                         "quality_score": quality_score.to_dict(),
                         "extraction_source": getattr(virtual_result, "extraction_source", None),
                     })
+                    if getattr(virtual_result, "extraction_detail", None) is not None:
+                        det = dict(virtual_result.extraction_detail)
+                        det["virtual_invoice_id"] = virtual_result.virtual_invoice_id
+                        det["filename"] = pdf_file.name
+                        summary.extraction_details.append(det)
                     
                     invoice_results.append({
                         "invoice_header": virtual_result.invoice_header,

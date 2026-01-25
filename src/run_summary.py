@@ -62,7 +62,9 @@ class RunSummary:
     validation: Optional[Dict[str, Any]] = None  # Candidates + traceability for GUI (single or current from queue)
     validation_queue: Optional[List[Dict[str, Any]]] = None  # One blob per REVIEW invoice; GUI shows one-by-one
     compare_extraction_used: bool = False  # True when --compare-extraction was used
-    
+    # Per virtual-invoice extraction metadata (14-06): method_used, vision_reason, text quality, artifact paths
+    extraction_details: Optional[List[Dict[str, Any]]] = None
+
     @classmethod
     def create(cls, input_path: str, output_dir: str) -> 'RunSummary':
         """Create a new run summary."""
