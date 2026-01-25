@@ -748,14 +748,18 @@ def process_pdf(
     pdf_path: str,
     output_dir: str,
     verbose: bool = False,
-    compare_extraction: bool = False,
+    compare_extraction: bool = True,
 ) -> List[VirtualInvoiceResult]:
     """Process a PDF file that may contain multiple invoices.
+    
+    Standard flow: run pdfplumber and OCR, pick best result; if total confidence < 95%,
+    AI fallback is used (when enabled). Learning patterns (learning.db) can reduce need for OCR/AI.
     
     Args:
         pdf_path: Path to PDF file
         output_dir: Output directory (used for error reporting, not in this function)
         verbose: Enable verbose output
+        compare_extraction: If True (default), run both pdfplumber and OCR and use best.
         
     Returns:
         List of VirtualInvoiceResult objects (one per detected invoice, or one if detection fails)
@@ -837,9 +841,12 @@ def process_batch(
     fail_fast: bool = False,
     verbose: bool = False,
     artifacts_dir: Optional[str] = None,
-    compare_extraction: bool = False,
+    compare_extraction: bool = True,
 ) -> Dict:
     """Process multiple invoice PDFs in batch.
+    
+    Standard flow: compare_extraction=True runs pdfplumber and OCR per invoice, uses best;
+    AI fallback when confidence < 95% (if enabled). Use compare_extraction=False to skip OCR.
     
     Args:
         input_path: Input directory or file list
@@ -847,6 +854,7 @@ def process_batch(
         fail_fast: Stop on first error if True
         verbose: Enable verbose output
         artifacts_dir: Optional custom directory for run artifacts
+        compare_extraction: If True (default), run pdfplumber and OCR and use best result.
         
     Returns:
         Dict with batch processing results
@@ -1270,9 +1278,9 @@ def main():
     )
     
     parser.add_argument(
-        "--compare-extraction",
+        "--no-compare-extraction",
         action="store_true",
-        help="Run both pdfplumber and OCR, compare results, use best."
+        help="Use only pdfplumber (no OCR comparison). Default: run pdfplumber and OCR, use best; if confidence < 95% then AI fallback."
     )
     
     parser.add_argument(
@@ -1429,7 +1437,7 @@ def main():
                 fail_fast=args.fail_fast,
                 verbose=args.verbose,
                 artifacts_dir=args.artifacts_dir,
-                compare_extraction=args.compare_extraction
+                compare_extraction=not args.no_compare_extraction
             )
         
         # Final summary with validation statistics

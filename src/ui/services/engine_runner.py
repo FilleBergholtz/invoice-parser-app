@@ -63,6 +63,7 @@ class EngineRunner(QObject):
             script_path = project_root / "run_engine.py"
             cmd = [sys.executable, str(script_path)]
             
+        # Standard flow: pdfplumber + OCR (compare, use best); AI fallback if confidence < 95%
         cmd.extend([
             "--input", self.pdf_path,
             "--output", self.output_dir,
