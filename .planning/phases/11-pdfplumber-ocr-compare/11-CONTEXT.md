@@ -31,13 +31,15 @@ Implement both pdfplumber and OCR extraction, run both per invoice/PDF, compare 
 - When `extraction_path == "ocr"`: for each page, `render_page_to_image(page, output_dir)` then `extract_tokens_with_ocr(page)`. Use e.g. `output_dir / "ocr_render"` for images.
 - Reuse same pipeline: `group_tokens_to_rows` → `identify_segments` → line items, footer, etc.
 
-### 3. Dual-run and compare
+### 3. Dual-run and compare (nu standard)
 
-- Add `--compare-extraction` (CLI) or equivalent config. When set:
+- **Compare är standard:** Motorn kör både pdfplumber och OCR per faktura, jämför och använder bästa resultatet. CLI-flagga `--no-compare-extraction` stänger av OCR-jämförelsen (endast pdfplumber).
+- När compare är på (default):
   - Run full pipeline with **pdfplumber** → result A (per virtual invoice or per PDF).
   - Run full pipeline with **OCR** → result B.
   - Compare A vs B (e.g. `validation_passed`, `total_confidence`, optionally `invoice_number_confidence`).
   - Select **best** and use that result for the rest of the run.
+- Vid konfidens &lt; 95 % används AI-fallback (om aktiverad) oavsett compare.
 
 ### 4. “Best” definition
 

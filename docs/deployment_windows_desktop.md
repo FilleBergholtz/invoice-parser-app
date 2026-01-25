@@ -55,6 +55,9 @@ Flaggor:
 *   `--fail-fast`: Avbryt vid första felet.
 *   `--verbose`: Visa debug-utskrifter.
 *   `--strict`: Returnera felkod (1) även vid REVIEW/PARTIAL status (strikt validering).
+*   `--no-compare-extraction`: Använd endast pdfplumber (ingen OCR-jämförelse). Standard är att köra både pdfplumber och OCR, välja bästa resultat, och vid konfidens &lt; 95 % använda AI-fallback om aktiverad.
+
+**Standardflöde:** Motorn kör först pdfplumber, sedan OCR, jämför och använder bästa resultatet; om konfidensen är under 95 % anropas AI (när den är konfigurerad och aktiverad).
 
 ## Release & Distribution
 

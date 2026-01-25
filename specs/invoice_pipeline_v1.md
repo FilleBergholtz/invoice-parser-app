@@ -55,7 +55,8 @@ Denna pipeline definierar 10 steg för att transformera en PDF-faktura till stru
 - Varje Token innehåller: text, x, y, width, height (position och dimensioner)
 
 **Regler**:
-- Tokens identifieras genom OCR eller PDF-textextraktion
+- Tokens identifieras genom OCR eller PDF-textextraktion (pdfplumber)
+- **Standardflöde:** Motorn kör både pdfplumber och OCR per faktura, jämför resultat (validering + konfidens) och använder bästa källan. Vid konfidens &lt; 95 % används AI-fallback om aktiverad. Med `--no-compare-extraction` körs endast pdfplumber.
 - Positionsdata (x, y, width, height) måste sparas exakt
 - Tokens behåller sin ordning i dokumentflödet
 - Whitespace och formatering bevaras i position-data

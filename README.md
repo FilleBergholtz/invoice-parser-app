@@ -90,7 +90,20 @@ python -m src.cli.main process invoice.pdf output/ --verbose
 
 # Fail fast (stoppa vid första fel)
 python -m src.cli.main batch input_folder/ output/ --fail-fast
+
+# Endast pdfplumber (ingen OCR-jämförelse); snabbare men mindre robust
+python -m src.cli.main batch input_folder/ output/ --no-compare-extraction
 ```
+
+### Standard extraktionsflöde
+
+Som standard kör motorn **pdfplumber** och **OCR** per faktura, jämför resultatet och använder det bästa. Om totalsumma-konfidensen fortfarande är under 95 % används **AI-fallback** (när den är aktiverad i inställningarna). Detta ger högsta noggrannhet.
+
+1. **Först pdfplumber** – extraktion från inbäddad PDF-text.
+2. **Vid behov OCR** – renderad sida OCR:as; bästa av pdfplumber och OCR väljs (validering + konfidens).
+3. **Vid konfidens &lt; 95 %** – AI anropas för totalsumma-förslag (om AI är aktiverad).
+
+Med **inlärning** (learning.db, mönster från korrigeringar) blir pdfplumber ofta tillräcklig, så behovet av OCR och AI minskar över tid. För snabb batch eller när källan är välkänd kan du använda `--no-compare-extraction` för att bara köra pdfplumber.
 
 ---
 
