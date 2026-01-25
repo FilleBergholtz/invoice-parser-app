@@ -39,6 +39,9 @@ class CorrectionCollector:
     
     def save_correction(self, correction: Dict[str, Any]) -> None:
         """Save single correction to JSON file.
+
+        Per invoice_id only the correction with highest corrected_confidence
+        is kept; duplicates are avoided.
         
         Args:
             correction: Correction dict with all required fields
@@ -58,18 +61,23 @@ class CorrectionCollector:
             if field not in correction:
                 raise ValueError(f"Missing required field: {field}")
         
-        # Load existing corrections
+        invoice_id = correction.get('invoice_id', '')
+        new_conf = float(correction.get('corrected_confidence') or 0.0)
+        
+        # Load existing, keep only others; if same invoice_id exists, keep best by confidence
         corrections = self.get_corrections()
+        same = [c for c in corrections if c.get('invoice_id') == invoice_id]
+        rest = [c for c in corrections if c.get('invoice_id') != invoice_id]
+        best_existing = max((float(c.get('corrected_confidence') or 0.0) for c in same), default=-1.0)
+        if same and new_conf <= best_existing:
+            return  # redan bättre eller lika bra sparad
+        rest.append(correction)
         
-        # Append new correction
-        corrections.append(correction)
-        
-        # Save to file
         try:
             with open(self.storage_path, 'w', encoding='utf-8') as f:
-                json.dump(corrections, f, indent=2, ensure_ascii=False)
+                json.dump(rest, f, indent=2, ensure_ascii=False)
             
-            logger.info(f"Saved correction for invoice {correction.get('invoice_id')}")
+            logger.info(f"Saved correction for invoice {invoice_id}" + (" (replaced previous)" if same else ""))
             
         except Exception as e:
             logger.error(f"Failed to save correction: {e}")

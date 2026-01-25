@@ -104,6 +104,11 @@ class LearningDatabase:
                 ON patterns(layout_hash)
             """)
             
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_corrections_invoice_id 
+                ON corrections(invoice_id)
+            """)
+            
             conn.commit()
             logger.debug(f"Database schema initialized: {self.db_path}")
     
@@ -171,14 +176,15 @@ class LearningDatabase:
         return imported_count
     
     def add_correction(self, correction: Dict[str, Any]) -> None:
-        """Insert a single correction into the database.
+        """Insert or replace a single correction; per invoice_id only the
+        row with highest corrected_confidence is kept (no duplicates).
         
         Same format as produced by correction_collector.save_correction.
         Used when saving from GUI so corrections go to both JSON and DB.
         
         Args:
             correction: Dict with invoice_id, supplier_name, original_total,
-                corrected_total, timestamp, correction_type, etc.
+                corrected_total, corrected_confidence, timestamp, correction_type, etc.
                 
         Raises:
             ValueError: If required fields are missing
@@ -187,28 +193,60 @@ class LearningDatabase:
         for k in required:
             if k not in correction:
                 raise ValueError(f"Missing required field: {k}")
+        invoice_id = correction.get('invoice_id', '')
+        new_conf = float(correction.get('corrected_confidence') or 0.0)
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
-                INSERT INTO corrections (
-                    invoice_id, supplier_name, original_total,
-                    original_confidence, corrected_total, corrected_confidence,
-                    raw_confidence, candidate_index, timestamp, correction_type
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                correction.get('invoice_id', ''),
-                correction.get('supplier_name', 'Unknown'),
-                correction.get('original_total'),
-                correction.get('original_confidence'),
-                correction.get('corrected_total'),
-                correction.get('corrected_confidence'),
-                correction.get('raw_confidence'),
-                correction.get('candidate_index'),
-                correction.get('timestamp', datetime.now().isoformat()),
-                correction.get('correction_type', 'total_amount')
-            ))
+            cursor.execute(
+                "SELECT id, corrected_confidence FROM corrections WHERE invoice_id = ?",
+                (invoice_id,),
+            )
+            row = cursor.fetchone()
+            if row is not None:
+                old_conf = float(row['corrected_confidence'] or 0.0)
+                if new_conf <= old_conf:
+                    logger.debug(f"Kept existing correction for invoice {invoice_id} (conf {old_conf} >= {new_conf})")
+                    return
+                cursor.execute("""
+                    UPDATE corrections SET
+                        supplier_name = ?, original_total = ?, original_confidence = ?,
+                        corrected_total = ?, corrected_confidence = ?, raw_confidence = ?,
+                        candidate_index = ?, timestamp = ?, correction_type = ?
+                    WHERE invoice_id = ?
+                """, (
+                    correction.get('supplier_name', 'Unknown'),
+                    correction.get('original_total'),
+                    correction.get('original_confidence'),
+                    correction.get('corrected_total'),
+                    correction.get('corrected_confidence'),
+                    correction.get('raw_confidence'),
+                    correction.get('candidate_index'),
+                    correction.get('timestamp', datetime.now().isoformat()),
+                    correction.get('correction_type', 'total_amount'),
+                    invoice_id,
+                ))
+                logger.info(f"Updated correction for invoice {invoice_id} (higher confidence {new_conf})")
+            else:
+                cursor.execute("""
+                    INSERT INTO corrections (
+                        invoice_id, supplier_name, original_total,
+                        original_confidence, corrected_total, corrected_confidence,
+                        raw_confidence, candidate_index, timestamp, correction_type
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    invoice_id,
+                    correction.get('supplier_name', 'Unknown'),
+                    correction.get('original_total'),
+                    correction.get('original_confidence'),
+                    correction.get('corrected_total'),
+                    correction.get('corrected_confidence'),
+                    correction.get('raw_confidence'),
+                    correction.get('candidate_index'),
+                    correction.get('timestamp', datetime.now().isoformat()),
+                    correction.get('correction_type', 'total_amount')
+                ))
+                logger.info(f"Added correction for invoice {invoice_id} to learning DB")
             conn.commit()
-        logger.info(f"Added correction for invoice {correction.get('invoice_id')} to learning DB")
     
     def get_corrections(self, supplier: Optional[str] = None) -> List[Dict[str, Any]]:
         """Get corrections, optionally filtered by supplier.
