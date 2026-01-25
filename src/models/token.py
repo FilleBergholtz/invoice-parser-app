@@ -27,6 +27,7 @@ class Token:
         page: Reference to parent Page for traceability
         font_size: Optional font size (if available from source)
         font_name: Optional font name (if available from source)
+        confidence: Optional confidence 0–100 (e.g. from OCR TSV); None for pdfplumber tokens
     """
     
     text: str
@@ -37,6 +38,7 @@ class Token:
     page: Page
     font_size: Optional[float] = None
     font_name: Optional[str] = None
+    confidence: Optional[float] = None  # 0–100 from Tesseract; None when from pdfplumber
     
     def __post_init__(self):
         """Validate bbox dimensions are non-negative."""

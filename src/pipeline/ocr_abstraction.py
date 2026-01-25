@@ -1,7 +1,9 @@
 """OCR abstraction layer with Tesseract implementation."""
 
+import statistics
 import sys
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
 
@@ -30,6 +32,18 @@ def _apply_tesseract_default_path() -> None:
 class OCRException(Exception):
     """Raised when OCR processing fails."""
     pass
+
+
+@dataclass
+class OCRPageMetrics:
+    """Per-page OCR confidence metrics for routing.
+    
+    Mean is used for DPI retry sensitivity, median for routing robustness.
+    All values use 0–100 scale (Tesseract native).
+    """
+    mean_conf: float
+    median_conf: float
+    low_conf_fraction: float  # fraction of word tokens with confidence < 50
 
 
 class OCREngine(ABC):
@@ -190,23 +204,25 @@ class TesseractOCREngine(OCREngine):
                 if not text:
                     continue
                 
-                # Get bounding box (pixels)
+                # Get bounding box (pixels) and confidence
                 try:
                     x_px = float(fields[left_idx])
                     y_px = float(fields[top_idx])
                     w_px = float(fields[width_idx])
                     h_px = float(fields[height_idx])
-                    confidence = float(fields[conf_idx])
+                    conf = float(fields[conf_idx])
                 except (ValueError, IndexError):
                     continue  # Skip invalid rows
-                
+                # Exclude layout rows: conf == -1 for level 1–4; only level 5 (word) has conf 0–100.
+                # Mean is used for DPI retry sensitivity, median for routing robustness.
+                if conf < 0:
+                    continue
+                confidence = conf  # 0–100 scale, stored on Token for aggregation
                 # Scale to page coordinates (points) for segment_identification
                 x = x_px * scale_x
                 y = y_px * scale_y
                 width = w_px * scale_x
                 height = h_px * scale_y
-                
-                # Create Token object
                 token = Token(
                     text=text,
                     x=x,
@@ -214,10 +230,10 @@ class TesseractOCREngine(OCREngine):
                     width=width,
                     height=height,
                     page=page,
-                    font_size=None,  # Not available from Tesseract TSV
-                    font_name=None
+                    font_size=None,
+                    font_name=None,
+                    confidence=confidence,
                 )
-                
                 tokens.append(token)
             
             # Sort tokens by reading order (top-to-bottom, left-to-right)
@@ -239,12 +255,43 @@ def extract_tokens_with_ocr(page: Page, engine: Optional[OCREngine] = None) -> L
         engine: Optional OCR engine (defaults to TesseractOCREngine)
         
     Returns:
-        List of Token objects with spatial information
+        List of Token objects with spatial information and confidence (0–100)
     """
     if engine is None:
         engine = TesseractOCREngine()
     
     return engine.extract_tokens(page)
+
+
+# R2: thresholds for routing (14-RESEARCH)
+OCR_EXCLUDE_CONF_BELOW = 0
+OCR_MEDIAN_CONF_ROUTING_THRESHOLD = 70
+OCR_LOW_CONF_FRACTION_THRESHOLD = 0.25
+OCR_LOW_CONF_WORD_THRESHOLD = 50  # tokens with confidence < 50 count as "low conf"
+
+
+def ocr_page_metrics(tokens: List[Token]) -> OCRPageMetrics:
+    """Compute per-page OCR confidence metrics from tokens with confidence set.
+    
+    Only tokens with confidence is not None and >= OCR_EXCLUDE_CONF_BELOW (0) are
+    included. Mean is used for DPI retry sensitivity, median for routing robustness.
+    
+    Args:
+        tokens: List of Token from OCR (token.confidence in 0–100)
+        
+    Returns:
+        OCRPageMetrics with mean_conf, median_conf, low_conf_fraction
+    """
+    confs = [t.confidence for t in tokens if t.confidence is not None and t.confidence >= OCR_EXCLUDE_CONF_BELOW]
+    if not confs:
+        return OCRPageMetrics(mean_conf=0.0, median_conf=0.0, low_conf_fraction=1.0)
+    n = len(confs)
+    low = sum(1 for c in confs if c < OCR_LOW_CONF_WORD_THRESHOLD)
+    return OCRPageMetrics(
+        mean_conf=statistics.mean(confs),
+        median_conf=statistics.median(confs),
+        low_conf_fraction=low / n,
+    )
 
 
 # Convenience: Create default engine instance
