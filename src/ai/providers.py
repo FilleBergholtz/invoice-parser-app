@@ -161,7 +161,7 @@ class OpenAIProvider(AIProvider):
         """Build prompt for AI extraction."""
         prompt = "Extract the total amount (totalsumma / att betala) from this Swedish invoice.\n\n"
         if page_context:
-            prompt += """Use the FULL PAGE TEXT below as the source of truth. Our heuristic candidates may be wrong or incomplete—derive the total from the actual text, not from the candidates.
+            prompt += """Use the FULL PAGE TEXT below as the source of truth. Focus on normal left-to-right lines (Nettobelopp, Momsbelopp, Att betala: SEK). Reversed/watermark-like lines have been filtered out.
 
 --- FULL PAGE (header, items, footer) ---
 """
@@ -170,7 +170,7 @@ class OpenAIProvider(AIProvider):
         else:
             prompt += f"Footer text:\n{footer_text}\n\n"
         if line_items_sum is not None:
-            prompt += f"Line items sum: {line_items_sum:.2f} SEK. Use to validate; total often equals or slightly exceeds it (VAT, rounding).\n"
+            prompt += f"Line items sum: {line_items_sum:.2f} SEK. Use to validate if plausible; if it looks wrong (e.g. very small vs large page amounts), ignore it and use the page text. Total often equals or slightly exceeds line sum (VAT, rounding).\n"
         if candidates and not page_context:
             parts = [f"{c.get('amount')} SEK ({c.get('keyword_type', '?')})" for c in candidates]
             prompt += f"We detected these candidates: {', '.join(parts)}. Prefer 'with_vat' (att betala) when relevant.\n"
@@ -284,7 +284,7 @@ class ClaudeProvider(AIProvider):
         """Build prompt for AI extraction."""
         prompt = "Extract the total amount (totalsumma / att betala) from this Swedish invoice.\n\n"
         if page_context:
-            prompt += """Use the FULL PAGE TEXT below as the source of truth. Our heuristic candidates may be wrong or incomplete—derive the total from the actual text, not from the candidates.
+            prompt += """Use the FULL PAGE TEXT below as the source of truth. Focus on normal left-to-right lines (Nettobelopp, Momsbelopp, Att betala: SEK). Reversed/watermark-like lines have been filtered out.
 
 --- FULL PAGE (header, items, footer) ---
 """
@@ -293,7 +293,7 @@ class ClaudeProvider(AIProvider):
         else:
             prompt += f"Footer text:\n{footer_text}\n\n"
         if line_items_sum is not None:
-            prompt += f"Line items sum: {line_items_sum:.2f} SEK. Use to validate; total often equals or slightly exceeds it (VAT, rounding).\n"
+            prompt += f"Line items sum: {line_items_sum:.2f} SEK. Use to validate if plausible; if it looks wrong (e.g. very small vs large page amounts), ignore it and use the page text. Total often equals or slightly exceeds line sum (VAT, rounding).\n"
         if candidates and not page_context:
             parts = [f"{c.get('amount')} SEK ({c.get('keyword_type', '?')})" for c in candidates]
             prompt += f"We detected these candidates: {', '.join(parts)}. Prefer 'with_vat' (att betala) when relevant.\n"

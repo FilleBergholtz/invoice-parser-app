@@ -58,11 +58,24 @@ class InvoiceProcessingError(Exception):
     pass
 
 
+def _is_likely_garbled(row_text: str) -> bool:
+    """Utelämn rader som ser ut som revers/vattensstämpel (t.ex. |TEKREVSGNINRYTSIMONOKE, nigirO, ecruoS)."""
+    import re
+    t = row_text.strip()
+    if not t:
+        return True
+    if re.search(r"\|[A-Za-z]{12,}", t) or re.search(r"[A-Za-z]{12,}\|", t):
+        return True
+    if re.search(r"[a-z]{3,}[A-Z][a-z]*", t):
+        return True
+    return False
+
+
 def _build_page_context_for_ai(last_page_segments: list) -> str:
     """Bygg full sidtext (header, items, footer) så AI får PDF:ens hela data för totalsidan.
     
-    AI behöver se hela sidan, inte bara footer + kandidater, för att hitta rätt
-    totalsumma när heuristiken ger fel kandidater.
+    Filtrerar bort uppenbart skräp (revers, vattensstämplar). AI behöver se hela sidan
+    för att hitta rätt totalsumma när heuristiken ger fel kandidater.
     """
     if not last_page_segments:
         return ""
@@ -71,6 +84,8 @@ def _build_page_context_for_ai(last_page_segments: list) -> str:
     for seg in ordered:
         parts.append(f"--- {seg.segment_type.upper()} ---")
         for row in seg.rows:
+            if _is_likely_garbled(row.text):
+                continue
             parts.append(row.text)
     return "\n".join(parts)
 
@@ -1042,11 +1057,13 @@ def process_batch(
     
     # Validation payload for GUI (single-PDF, first REVIEW)
     if len(pdf_files) == 1 and invoice_results:
+        processed_pdf_path = str(Path(pdf_files[0]).resolve())
         for ir in invoice_results:
             if ir["validation_result"].status == "REVIEW":
                 header = ir["invoice_header"]
                 candidates = header.total_candidates or []
                 summary.validation = {
+                    "pdf_path": processed_pdf_path,
                     "candidates": [
                         {
                             "amount": c.get("amount", 0.0),

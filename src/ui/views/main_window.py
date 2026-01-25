@@ -280,20 +280,32 @@ class MainWindow(QMainWindow):
     def _show_validation_ui(self):
         """Show validation UI with PDF viewer and candidate selector."""
         try:
-            # Load PDF
-            self.pdf_viewer.load_pdf(self.input_path)
+            validation = (self.processing_result or {}).get("validation") or {}
+            pdf_path = validation.get("pdf_path") or self.processing_result.get("input_path") or self.input_path
+            pdf_path = str(Path(pdf_path).resolve()) if pdf_path else None
+            if not pdf_path or not Path(pdf_path).exists():
+                pdf_path = self.input_path
+            if not pdf_path or not Path(pdf_path).exists():
+                self.log_error("Kunde inte hitta PDF att validera (saknad pdf_path).")
+                return
+            self.pdf_viewer.load_pdf(pdf_path)
+            self.log(f"Validerar PDF: {pdf_path}")
             
-            # Load candidates and traceability from processing result (run_summary.validation)
             candidates, traceability = self._load_candidates_from_result()
             
             if candidates:
-                # Set candidates in selector
                 self.candidate_selector.set_candidates(candidates)
                 self.pdf_viewer.set_candidates(candidates, traceability)
+                page = 1
+                if traceability and getattr(traceability, "evidence", None):
+                    page = traceability.evidence.get("page_number", 1)
+                try:
+                    self.pdf_viewer.set_page(int(page))
+                except Exception:
+                    pass
             else:
                 self.log("Inga kandidater hittades - validering kan inte utföras")
             
-            # Show validation section
             self.validation_widget.setVisible(True)
             self.log("Valideringsläge aktiverat - välj korrekt totalsumma från listan")
             
