@@ -1,11 +1,23 @@
 """Run summary model and serialization."""
 
 import json
+import math
 import uuid
 from dataclasses import dataclass, field, asdict
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Any
+
+
+def _sanitize_for_json(obj: Any) -> Any:
+    """Recursively replace NaN/Inf floats so JSON round-trip works (json.load rejects them)."""
+    if isinstance(obj, dict):
+        return {k: _sanitize_for_json(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_sanitize_for_json(v) for v in obj]
+    if isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
+        return 0.0
+    return obj
 
 @dataclass
 class RunSummary:
@@ -54,5 +66,6 @@ class RunSummary:
         
     def save(self, path: Path):
         """Save summary to JSON file."""
+        data = _sanitize_for_json(asdict(self))
         with open(path, 'w', encoding='utf-8') as f:
-            json.dump(asdict(self), f, indent=2, ensure_ascii=False)
+            json.dump(data, f, indent=2, ensure_ascii=False)
