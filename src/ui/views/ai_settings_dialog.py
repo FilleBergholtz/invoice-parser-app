@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
     QSizePolicy,
     QSplitter,
     QVBoxLayout,
+    QWidget,
 )
 
 from ...config import clear_ai_config, load_ai_config, set_ai_config
