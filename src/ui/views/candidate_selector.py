@@ -43,13 +43,14 @@ class CandidateSelector(QWidget):
     
     def setup_ui(self):
         """Initialize UI components."""
+        self.setStyleSheet("background-color: #f8f8f8;")
         layout = QVBoxLayout(self)
         layout.setContentsMargins(10, 10, 10, 10)
         layout.setSpacing(5)
         
-        # Title
+        # Title (dark text for contrast)
         title = QLabel("Välj korrekt totalsumma:")
-        title.setStyleSheet("font-weight: bold; font-size: 14px")
+        title.setStyleSheet("font-weight: bold; font-size: 14px; color: #111; background: transparent;")
         layout.addWidget(title)
         
         # Scroll area for candidate list
@@ -67,9 +68,9 @@ class CandidateSelector(QWidget):
         self.scroll_area.setWidget(self.candidates_widget)
         layout.addWidget(self.scroll_area)
         
-        # Instructions
+        # Instructions (dark gray for readability on light and dark backgrounds)
         instructions = QLabel("Använd piltangenter för att navigera\nEnter för att välja")
-        instructions.setStyleSheet("color: gray; font-size: 10px")
+        instructions.setStyleSheet("color: #333; font-size: 11px; background: transparent;")
         instructions.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(instructions)
         
@@ -96,7 +97,7 @@ class CandidateSelector(QWidget):
             # Show message if no candidates
             no_candidates = QLabel("Inga kandidater tillgängliga")
             no_candidates.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            no_candidates.setStyleSheet("color: gray; padding: 20px")
+            no_candidates.setStyleSheet("color: #555; padding: 20px; background: transparent;")
             self.candidates_layout.insertWidget(0, no_candidates)
             return
         

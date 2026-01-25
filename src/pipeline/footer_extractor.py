@@ -216,6 +216,29 @@ def _apply_pattern_boosts(
         # Continue without boost - don't break extraction
 
 
+def _build_ui_candidates(scored: List[Dict], max_count: int = 10) -> List[Dict]:
+    """Build UI candidate list: all with_vat first, then rest by score; use raw_score for display."""
+    with_vat = [c for c in scored if c.get('keyword_type') == 'with_vat']
+    rest = [c for c in scored if c.get('keyword_type') != 'with_vat']
+    seen: set = set()
+    out: List[Dict] = []
+    for c in with_vat + rest:
+        if len(out) >= max_count:
+            break
+        a = c['amount']
+        key = round(a, 2)
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append({
+            'amount': c['amount'],
+            'score': c.get('raw_score', c['score']),
+            'row_index': c['row_index'],
+            'keyword_type': c.get('keyword_type'),
+        })
+    return out
+
+
 def extract_total_amount(
     footer_segment: Optional[Segment],
     line_items: List[InvoiceLine],
@@ -491,13 +514,20 @@ def extract_total_amount(
         # Boost score based on keyword type (prioritize "with VAT" totals)
         keyword_type = candidate.get('keyword_type')
         if keyword_type == 'with_vat':
-            # Adjust boost based on strategy
-            if strategy == 'aggressive':
-                boost = 0.20  # Higher boost for aggressive strategy
+            row_lower = candidate['row'].text.lower()
+            has_label = any(
+                k in row_lower for k in
+                ("att betala", "attbetala", "inkl. moms", "inklusive moms", "betalas", "slutsumma")
+            )
+            # When amount is on next row (label above), row has no keyword → full keyword compensation
+            if not has_label:
+                boost = 0.32
+            elif strategy == 'aggressive':
+                boost = 0.20
             elif strategy == 'conservative':
-                boost = 0.10  # Lower boost for conservative strategy
+                boost = 0.10
             else:
-                boost = 0.15  # Default boost
+                boost = 0.15
             score = min(score + boost, 1.0)  # Boost for "att betala" / "inkl. moms"
         elif keyword_type == 'without_vat':
             # Adjust penalty based on strategy
@@ -512,7 +542,8 @@ def extract_total_amount(
         
         scored_candidates.append({
             **candidate,
-            'score': score
+            'score': score,
+            'raw_score': score,
         })
     
     # Sort by score descending, then by keyword_type priority
@@ -525,7 +556,8 @@ def extract_total_amount(
     # Step 3: Apply pattern matching boost (if learning enabled)
     if get_learning_enabled():
         _apply_pattern_boosts(scored_candidates, invoice_header)
-        # Re-sort after pattern boosts (scores may have changed)
+        for c in scored_candidates:
+            c['raw_score'] = c['score']
         scored_candidates.sort(key=sort_key, reverse=True)
     
     # Step 4: Apply calibration to all candidate scores (if model exists)
@@ -533,20 +565,11 @@ def extract_total_amount(
     if calibration_model:
         for candidate in scored_candidates:
             candidate['score'] = calibrate_confidence(candidate['score'], calibration_model)
-        # Re-sort after calibration (scores may have changed)
         scored_candidates.sort(key=sort_key, reverse=True)
     
-    # Step 5: Store top 5 candidates for UI display
-    top_5_candidates = []
-    for candidate in scored_candidates[:5]:  # Top 5 only
-        top_5_candidates.append({
-            'amount': candidate['amount'],
-            'score': candidate['score'],
-            'row_index': candidate['row_index'],
-            'keyword_type': candidate.get('keyword_type')
-        })
-    
-    invoice_header.total_candidates = top_5_candidates if top_5_candidates else None
+    # Step 5: Build UI candidate list (max 10). Always include all with_vat first, then fill by score.
+    # Store raw_score for display (calibration can zero out, making % useless).
+    invoice_header.total_candidates = _build_ui_candidates(scored_candidates, 10) or None
     
     # Step 5: Try AI fallback if confidence is low
     ai_result = None
@@ -578,23 +601,14 @@ def extract_total_amount(
                     ai_candidate = {
                         'amount': ai_result['total_amount'],
                         'score': ai_confidence,
-                        'row_index': -1,  # AI result, no row
+                        'raw_score': ai_confidence,
+                        'row_index': -1,
                         'keyword_type': 'ai_extracted',
-                        'row': None  # No row for AI result
+                        'row': None,
                     }
                     scored_candidates.insert(0, ai_candidate)
-                    # Re-sort
                     scored_candidates.sort(key=sort_key, reverse=True)
-                    # Update top 5 candidates
-                    top_5_candidates = []
-                    for candidate in scored_candidates[:5]:
-                        top_5_candidates.append({
-                            'amount': candidate['amount'],
-                            'score': candidate['score'],
-                            'row_index': candidate['row_index'],
-                            'keyword_type': candidate.get('keyword_type')
-                        })
-                    invoice_header.total_candidates = top_5_candidates if top_5_candidates else None
+                    invoice_header.total_candidates = _build_ui_candidates(scored_candidates, 10) or None
                 else:
                     logger.debug(
                         f"AI result not used: confidence {ai_confidence:.2f} <= "

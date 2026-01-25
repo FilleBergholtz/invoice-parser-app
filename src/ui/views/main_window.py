@@ -135,17 +135,27 @@ class MainWindow(QMainWindow):
         splitter.setSizes([600, 300])  # PDF viewer larger, candidate selector wider
         validation_layout.addWidget(splitter)
         
-        # Action buttons
+        # Action buttons (explicit contrast: dark text on light background)
         action_layout = QHBoxLayout()
-        
+        _btn_style = """
+            QPushButton {
+                background-color: #e0e0e0; color: #111; border: 2px solid #888;
+                border-radius: 4px; font-weight: bold; padding: 8px 16px;
+            }
+            QPushButton:hover { background-color: #d0d0d0; border-color: #0078d4; }
+            QPushButton:pressed { background-color: #c0c0c0; }
+            QPushButton:disabled { background-color: #ccc; color: #666; border-color: #999; }
+        """
         self.confirm_btn = QPushButton("Bekräfta val")
         self.confirm_btn.setMinimumHeight(40)
+        self.confirm_btn.setStyleSheet(_btn_style)
         self.confirm_btn.setEnabled(False)
         self.confirm_btn.clicked.connect(self._confirm_correction)
         action_layout.addWidget(self.confirm_btn)
         
         skip_btn = QPushButton("Hoppa över")
         skip_btn.setMinimumHeight(40)
+        skip_btn.setStyleSheet(_btn_style)
         skip_btn.clicked.connect(self._skip_validation)
         action_layout.addWidget(skip_btn)
         
