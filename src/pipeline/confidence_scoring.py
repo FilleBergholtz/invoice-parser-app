@@ -8,11 +8,12 @@ from ..models.page import Page
 from ..models.row import Row
 from ..models.token import Token
 
-# Amount pattern: space or dot thousands, comma or dot decimals. "3.717,35", "1 234,56", "743.47"
+# Amount pattern. Dot-thousands FIRST (require .XXX); then dot-decimal.
 _AMOUNT_PATTERN = re.compile(
-    r'\d{1,3}(?:\s+\d{3})*(?:[.,]\d{1,2})?|'
-    r'\d{1,3}(?:\.\d{3})*(?:,\d{1,2})?|'
-    r'\d+(?:[.,]\d{1,2})?'
+    r'\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|'      # Swedish dot thousands: "2.973,88", "3.717,35"
+    r'\d+\.\d{1,2}(?!\d)|'                     # Dot decimal only: "743.47", "8302.00"
+    r'\d{1,3}(?:\s+\d{3})*(?:[.,]\d{1,2})?|'  # Space thousands: "1 234,56"
+    r'\d+(?:,\d{1,2})?'                        # Comma decimal: "123,45"
 )
 _CURRENCY_SYMBOLS = ('kr', 'SEK', 'sek', ':-', '€', '$')
 

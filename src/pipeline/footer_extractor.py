@@ -393,14 +393,13 @@ def extract_total_amount(
     # Combined patterns for keyword detection
     keyword_patterns = total_with_vat_patterns + total_without_vat_patterns + generic_total_patterns
     
-    # Improved amount pattern: matches amounts with/without decimals, with/without thousand separators
-    # Matches: "123,45", "123.45", "1 234,56", "1234", "1 234", "3.717,35" (punkt som tusentalsavgränsare)
-    # Support both Swedish format (komma som decimal, punkt/mellanslag som tusentalsavgränsare)
-    # and international format (punkt som decimal, komma som tusentalsavgränsare)
+    # Improved amount pattern. Dot-thousands FIRST (require at least one .XXX) so "2.973,88"
+    # matches whole. Then dot-decimal so "743.47" matches whole.
     amount_pattern = re.compile(
-        r'\d{1,3}(?:\s+\d{3})*(?:[.,]\d{1,2})?|'  # Swedish: "1 234,56" or "3.717,35"
-        r'\d{1,3}(?:\.\d{3})*(?:,\d{1,2})?|'      # Swedish with dots: "3.717,35"
-        r'\d+(?:[.,]\d{1,2})?'                     # Simple: "123,45" or "123.45" or "8302.00"
+        r'\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|'      # Swedish dot thousands: "2.973,88", "3.717,35"
+        r'\d+\.\d{1,2}(?!\d)|'                     # Dot decimal only: "743.47", "8302.00"
+        r'\d{1,3}(?:\s+\d{3})*(?:[.,]\d{1,2})?|'  # Space thousands: "1 234,56"
+        r'\d+(?:,\d{1,2})?'                        # Comma decimal: "123,45"
     )
     currency_symbols = ['kr', 'SEK', 'sek', ':-', '€', '$']
     
