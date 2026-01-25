@@ -36,6 +36,7 @@ This roadmap delivers a Swedish invoice parsing system that transforms PDF invoi
 - [ ] **Phase 9: AI Data Analysis** (Optional) - Natural language queries and data analysis over processed invoices
 - [ ] **Phase 10: AI Fallback Fixes and Verification** - Document fixes, address gaps, and verify AI fallback works well
 - [ ] **Phase 11: Pdfplumber och OCR: kör båda, jämför, använd bästa** - Dual extraction; compare results; use best
+- [ ] **Phase 12: UI Polish (PySide6)** - Theme + layout + engine states för desktop-GUI
 
 ## Phase Details
 
@@ -287,10 +288,27 @@ Implementera både pdfplumber- och OCR-extraktion, köra båda per faktura/PDF, 
 
 ---
 
+### Phase 12: UI Polish (PySide6) – theme + layout + engine states
+
+**Goal:** Förbättra desktop-GUI (run_gui.py, PySide6) med enhetlig tema/styling, tydligare layout, och tydlig visning av engine-tillstånd (t.ex. Idle / Kör / Klar / Fel).
+
+**Depends on:** Phase 6 (Manual Validation UI), Phase 11
+
+**Scope:**
+- **Theme:** Konsistent utseende (färger, teckensnitt, dark/light eller system), styrd via stylesheet eller QPalette.
+- **Layout:** Tydligare uppdelning av paneler (input/output, PDF-viewer, validering), resizable/QLayout, möjligtvis sparad layout.
+- **Engine states:** UI visar tydligt pipeline-tillstånd: t.ex. “Redo”, “Kör …”, “Klar”, “Fel” med ev. progress eller spinner; knappar och fält disable/enable per tillstånd så att användaren inte triggar dubbelkörningar eller missar feedback.
+
+**Plans:** TBD (t.ex. 12-01 Theme, 12-02 Layout, 12-03 Engine states).
+
+**Details:** Se `.planning/phases/12-ui-polish-pyside6/12-CONTEXT.md` när planer skapats.
+
+---
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 5 → 6 → 7 → 8 → 9 → 10 → 11
+Phases execute in numeric order: 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -305,5 +323,6 @@ Phases execute in numeric order: 5 → 6 → 7 → 8 → 9 → 10 → 11
 | 9. AI Data Analysis | v2.0 | 3/3 | Complete | - |
 | 10. AI Fallback Fixes and Verification | v2.0 | 2/2 | Complete | - |
 | 11. Pdfplumber och OCR: kör båda, jämför, använd bästa | v2.0 | 3/3 | Complete | - |
+| 12. UI Polish (PySide6) – theme + layout + engine states | v2.0 | 0/– | Planned | - |
 
-**Note:** v1.0 phases complete. v2.0 phases 5–11 complete.
+**Note:** v1.0 phases complete. v2.0 phases 5–11 complete. Phase 12 added (UI Polish).
