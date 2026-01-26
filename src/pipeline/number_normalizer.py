@@ -4,7 +4,9 @@ from decimal import Decimal, InvalidOperation
 import re
 
 
-_CURRENCY_PATTERN = re.compile(r"(?i)\bsek\b|\bkr\b|:-|€|\$")
+_CURRENCY_PATTERN = re.compile(
+    r"(?i)(?<=\d)\s*(?:sek|kr)\b\.?|\bsek\b|\bkr\b|:-|€|\$"
+)
 
 
 def normalize_swedish_decimal(text: str) -> Decimal:
