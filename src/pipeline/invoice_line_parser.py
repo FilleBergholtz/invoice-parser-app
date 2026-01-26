@@ -419,9 +419,14 @@ def extract_invoice_lines(items_segment: Segment) -> List[InvoiceLine]:
         )
         
         if invoice_line:
-            # Detect wrapped rows
+            # Detect wrapped rows with enhanced detection
             following_rows = table_rows[row_index + 1:]
-            wrapped_rows = detect_wrapped_rows(row, following_rows, items_segment.page)
+            wrapped_rows = detect_wrapped_rows(
+                row, 
+                following_rows, 
+                items_segment.page,
+                all_rows=table_rows  # Pass all table rows for adaptive Y-threshold
+            )
             
             # Mark wrapped rows as processed
             for wrapped_row in wrapped_rows:
