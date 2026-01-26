@@ -1,13 +1,13 @@
 # Phase 17 Verification — AI-policy (fallback only)
 
-status: gaps_found  
+status: verified  
 date: 2026-01-26
 
 ## Must-haves
-- AI-01 (AI endast fallback när deterministiska mönster saknas): gap (policy finns men används inte i compare-path).
-- AI-02 (EDI-lik text-layer ska vara deterministisk, AI ej normalväg): gap (compare-path kan köra AI utan policy-gating).
-- Samma AI-policy i normal-path och compare-path: gap (policy-gating endast i `process_invoice`).
-- Reason flags sparas i resultat: gap (ai_policy saknas i compare-path-resultat).
+- AI-01 (AI endast fallback när deterministiska mönster saknas): uppfyllt (policy-gating efter deterministisk extraktion + fallback, AI endast när allow_ai=true).
+- AI-02 (EDI-lik text-layer ska vara deterministisk, AI ej normalväg): uppfyllt (EDI-signalering blockerar AI om policy kräver).
+- Samma AI-policy i normal-path och compare-path: uppfyllt (samma evaluate_ai_policy + edi_signals i båda flöden).
+- Reason flags sparas i resultat: uppfyllt (`extraction_detail.ai_policy` skrivs i compare-path och normal-path).
 
 ## Evidens
 - AI-policy konfigureras i standardprofilen (allow_ai_for_edi=false, anchors, tabellmönster).
@@ -55,7 +55,7 @@ def evaluate_ai_policy(
         "edi_signals": signals,
     }
 ```
-- Normal-path använder policy efter deterministisk extraktion och fallback innan AI tillåts.
+- Normal-path kör deterministisk fallback före AI och gating styrs av policy.
 ```325:399:src/cli/main.py
             deterministic_validation_result = validate_invoice(invoice_header, all_invoice_lines)
             if not validation_passed(deterministic_validation_result):
@@ -100,20 +100,55 @@ def evaluate_ai_policy(
                     allow_ai=True,
                 )
 ```
-- Compare-path kör `extract_total_amount` utan policy-gating (default `allow_ai=True`), och saknar policybeslut.
-```721:749:src/cli/main.py
-        if footer_segment and invoice_header:
-            from ..pipeline.retry_extraction import extract_with_retry
-            
-            page_context_for_ai = _build_page_context_for_ai(last_page_segments)
-            
-            def extract_total(strategy=None):
+- Compare-path använder samma policy-gating och sparar ai_policy i extraction_detail.
+```721:955:src/cli/main.py
+            deterministic_validation_result = validate_invoice(invoice_header, all_invoice_lines)
+            if not validation_passed(deterministic_validation_result):
+                fallback_attempted = True
+                ...
+                run_deterministic_fallback(
+                    extract_total_deterministic,
+                    target_confidence=0.90,
+                    max_attempts=3,
+                    progress_callback=fallback_progress,
+                )
+                deterministic_validation_result = validate_invoice(invoice_header, all_invoice_lines)
+                fallback_passed = validation_passed(deterministic_validation_result)
+
+            policy_config = get_ai_policy_config()
+            edi_signals = evaluate_edi_signals(
+                text=page_context_for_ai,
+                text_layer_used=text_layer_used,
+                text_quality=text_quality,
+                anchor_rules=policy_config.get("edi_anchor_rules"),
+                table_patterns=policy_config.get("edi_table_patterns"),
+                min_signals=int(policy_config.get("min_edi_signals", 2) or 2),
+                min_text_quality=float(policy_config.get("min_text_quality", 0.5) or 0.5),
+            )
+            ai_policy_decision = evaluate_ai_policy(
+                extraction_source=extraction_path,
+                text_quality=text_quality,
+                validation_result=deterministic_validation_result,
+                edi_signals=edi_signals,
+                policy_config=policy_config,
+                fallback_attempted=fallback_attempted,
+                fallback_passed=fallback_passed,
+            )
+
+            if ai_policy_decision.get("allow_ai") and (
+                invoice_header.total_amount is None or invoice_header.total_confidence < 0.95
+            ):
                 extract_total_amount(
                     footer_segment, all_invoice_lines, invoice_header,
-                    strategy=strategy, rows_above_footer=rows_above_footer,
-                    page_context_for_ai=page_context_for_ai
+                    strategy=None, rows_above_footer=rows_above_footer,
+                    page_context_for_ai=page_context_for_ai,
+                    allow_ai=True,
                 )
-                return invoice_header
+...
+        if result.extraction_detail is None:
+            result.extraction_detail = {"method_used": extraction_path}
+        if ai_policy_decision is not None:
+            result.extraction_detail["ai_policy"] = ai_policy_decision
 ```
 - Enhetstester täcker policybeslut (EDI-lik OK → AI blockeras, icke-EDI → AI tillåts).
 ```1:116:tests/test_ai_policy.py
@@ -134,7 +169,3 @@ def test_edi_like_validation_ok_blocks_ai():
     )
     assert decision["allow_ai"] is False
 ```
-
-## Gaps
-- Compare-path saknar AI-policy-gating; AI fallback kan triggas utan EDI-blockering.
-- Reason flags sparas inte konsekvent i compare-path-resultat (ai_policy blir aldrig satt).
