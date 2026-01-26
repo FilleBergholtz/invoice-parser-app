@@ -73,10 +73,10 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| OCR-01 | Phase 16: Text-layer routing (OCR-skip) | Pending |
-| OCR-02 | Phase 16: Text-layer routing (OCR-skip) | Pending |
-| OCR-03 | Phase 16: Text-layer routing (OCR-skip) | Pending |
-| OCR-04 | Phase 16: Text-layer routing (OCR-skip) | Pending |
+| OCR-01 | Phase 16: Text-layer routing (OCR-skip) | Complete |
+| OCR-02 | Phase 16: Text-layer routing (OCR-skip) | Complete |
+| OCR-03 | Phase 16: Text-layer routing (OCR-skip) | Complete |
+| OCR-04 | Phase 16: Text-layer routing (OCR-skip) | Complete |
 | AI-01  | Phase 17: AI-policy (fallback only) | Pending |
 | AI-02  | Phase 17: AI-policy (fallback only) | Pending |
 | BOUND-01 | Phase 18: Fakturaboundaries | Pending |

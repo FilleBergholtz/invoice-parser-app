@@ -1,13 +1,13 @@
 # Phase 16 Verification — Text-layer routing (OCR-skip)
 
-status: human_needed  
+status: passed  
 date: 2026-01-26
 
 ## Must-haves
-- OCR-01 (per-sida text-layer → OCR skip): passed (kod), human_needed för runtime-bekräftelse.
+- OCR-01 (per-sida text-layer → OCR skip): passed (kod + runtime).
 - OCR-02 (konfigurerbar tröskel + ankare): passed.
-- OCR-03 (OCR endast fallback när text-layer inte räcker; mixed-PDF): human_needed (integration).
-- OCR-04 (compare-path kraschar inte / KeyError: 4): human_needed (regression i körning).
+- OCR-03 (OCR endast fallback när text-layer inte räcker; mixed-PDF): passed (runtime).
+- OCR-04 (compare-path kraschar inte / KeyError: 4): passed (runtime).
 
 ## Evidens
 - OCR-routing konfigureras i standardprofilen med `min_text_chars`, required/extra anchors och override-trösklar.
@@ -260,4 +260,18 @@ def test_evaluate_text_layer_quality_override():
     decision = evaluate_text_layer(text, [], routing)
     assert decision["use_text_layer"] is True
     assert "quality_override" in decision["reason_flags"]
+```
+
+## Runtime-verifiering (logg)
+
+- `compare_extraction` kördes på `export_2026-01-13_09-09-09.pdf` och samtliga sidor accepterade pdfplumber med routing “text-layer sufficient”.
+- Ingen `KeyError: 4` eller compare‑path crash uppstod.
+
+Exempel:
+```
+Compare: kör pdfplumber för sidor 1-1 …
+[30202312] accept pdfplumber (routing: text-layer sufficient)
+...
+Compare: kör pdfplumber för sidor 14-14 …
+[30205452] accept pdfplumber (routing: text-layer sufficient)
 ```

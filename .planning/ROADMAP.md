@@ -51,10 +51,10 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. EDI-liknande fakturor med text-layer parsas deterministiskt utan AI.
   2. AI används bara när deterministiska regler saknas eller mönster är ovanliga.
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 17-01: TBD
+- [ ] 17-01: AI-policy (fallback only)
 
 #### Phase 18: Fakturaboundaries för multi-page PDFs
 **Goal**: Sidor grupperas korrekt per faktura utan att bero på totalsumma.
@@ -127,7 +127,7 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 16. Text-layer routing (OCR-skip) | v2.1 | 1/1 | Complete | 2026-01-26 |
-| 17. AI-policy (fallback only) | v2.1 | 0/TBD | Not started | - |
+| 17. AI-policy (fallback only) | v2.1 | 0/1 | Not started | - |
 | 18. Fakturaboundaries | v2.1 | 0/TBD | Not started | - |
 | 19. Svensk talnormalisering | v2.1 | 0/TBD | Not started | - |
 | 20. Tabellsegment & kolumnregler | v2.1 | 0/TBD | Not started | - |
