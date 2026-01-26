@@ -79,9 +79,9 @@
 | OCR-04 | Phase 16: Text-layer routing (OCR-skip) | Complete |
 | AI-01  | Phase 17: AI-policy (fallback only) | Complete |
 | AI-02  | Phase 17: AI-policy (fallback only) | Complete |
-| BOUND-01 | Phase 18: Fakturaboundaries | Pending |
-| BOUND-02 | Phase 18: Fakturaboundaries | Pending |
-| BOUND-03 | Phase 18: Fakturaboundaries | Pending |
+| BOUND-01 | Phase 18: Fakturaboundaries | Complete |
+| BOUND-02 | Phase 18: Fakturaboundaries | Complete |
+| BOUND-03 | Phase 18: Fakturaboundaries | Complete |
 | NUM-01 | Phase 19: Svensk talnormalisering | Pending |
 | NUM-02 | Phase 19: Svensk talnormalisering | Pending |
 | NUM-03 | Phase 19: Svensk talnormalisering | Pending |
