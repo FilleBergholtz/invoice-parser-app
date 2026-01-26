@@ -29,6 +29,15 @@ _FOOTER_SOFT_KEYWORDS = frozenset([
 ])
 
 
+def _parse_numeric_value(text: str) -> Optional[float]:
+    """Parse numeric text via Swedish normalizer."""
+    try:
+        value = normalize_swedish_decimal(text)
+    except ValueError:
+        return None
+    return float(value)
+
+
 def _row_has_total_like_amount(row: Row) -> bool:
     """True if row has an amount pattern typical of totals (extra signal for SOFT footer)."""
     result = _extract_amount_from_row_text(row)
@@ -477,12 +486,9 @@ def _extract_line_from_row(
             if i > 0:
                 prev_token = tokens[i - 1].text.strip()
                 if re.match(r'^\d+$', prev_token):
-                    try:
-                        potential_quantity = float(prev_token)
-                        if 1 <= potential_quantity <= 100000:  # Reasonable quantity range
-                            quantity = potential_quantity
-                    except ValueError:
-                        pass
+                    potential_quantity = _parse_numeric_value(prev_token)
+                    if potential_quantity is not None and 1 <= potential_quantity <= 100000:
+                        quantity = potential_quantity
             break
         # Also check if token matches unit pattern (uppercase units like "ST", "EA", "M2", "BD")
         elif re.match(r'^[A-Z]{1,4}$', token_text):
@@ -494,12 +500,9 @@ def _extract_line_from_row(
                 if i > 0:
                     prev_token = tokens[i - 1].text.strip()
                     if re.match(r'^\d+$', prev_token):
-                        try:
-                            potential_quantity = float(prev_token)
-                            if 1 <= potential_quantity <= 100000:
-                                quantity = potential_quantity
-                        except ValueError:
-                            pass
+                        potential_quantity = _parse_numeric_value(prev_token)
+                        if potential_quantity is not None and 1 <= potential_quantity <= 100000:
+                            quantity = potential_quantity
                 break
         # Check for units with numbers (M2, M3)
         elif re.match(r'^[Mm][23]$', token_text):
@@ -509,12 +512,9 @@ def _extract_line_from_row(
             if i > 0:
                 prev_token = tokens[i - 1].text.strip()
                 if re.match(r'^\d+$', prev_token):
-                    try:
-                        potential_quantity = float(prev_token)
-                        if 1 <= potential_quantity <= 100000:
-                            quantity = potential_quantity
-                    except ValueError:
-                        pass
+                    potential_quantity = _parse_numeric_value(prev_token)
+                    if potential_quantity is not None and 1 <= potential_quantity <= 100000:
+                        quantity = potential_quantity
             break
     
     # Identify potential article numbers in description
@@ -545,7 +545,7 @@ def _extract_line_from_row(
             # Try to extract numeric part if alphanumeric
             numeric_part = re.sub(r'[^0-9]', '', first_number_cleaned)
             if numeric_part:
-                first_number_value = float(numeric_part)
+                first_number_value = _parse_numeric_value(numeric_part)
         except ValueError:
             pass
     
@@ -573,9 +573,8 @@ def _extract_line_from_row(
             # Prioritize matches closer to the unit (higher position in text)
             for match in reversed(matches):
                 quantity_text = match.group(1)
-                try:
-                    numeric_value = float(normalize_swedish_decimal(quantity_text))
-                except ValueError:
+                numeric_value = _parse_numeric_value(quantity_text)
+                if numeric_value is None:
                     continue
 
                 match_start = match.start()
@@ -619,29 +618,28 @@ def _extract_line_from_row(
                 
                 # Check if token is a pure number
                 if re.match(r'^\d+([.,]\d+)?$', token_text.replace(' ', '')):
-                    try:
-                        numeric_value = float(normalize_swedish_decimal(token_text))
-                        
-                        # Skip if it looks like article number or line number
-                        is_article_or_line_number = False
-                        if i < 3:  # First few tokens
-                            if first_number_value and abs(numeric_value - first_number_value) < 0.01:
-                                is_article_or_line_number = True
-                            elif numeric_value >= 10000 or len(str(int(numeric_value))) >= 5:
-                                is_article_or_line_number = True
-                            elif i == 0 and numeric_value < 100 and numeric_value == int(numeric_value):
-                                if len(tokens) > 1 and i + 1 < len(tokens):
-                                    next_token = tokens[i + 1].text.strip()
-                                    if re.match(r'^\d+', next_token):
-                                        is_article_or_line_number = True
-                        
-                        if not is_article_or_line_number:
-                            # This is likely quantity (should be small number, < 1000 typically)
-                            if numeric_value < 1000 and numeric_value == int(numeric_value):
-                                quantity = numeric_value
-                                break
-                    except ValueError:
-                        pass
+                    numeric_value = _parse_numeric_value(token_text)
+                    if numeric_value is None:
+                        continue
+                    
+                    # Skip if it looks like article number or line number
+                    is_article_or_line_number = False
+                    if i < 3:  # First few tokens
+                        if first_number_value and abs(numeric_value - first_number_value) < 0.01:
+                            is_article_or_line_number = True
+                        elif numeric_value >= 10000 or len(str(int(numeric_value))) >= 5:
+                            is_article_or_line_number = True
+                        elif i == 0 and numeric_value < 100 and numeric_value == int(numeric_value):
+                            if len(tokens) > 1 and i + 1 < len(tokens):
+                                next_token = tokens[i + 1].text.strip()
+                                if re.match(r'^\d+', next_token):
+                                    is_article_or_line_number = True
+                    
+                    if not is_article_or_line_number:
+                        # This is likely quantity (should be small number, < 1000 typically)
+                        if numeric_value < 1000 and numeric_value == int(numeric_value):
+                            quantity = numeric_value
+                            break
         
         # Look for numeric token AFTER unit but BEFORE amount (this is unit_price)
         # Handle amounts with thousand separators (e.g., "1 034,00")
@@ -657,13 +655,11 @@ def _extract_line_from_row(
             
             if match:
                 amount_text = match.group(0)
-                try:
-                    numeric_value = float(normalize_swedish_decimal(amount_text))
+                numeric_value = _parse_numeric_value(amount_text)
+                if numeric_value is not None:
                     # Unit price should be reasonable (not too small, not too large)
                     if 0.01 <= numeric_value <= 1000000:  # Reasonable range
                         unit_price = numeric_value
-                except ValueError:
-                    pass
             else:
                 # Fallback: look for single numeric token
                 if amount_token_idx is not None:
@@ -671,13 +667,10 @@ def _extract_line_from_row(
                         token = tokens[i]
                         token_text = token.text.strip()
                         if re.match(r'^\d+([.,]\d+)?$', token_text.replace(' ', '')):
-                            try:
-                                numeric_value = float(normalize_swedish_decimal(token_text))
-                                if 0.01 <= numeric_value <= 1000000:
-                                    unit_price = numeric_value
-                                    break
-                            except ValueError:
-                                pass
+                            numeric_value = _parse_numeric_value(token_text)
+                            if numeric_value is not None and 0.01 <= numeric_value <= 1000000:
+                                unit_price = numeric_value
+                                break
     
     # Strategy 2: If no unit found, use old heuristic (fallback)
     if unit_token_idx is None:
@@ -690,25 +683,24 @@ def _extract_line_from_row(
             token_text = token.text.strip()
             # Check if token looks like a number
             if re.match(r'^\d+([.,]\d+)?$', token_text.replace(' ', '')):
-                try:
-                    numeric_value = float(normalize_swedish_decimal(token_text))
+                numeric_value = _parse_numeric_value(token_text)
+                if numeric_value is None:
+                    continue
+                
+                # Skip if this looks like an article number
+                is_article_number = False
+                if i < 2:  # First tokens
+                    if numeric_value >= 100000:  # 6+ digits
+                        is_article_number = True
+                    elif first_number_value and abs(numeric_value - first_number_value) < 0.01:
+                        is_article_number = True
+                    elif len(str(int(numeric_value))) >= 6:  # 6+ digits
+                        is_article_number = True
+                
+                if is_article_number:
+                    continue  # Skip article number
                     
-                    # Skip if this looks like an article number
-                    is_article_number = False
-                    if i < 2:  # First tokens
-                        if numeric_value >= 100000:  # 6+ digits
-                            is_article_number = True
-                        elif first_number_value and abs(numeric_value - first_number_value) < 0.01:
-                            is_article_number = True
-                        elif len(str(int(numeric_value))) >= 6:  # 6+ digits
-                            is_article_number = True
-                    
-                    if is_article_number:
-                        continue  # Skip article number
-                        
-                    numeric_tokens_before_amount.append((i, numeric_value, token))
-                except ValueError:
-                    pass
+                numeric_tokens_before_amount.append((i, numeric_value, token))
         
         # Heuristic: rightmost numeric before amount is likely unit_price
         # Leftmost numeric (after article number) is likely quantity

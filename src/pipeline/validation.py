@@ -1,7 +1,7 @@
 """Validation logic for invoice data with status assignment."""
 
 from decimal import Decimal
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 from ..models.invoice_header import InvoiceHeader
 from ..models.invoice_line import InvoiceLine
@@ -10,13 +10,19 @@ from ..pipeline.confidence_scoring import (
     validate_total_against_line_items,
     validate_and_score_invoice_line
 )
+from ..pipeline.number_normalizer import normalize_swedish_decimal
 
 
-def _to_decimal(value: Optional[float]) -> Optional[Decimal]:
+def _to_decimal(value: Optional[Union[float, str, Decimal]]) -> Optional[Decimal]:
     if value is None:
         return None
     if isinstance(value, Decimal):
         return value
+    if isinstance(value, str):
+        try:
+            return normalize_swedish_decimal(value)
+        except ValueError:
+            return None
     return Decimal(str(value))
 
 
