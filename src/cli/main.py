@@ -1023,6 +1023,9 @@ def process_pdf(
 
                 needs_ocr_pages = [p for p, d in page_routing.items() if not d.get("use_text_layer", True)]
                 if not needs_ocr_pages:
+                    ai_policy_detail = None
+                    if r_pdf.extraction_detail:
+                        ai_policy_detail = r_pdf.extraction_detail.get("ai_policy")
                     r_pdf.extraction_source = "pdfplumber"
                     r_pdf.extraction_detail = {
                         "method_used": "pdfplumber",
@@ -1036,6 +1039,8 @@ def process_pdf(
                         "vision_reason": None,
                         "page_routing": page_routing,
                     }
+                    if ai_policy_detail is not None:
+                        r_pdf.extraction_detail["ai_policy"] = ai_policy_detail
                     if verbose:
                         print(f"  [{r_pdf.virtual_invoice_id}] accept pdfplumber (routing: text-layer sufficient)")
                     results.append(r_pdf)
@@ -1062,6 +1067,9 @@ def process_pdf(
                     and (ocr_median >= OCR_MEDIAN_CONF_ROUTING_THRESHOLD if last_page_source == "ocr" else pdf_text_quality >= TEXT_QUALITY_THRESHOLD)
                 )
                 if r_ocr.status == "FAILED":
+                    ai_policy_detail = None
+                    if r_pdf.extraction_detail:
+                        ai_policy_detail = r_pdf.extraction_detail.get("ai_policy")
                     r_pdf.extraction_source = "pdfplumber"
                     r_pdf.extraction_detail = {
                         "method_used": "pdfplumber",
@@ -1075,6 +1083,8 @@ def process_pdf(
                         "vision_reason": None,
                         "page_routing": page_routing,
                     }
+                    if ai_policy_detail is not None:
+                        r_pdf.extraction_detail["ai_policy"] = ai_policy_detail
                     if verbose:
                         print(f"  [{r_pdf.virtual_invoice_id}] OCR failed, fallback to pdfplumber")
                     results.append(r_pdf)
@@ -1090,6 +1100,9 @@ def process_pdf(
                     _flags.append("ocr_text_quality<0.5")
                 if not accept_ocr:
                     _flags.append("ocr_fallback_used")
+                ai_policy_detail = None
+                if r_ocr.extraction_detail:
+                    ai_policy_detail = r_ocr.extraction_detail.get("ai_policy")
                 r_ocr.extraction_detail = {
                     "method_used": "ocr",
                     "pdf_text_quality": pdf_text_quality,
@@ -1102,6 +1115,8 @@ def process_pdf(
                     "vision_reason": None,
                     "page_routing": page_routing,
                 }
+                if ai_policy_detail is not None:
+                    r_ocr.extraction_detail["ai_policy"] = ai_policy_detail
                 if verbose:
                     print(f"  [{r_ocr.virtual_invoice_id}] OCR fallback used (pages: {needs_ocr_pages})")
                 results.append(r_ocr)
@@ -1111,8 +1126,13 @@ def process_pdf(
                     output_dir=output_dir, fallback_to_ocr=(extraction_path == "pdfplumber"),
                 )
                 result = out[0] if isinstance(out, tuple) else out
+                ai_policy_detail = None
+                if result.extraction_detail:
+                    ai_policy_detail = result.extraction_detail.get("ai_policy")
                 result.extraction_source = extraction_path
                 result.extraction_detail = {"method_used": extraction_path}
+                if ai_policy_detail is not None:
+                    result.extraction_detail["ai_policy"] = ai_policy_detail
                 results.append(result)
         
         return results
