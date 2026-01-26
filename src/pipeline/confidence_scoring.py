@@ -1,12 +1,14 @@
 """Multi-factor confidence scoring algorithms for field extraction."""
 
 import re
+from decimal import Decimal
 from typing import List, Optional, Tuple
 
 from ..models.invoice_line import InvoiceLine
 from ..models.page import Page
 from ..models.row import Row
 from ..models.token import Token
+from ..pipeline.number_normalizer import normalize_swedish_decimal
 
 # Amount pattern. Dot-thousands FIRST (require .XXX); then dot-decimal.
 _AMOUNT_PATTERN = re.compile(
@@ -15,28 +17,20 @@ _AMOUNT_PATTERN = re.compile(
     r'\d{1,3}(?:\s+\d{3})*(?:[.,]\d{1,2})?|'  # Space thousands: "1 234,56"
     r'\d+(?:,\d{1,2})?'                        # Comma decimal: "123,45"
 )
-_CURRENCY_SYMBOLS = ('kr', 'SEK', 'sek', ':-', '€', '$')
 
+
+def _to_decimal(value) -> Optional[Decimal]:
+    if value is None:
+        return None
+    if isinstance(value, Decimal):
+        return value
+    return Decimal(str(value))
 
 def _parse_amount_str(s: str) -> Optional[float]:
     """Parse amount string to float. Handles dot thousands (3.717,35), space thousands (1 234,56), dot decimal (743.47)."""
-    cleaned = s.strip()
-    for sym in _CURRENCY_SYMBOLS:
-        cleaned = cleaned.replace(sym, '')
-    cleaned = cleaned.replace(' ', '')
-    if ',' in cleaned and '.' in cleaned:
-        cleaned = cleaned.replace('.', '').replace(',', '.')
-    elif ',' in cleaned:
-        if re.search(r',\d{1,2}$', cleaned):
-            cleaned = cleaned.replace(',', '.')
-        else:
-            cleaned = cleaned.replace(',', '')
-    elif '.' in cleaned:
-        if not re.search(r'\.\d{1,2}$', cleaned):
-            cleaned = cleaned.replace('.', '')
     try:
-        v = float(cleaned)
-        return v if v > 0 else None
+        value = normalize_swedish_decimal(s.strip())
+        return float(value) if value > 0 else None
     except ValueError:
         return None
 
@@ -283,20 +277,24 @@ def validate_total_against_line_items(
     Note: Many invoices have VAT, shipping, or other fees not included in line items.
     For larger amounts, use percentage-based tolerance (e.g., 0.5% of total).
     """
-    if not line_items:
+    if not line_items or total is None:
         return False  # Cannot validate without line items
-    
-    lines_sum = sum(line.total_amount for line in line_items)
-    diff = abs(total - lines_sum)
+
+    total_decimal = _to_decimal(total)
+    if total_decimal is None:
+        return False
+
+    lines_sum = sum((_to_decimal(line.total_amount) or Decimal("0")) for line in line_items)
+    diff = abs(total_decimal - lines_sum)
     
     # Use percentage-based tolerance for larger amounts (handles VAT/shipping better)
     # For amounts > 1000 SEK, allow 0.5% difference (for VAT ~25% on subtotal)
     # For amounts <= 1000 SEK, use fixed tolerance
-    if total > 1000:
-        percentage_tolerance = total * 0.005  # 0.5% of total
-        return diff <= max(tolerance, percentage_tolerance)
-    else:
-        return diff <= tolerance
+    tolerance_decimal = _to_decimal(tolerance) or Decimal("0")
+    if total_decimal > Decimal("1000"):
+        percentage_tolerance = total_decimal * Decimal("0.005")  # 0.5% of total
+        return diff <= max(tolerance_decimal, percentage_tolerance)
+    return diff <= tolerance_decimal
 
 
 def _is_largest_in_footer(candidate: float, footer_rows: List[Row]) -> bool:

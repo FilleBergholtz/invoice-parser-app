@@ -20,6 +20,7 @@ from ..models.segment import Segment
 from ..models.traceability import Traceability
 from ..pipeline.confidence_calibration import CalibrationModel, calibrate_confidence
 from ..pipeline.confidence_scoring import score_total_amount_candidate, validate_total_against_line_items
+from ..pipeline.number_normalizer import normalize_swedish_decimal
 
 logger = logging.getLogger(__name__)
 
@@ -441,8 +442,6 @@ def extract_total_amount(
         r'\d{1,3}(?:\s+\d{3})*(?:[.,]\d{1,2})?|'  # Space thousands: "1 234,56"
         r'\d+(?:,\d{1,2})?'                        # Comma decimal: "123,45"
     )
-    currency_symbols = ['kr', 'SEK', 'sek', ':-', '€', '$']
-    
     for row_index, row in enumerate(footer_segment.rows):
         row_lower = row.text.lower()
         
@@ -480,39 +479,10 @@ def extract_total_amount(
         
         for match in amount_matches:
             amount_text = match.group(0)
-            # Clean and convert to float
-            # Handle both Swedish format (komma som decimal, punkt som tusentalsavgränsare)
-            # and international format (punkt som decimal)
-            cleaned = amount_text
-            for sym in currency_symbols:
-                cleaned = cleaned.replace(sym, '')
-            cleaned = cleaned.replace(' ', '')  # Remove spaces (thousand separators)
-            
-            # Detect format: if contains both comma and dot, assume Swedish format (3.717,35)
-            if ',' in cleaned and '.' in cleaned:
-                # Swedish format: "3.717,35" -> "3717.35"
-                cleaned = cleaned.replace('.', '').replace(',', '.')
-            elif ',' in cleaned:
-                # Only comma: could be Swedish decimal or international thousand separator
-                # If comma is followed by 1-2 digits at end, it's decimal: "123,45" -> "123.45"
-                if re.search(r',\d{1,2}$', cleaned):
-                    cleaned = cleaned.replace(',', '.')
-                else:
-                    # Comma as thousand separator: "1,234" -> "1234"
-                    cleaned = cleaned.replace(',', '')
-            elif '.' in cleaned:
-                # Only dot: could be decimal or thousand separator
-                # If dot is followed by 1-2 digits at end, it's decimal: "123.45" -> "123.45"
-                if re.search(r'\.\d{1,2}$', cleaned):
-                    # Already correct decimal format
-                    pass
-                else:
-                    # Dot as thousand separator: "1.234" -> "1234"
-                    cleaned = cleaned.replace('.', '')
-            
             try:
-                amount = float(cleaned)
+                amount = normalize_swedish_decimal(amount_text)
                 if amount > 0:  # Valid amount
+                    amount_value = float(amount)
                     # Find token that contains this amount (for traceability)
                     match_start = match.start()
                     match_end = match.end()
@@ -526,7 +496,7 @@ def extract_total_amount(
                         char_pos = token_end + 1  # +1 for space between tokens
                     
                     candidates.append({
-                        'amount': amount,
+                        'amount': amount_value,
                         'row': use_row,
                         'row_index': use_idx,
                         'token': matching_token or (use_row.tokens[0] if use_row.tokens else None),

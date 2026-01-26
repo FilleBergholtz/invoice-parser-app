@@ -9,6 +9,7 @@ from ..models.row import Row
 from ..models.segment import Segment
 from ..models.traceability import Traceability
 from ..pipeline.confidence_scoring import score_invoice_number_candidate
+from ..pipeline.number_normalizer import normalize_swedish_decimal
 
 
 def extract_invoice_number(
@@ -371,11 +372,17 @@ def _is_valid_invoice_number_candidate(candidate: str, row: Row, all_rows: List[
     if length == 4 and 1900 <= num <= 2100:
         return False
     
-    # Filter out amounts (check if row contains currency symbols or decimal patterns)
+    # Filter out amounts (check if row contains currency symbols and amount-like patterns)
     row_text = row.text.lower()
     if any(symbol in row_text for symbol in ['kr', 'sek', ':-', '€', '$']):
-        # Check if candidate is near decimal pattern
-        if re.search(r'\d+[.,]\d{2}', row_text):
+        amount_pattern = re.compile(
+            r'-?\d{1,3}(?:[ .]\d{3})*(?:[.,]\d{1,2})?-?|-?\d+(?:[.,]\d{1,2})?-?'
+        )
+        for match in amount_pattern.finditer(row_text):
+            try:
+                normalize_swedish_decimal(match.group(0))
+            except ValueError:
+                continue
             return False
     
     # Filter out postal codes (5 digits, typically 10000-99999 in Sweden)

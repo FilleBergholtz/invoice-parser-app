@@ -1,11 +1,13 @@
 """Line item extraction from items segment using layout-driven approach."""
 
 import re
+from decimal import Decimal
 from typing import List, Optional, Tuple
 
 from ..models.invoice_line import InvoiceLine
 from ..models.row import Row
 from ..models.segment import Segment
+from ..pipeline.number_normalizer import normalize_swedish_decimal
 from ..pipeline.wrap_detection import detect_wrapped_rows, consolidate_wrapped_description
 
 
@@ -141,17 +143,19 @@ def _extract_amount_from_row_text(row: Row) -> Optional[Tuple[float, Optional[fl
     - "100,0% 0,00" → (0.00, 1.0, idx)  # Discount as percentage (100%)
     - "10,5% 1 200,00" → (1200.00, 0.105, idx)  # Discount as percentage (10.5%)
     """
-    currency_symbols = ['kr', 'SEK', 'sek', ':-']
     row_text = row.text
     
-    # Pattern for amounts (positive or negative) with thousand separators (spaces)
-    # Matches: "123,45", "-123,45", "1 234,56", "-1 234,56", "-2 007,28", etc.
-    # Also handles period as decimal: "123.45", "-123.45"
-    amount_pattern = re.compile(r'-?\d{1,3}(?:\s+\d{3})*(?:[.,]\d{1,2})|-?\d+(?:[.,]\d{1,2})')
+    # Pattern for amounts with thousand separators (spaces or dots), optional decimals,
+    # and optional trailing minus (e.g. "1 234,00-", "12.345,67").
+    amount_pattern = re.compile(
+        r'-?\d{1,3}(?:[ .]\d{3})+(?:[.,]\d{1,2})?-?|-?\d+(?:[.,]\d{1,2})?-?'
+    )
     
     # Pattern for percentage discounts: "100,0%", "10,5%", "25%", etc.
     # Matches: digits with optional decimal, followed by %
-    percentage_pattern = re.compile(r'(\d{1,3}(?:\s+\d{3})*(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?)\s*%')
+    percentage_pattern = re.compile(
+        r'(\d{1,3}(?:[ .]\d{3})*(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?)\s*%'
+    )
     
     # Find all amount matches in row.text
     amount_matches = list(amount_pattern.finditer(row_text))
@@ -166,20 +170,15 @@ def _extract_amount_from_row_text(row: Row) -> Optional[Tuple[float, Optional[fl
     # Process amount matches
     for match in amount_matches:
         amount_text = match.group(0)
-        is_negative = amount_text.startswith('-')
-        
-        # Clean and convert to float
-        cleaned = amount_text
-        for sym in currency_symbols:
-            cleaned = cleaned.replace(sym, '')
-        cleaned = cleaned.replace(' ', '').replace(',', '.').lstrip('-')
-        
         try:
-            value = float(cleaned)
-            if value > 0:  # Only process positive values (we handle sign separately)
-                amounts.append((value, is_negative, False, match.start(), match.end()))
+            normalized = normalize_swedish_decimal(amount_text)
         except ValueError:
             continue
+        
+        is_negative = normalized < 0
+        value = abs(normalized)
+        if value > 0:  # Only process positive values (we handle sign separately)
+            amounts.append((float(value), is_negative, False, match.start(), match.end()))
     
     # Process percentage matches
     for match in percentage_matches:
@@ -188,21 +187,15 @@ def _extract_amount_from_row_text(row: Row) -> Optional[Tuple[float, Optional[fl
         if not percent_text:
             continue
         
-        # Clean percentage value (handle both komma and punkt as decimal)
-        cleaned = percent_text.replace(' ', '')
-        # If contains both comma and dot, assume Swedish format (e.g., "67,00" -> "67.00")
-        if ',' in cleaned and '.' in cleaned:
-            cleaned = cleaned.replace(',', '')  # Remove comma, keep dot
-        elif ',' in cleaned:
-            cleaned = cleaned.replace(',', '.')  # Convert comma to dot
-        
         try:
-            percent_value = float(cleaned)
-            # Convert to decimal (100% = 1.0, 10.5% = 0.105, 67.00% = 0.67)
-            decimal_value = percent_value / 100.0
-            amounts.append((decimal_value, False, True, match.start(), match.end()))
+            percent_value = normalize_swedish_decimal(percent_text)
         except ValueError:
             continue
+        
+        percent_value = abs(percent_value)
+        # Convert to decimal (100% = 1.0, 10.5% = 0.105, 67.00% = 0.67)
+        decimal_value = float(percent_value / Decimal("100"))
+        amounts.append((decimal_value, False, True, match.start(), match.end()))
     
     if not amounts:
         return None
@@ -580,41 +573,41 @@ def _extract_line_from_row(
             # Prioritize matches closer to the unit (higher position in text)
             for match in reversed(matches):
                 quantity_text = match.group(1)
-                cleaned = quantity_text.replace(' ', '')
                 try:
-                    numeric_value = float(cleaned)
-                    match_start = match.start()
-                    match_end = match.end()
-                    
-                    # Calculate distance from unit (higher = closer to unit)
-                    distance_from_unit = len(before_unit_text) - match_end
-                    
-                    # Check if this looks like an article number
-                    # Article numbers are typically at the start (first 30% of text)
-                    # and are often part of larger numbers like "27 7615" (277615)
-                    is_likely_article_number = False
-                    if match_start < len(before_unit_text) * 0.3:
-                        # At start - could be article number
-                        # If it's part of a larger number pattern (like "27 7615"), skip it
-                        # Check if there are more digits right after this match
-                        if match_end < len(before_unit_text):
-                            next_char = before_unit_text[match_end:match_end+1]
-                            if next_char.isdigit():
-                                # More digits after, likely part of article number
-                                is_likely_article_number = True
-                        # Also skip if numeric value is very large (likely article number)
-                        if numeric_value >= 100000:
-                            is_likely_article_number = True
-                    
-                    if not is_likely_article_number:
-                        # This looks like quantity
-                        # Prefer matches closer to unit (within last 50% of text)
-                        if distance_from_unit < len(before_unit_text) * 0.5 or numeric_value < 10000:
-                            if 1 <= numeric_value <= 100000:  # Reasonable range for quantity
-                                quantity = numeric_value
-                                break
+                    numeric_value = float(normalize_swedish_decimal(quantity_text))
                 except ValueError:
-                    pass
+                    continue
+
+                match_start = match.start()
+                match_end = match.end()
+                
+                # Calculate distance from unit (higher = closer to unit)
+                distance_from_unit = len(before_unit_text) - match_end
+                
+                # Check if this looks like an article number
+                # Article numbers are typically at the start (first 30% of text)
+                # and are often part of larger numbers like "27 7615" (277615)
+                is_likely_article_number = False
+                if match_start < len(before_unit_text) * 0.3:
+                    # At start - could be article number
+                    # If it's part of a larger number pattern (like "27 7615"), skip it
+                    # Check if there are more digits right after this match
+                    if match_end < len(before_unit_text):
+                        next_char = before_unit_text[match_end:match_end+1]
+                        if next_char.isdigit():
+                            # More digits after, likely part of article number
+                            is_likely_article_number = True
+                    # Also skip if numeric value is very large (likely article number)
+                    if numeric_value >= 100000:
+                        is_likely_article_number = True
+                
+                if not is_likely_article_number:
+                    # This looks like quantity
+                    # Prefer matches closer to unit (within last 50% of text)
+                    if distance_from_unit < len(before_unit_text) * 0.5 or numeric_value < 10000:
+                        if 1 <= numeric_value <= 100000:  # Reasonable range for quantity
+                            quantity = numeric_value
+                            break
         
         # If no thousand-separator quantity found, look for single numeric token
         if quantity is None:
@@ -626,9 +619,8 @@ def _extract_line_from_row(
                 
                 # Check if token is a pure number
                 if re.match(r'^\d+([.,]\d+)?$', token_text.replace(' ', '')):
-                    cleaned = token_text.replace(',', '.').replace(' ', '')
                     try:
-                        numeric_value = float(cleaned)
+                        numeric_value = float(normalize_swedish_decimal(token_text))
                         
                         # Skip if it looks like article number or line number
                         is_article_or_line_number = False
@@ -661,35 +653,12 @@ def _extract_line_from_row(
             
             # Pattern for amounts with thousand separators (spaces or dots)
             # Matches: "123,45", "1 234,56", "1 034,00", "3.717,35" (punkt som tusentalsavgränsare), "8302.00" (punkt som decimal)
-            amount_pattern = re.compile(
-                r'\d{1,3}(?:\s+\d{3})*(?:[.,]\d{2})?|'  # Swedish: "1 234,56" or "1 234"
-                r'\d{1,3}(?:\.\d{3})*(?:,\d{2})?|'      # Swedish with dots: "3.717,35"
-                r'\d+(?:[.,]\d{2})?'                     # Simple: "123,45" or "123.45" or "8302.00"
-            )
             match = amount_pattern.search(unit_to_amount_text)
             
             if match:
                 amount_text = match.group(0)
-                # Handle both Swedish format (komma som decimal, punkt som tusentalsavgränsare)
-                # and international format (punkt som decimal)
-                cleaned = amount_text.replace(' ', '')
-                if ',' in cleaned and '.' in cleaned:
-                    # Swedish format: "3.717,35" -> "3717.35"
-                    cleaned = cleaned.replace('.', '').replace(',', '.')
-                elif ',' in cleaned:
-                    # Only comma: if followed by 1-2 digits at end, it's decimal
-                    if re.search(r',\d{1,2}$', cleaned):
-                        cleaned = cleaned.replace(',', '.')
-                    else:
-                        cleaned = cleaned.replace(',', '')
-                elif '.' in cleaned:
-                    # Only dot: if followed by 1-2 digits at end, it's decimal
-                    if not re.search(r'\.\d{1,2}$', cleaned):
-                        # Dot as thousand separator: "1.234" -> "1234"
-                        cleaned = cleaned.replace('.', '')
-                
                 try:
-                    numeric_value = float(cleaned)
+                    numeric_value = float(normalize_swedish_decimal(amount_text))
                     # Unit price should be reasonable (not too small, not too large)
                     if 0.01 <= numeric_value <= 1000000:  # Reasonable range
                         unit_price = numeric_value
@@ -702,9 +671,8 @@ def _extract_line_from_row(
                         token = tokens[i]
                         token_text = token.text.strip()
                         if re.match(r'^\d+([.,]\d+)?$', token_text.replace(' ', '')):
-                            cleaned = token_text.replace(',', '.').replace(' ', '')
                             try:
-                                numeric_value = float(cleaned)
+                                numeric_value = float(normalize_swedish_decimal(token_text))
                                 if 0.01 <= numeric_value <= 1000000:
                                     unit_price = numeric_value
                                     break
@@ -722,10 +690,8 @@ def _extract_line_from_row(
             token_text = token.text.strip()
             # Check if token looks like a number
             if re.match(r'^\d+([.,]\d+)?$', token_text.replace(' ', '')):
-                # Convert to float
-                cleaned = token_text.replace(',', '.').replace(' ', '')
                 try:
-                    numeric_value = float(cleaned)
+                    numeric_value = float(normalize_swedish_decimal(token_text))
                     
                     # Skip if this looks like an article number
                     is_article_number = False

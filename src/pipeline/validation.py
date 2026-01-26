@@ -1,5 +1,6 @@
 """Validation logic for invoice data with status assignment."""
 
+from decimal import Decimal
 from typing import List, Optional, Tuple
 
 from ..models.invoice_header import InvoiceHeader
@@ -9,6 +10,14 @@ from ..pipeline.confidence_scoring import (
     validate_total_against_line_items,
     validate_and_score_invoice_line
 )
+
+
+def _to_decimal(value: Optional[float]) -> Optional[Decimal]:
+    if value is None:
+        return None
+    if isinstance(value, Decimal):
+        return value
+    return Decimal(str(value))
 
 
 def validate_line_items(
@@ -98,15 +107,22 @@ def calculate_validation_values(
         - diff: total_amount - lines_sum (signed difference, None if total_amount is None)
         - validation_passed: True if abs(diff) <= tolerance (False if diff is None)
     """
-    lines_sum = sum(line.total_amount for line in line_items) if line_items else 0.0
+    lines_sum_decimal = sum(
+        (_to_decimal(line.total_amount) or Decimal("0")) for line in line_items
+    ) if line_items else Decimal("0")
+    lines_sum = float(lines_sum_decimal)
     
     if total_amount is None:
         return lines_sum, None, False
     
-    diff = total_amount - lines_sum
-    validation_passed = validate_total_against_line_items(total_amount, line_items, tolerance)
+    total_decimal = _to_decimal(total_amount)
+    if total_decimal is None:
+        return lines_sum, None, False
+
+    diff_decimal = total_decimal - lines_sum_decimal
+    validation_passed = validate_total_against_line_items(total_decimal, line_items, tolerance)
     
-    return lines_sum, diff, validation_passed
+    return lines_sum, float(diff_decimal), validation_passed
 
 
 def validate_invoice(
