@@ -38,6 +38,7 @@ def detect_invoice_boundaries(
     extraction_path: str,
     verbose: bool = False,
     output_dir: Optional[str] = None,
+    decision_log: Optional[List[Dict[str, Any]]] = None,
 ) -> List[Tuple[int, int]]:
     """Detect invoice boundaries (page ranges) within a PDF.
     
@@ -136,7 +137,7 @@ def detect_invoice_boundaries(
             segments = identify_segments(rows, page)
             page_segments_map[page.page_number] = (segments, rows)
     
-    boundaries = _find_invoice_boundaries(doc, page_segments_map, verbose)
+    boundaries = _find_invoice_boundaries(doc, page_segments_map, verbose, decision_log=decision_log)
     if not boundaries:
         if verbose:
             print(f"  Warning: No invoice boundaries detected, treating entire PDF as one invoice")
@@ -147,46 +148,89 @@ def detect_invoice_boundaries(
 def _find_invoice_boundaries(
     doc: Document,
     page_segments_map: dict,  # page_number -> (segments, rows)
-    verbose: bool = False
+    verbose: bool = False,
+    decision_log: Optional[List[Dict[str, Any]]] = None,
 ) -> List[Tuple[int, int]]:
-    """Find invoice boundaries by analyzing header/footer patterns.
+    """Find invoice boundaries by analyzing invoice number and page numbering.
     
     Returns list of (page_start, page_end) tuples.
     """
-    boundaries = []
+    boundaries: List[Tuple[int, int]] = []
     current_start = 1
+    current_invoice_no: Optional[str] = None
+    prev_page_number_info: Optional[Dict[str, Any]] = None
     num_pages = len(doc.pages)
     
     for page_num in range(1, num_pages + 1):
         if page_num not in page_segments_map:
+            prev_page_number_info = None
+            if decision_log is not None:
+                decision_log.append({
+                    "page": page_num,
+                    "invoice_no": None,
+                    "invoice_score": None,
+                    "page_number": None,
+                    "decision": "no_data",
+                    "reason": ["missing_page_segments"]
+                })
             continue
         
         segments, rows = page_segments_map[page_num]
-        
-        # Check if this page has a strong invoice header (new invoice start)
+        page = doc.pages[page_num - 1]
         header_segment = next((s for s in segments if s.segment_type == "header"), None)
         
-        if header_segment and page_num > current_start:
-            # Check for high-confidence invoice number (≥0.95) or strong pattern
-            has_invoice_header = _has_strong_invoice_header(header_segment, rows, doc.pages[page_num - 1])
-            
-            if has_invoice_header:
-                # This is a new invoice start
-                # End previous invoice at page_num - 1
+        invoice_candidate = _select_invoice_number_candidate(rows, page, header_segment)
+        page_number_info = _parse_page_number(rows)
+        
+        decision = "continue"
+        reasons: List[str] = []
+        
+        if invoice_candidate:
+            invoice_no = invoice_candidate["candidate"]
+            if current_invoice_no is None:
+                current_invoice_no = invoice_no
+                reasons.append("invoice_no_detected")
+            elif invoice_no != current_invoice_no:
                 if current_start <= page_num - 1:
-                    # Check if previous page has total
-                    prev_segments, prev_rows = page_segments_map.get(page_num - 1, ([], []))
-                    footer_segment = next((s for s in prev_segments if s.segment_type == "footer"), None)
-                    has_total = _has_high_confidence_total(footer_segment, prev_rows) if footer_segment else False
-                    
-                    end_page = page_num - 1
-                    boundaries.append((current_start, end_page))
+                    boundaries.append((current_start, page_num - 1))
                     if verbose:
-                        print(f"  Invoice boundary: pages {current_start}-{end_page} (total found: {has_total})")
-                
+                        print(f"  Invoice boundary: pages {current_start}-{page_num - 1} (invoice_no change)")
                 current_start = page_num
+                current_invoice_no = invoice_no
+                decision = "new_invoice"
+                reasons.append("invoice_no_change")
+            else:
+                reasons.append("invoice_no_match")
+        else:
+            if page_number_info and prev_page_number_info:
+                if _is_page_number_sequential(prev_page_number_info, page_number_info):
+                    reasons.append("page_no_sequential")
+                else:
+                    if current_start <= page_num - 1:
+                        boundaries.append((current_start, page_num - 1))
+                        if verbose:
+                            print(f"  Invoice boundary: pages {current_start}-{page_num - 1} (page_no break)")
+                    current_start = page_num
+                    current_invoice_no = None
+                    decision = "new_invoice"
+                    reasons.append("page_no_break")
+            elif page_number_info:
+                reasons.append("page_no_no_prev")
+            else:
+                reasons.append("no_invoice_no_or_page_no")
+        
+        if decision_log is not None:
+            decision_log.append({
+                "page": page_num,
+                "invoice_no": invoice_candidate["candidate"] if invoice_candidate else None,
+                "invoice_score": invoice_candidate["score"] if invoice_candidate else None,
+                "page_number": page_number_info,
+                "decision": decision,
+                "reason": reasons
+            })
+        
+        prev_page_number_info = page_number_info
     
-    # Handle last invoice
     if current_start <= num_pages:
         boundaries.append((current_start, num_pages))
         if verbose:
