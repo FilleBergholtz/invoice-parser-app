@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from decimal import Decimal
 from typing import List, Optional
 
 
@@ -23,9 +24,9 @@ class ValidationResult:
     """
     
     status: str
-    lines_sum: float
-    diff: Optional[float]
-    tolerance: float = 1.0
+    lines_sum: Decimal
+    diff: Optional[Decimal]
+    tolerance: Decimal = Decimal("1.0")
     hard_gate_passed: bool = False
     invoice_number_confidence: float = 0.0
     total_confidence: float = 0.0

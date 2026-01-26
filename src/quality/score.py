@@ -114,18 +114,19 @@ def calculate_quality_score(
     reconciliation_penalty = 0.0
     if validation_result.diff is not None:
         abs_diff = abs(validation_result.diff)
-        if abs_diff <= 0.01:
+        abs_diff_value = float(abs_diff)
+        if abs_diff_value <= 0.01:
             # Perfect match (within rounding tolerance)
             reconciliation_penalty = 0.0
-        elif abs_diff <= 1.0:
+        elif abs_diff_value <= 1.0:
             # Small difference (within tolerance)
-            reconciliation_penalty = abs_diff * 2.0  # 2 points per SEK
-        elif abs_diff <= 10.0:
+            reconciliation_penalty = abs_diff_value * 2.0  # 2 points per SEK
+        elif abs_diff_value <= 10.0:
             # Medium difference
-            reconciliation_penalty = 2.0 + (abs_diff - 1.0) * 1.5  # 2 + 1.5 per SEK over 1
+            reconciliation_penalty = 2.0 + (abs_diff_value - 1.0) * 1.5  # 2 + 1.5 per SEK over 1
         else:
             # Large difference
-            reconciliation_penalty = 15.5 + min((abs_diff - 10.0) * 0.5, 4.5)  # Cap at 20
+            reconciliation_penalty = 15.5 + min((abs_diff_value - 10.0) * 0.5, 4.5)  # Cap at 20
         
         reconciliation_penalty = min(reconciliation_penalty, 20.0)
     else:

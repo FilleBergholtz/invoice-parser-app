@@ -2,7 +2,7 @@
 
 import re
 from decimal import Decimal
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 from ..models.invoice_line import InvoiceLine
 from ..models.page import Page
@@ -26,17 +26,17 @@ def _to_decimal(value) -> Optional[Decimal]:
         return value
     return Decimal(str(value))
 
-def _parse_amount_str(s: str) -> Optional[float]:
-    """Parse amount string to float. Handles dot thousands (3.717,35), space thousands (1 234,56), dot decimal (743.47)."""
+def _parse_amount_str(s: str) -> Optional[Decimal]:
+    """Parse amount string to Decimal. Handles dot thousands (3.717,35), space thousands (1 234,56), dot decimal (743.47)."""
     try:
         value = normalize_swedish_decimal(s.strip())
-        return float(value) if value > 0 else None
+        return value if value > 0 else None
     except ValueError:
         return None
 
 
 def score_total_amount_candidate(
-    candidate: float,
+    candidate: Union[float, Decimal],
     row: Row,
     page: Page,
     line_items: List[InvoiceLine],
@@ -131,39 +131,41 @@ def score_total_amount_candidate(
     elif row.y > 0.6 * page.height:  # Bottom 40% of page (still likely footer)
         score += 0.13  # Partial score (reduced proportionally)
     
+    candidate_decimal = _to_decimal(candidate) or Decimal("0")
+
     # Mathematical validation (0.32 weight, reduced from 0.35)
-    if validate_total_against_line_items(candidate, line_items, tolerance=1.0):
+    if validate_total_against_line_items(candidate_decimal, line_items, tolerance=Decimal("1.0")):
         score += 0.32  # Perfect match - full score
     elif line_items:
         # Partial scoring based on how close the match is
-        lines_sum = sum(line.total_amount for line in line_items)
-        diff = abs(candidate - lines_sum)
+        lines_sum = sum((_to_decimal(line.total_amount) or Decimal("0")) for line in line_items)
+        diff = abs(candidate_decimal - lines_sum)
         
         # Use percentage-based thresholds for larger amounts
-        if candidate > 1000:
+        if candidate_decimal > Decimal("1000"):
             # For larger amounts, VAT/shipping can cause larger absolute differences
-            percentage_diff = (diff / candidate) * 100
-            if percentage_diff <= 0.5:  # Within 0.5% - very likely correct (VAT/rounding)
+            percentage_diff = (diff / candidate_decimal) * Decimal("100")
+            if percentage_diff <= Decimal("0.5"):  # Within 0.5% - very likely correct (VAT/rounding)
                 score += 0.30  # Very high partial score (almost full)
-            elif percentage_diff <= 1.0:  # Within 1% - likely VAT/shipping
+            elif percentage_diff <= Decimal("1.0"):  # Within 1% - likely VAT/shipping
                 score += 0.26  # High partial score
-            elif percentage_diff <= 2.0:  # Within 2% - likely VAT/shipping
+            elif percentage_diff <= Decimal("2.0"):  # Within 2% - likely VAT/shipping
                 score += 0.20  # Medium-high partial score
-            elif percentage_diff <= 5.0:  # Within 5% - might be VAT/shipping
+            elif percentage_diff <= Decimal("5.0"):  # Within 5% - might be VAT/shipping
                 score += 0.14  # Medium partial score
-            elif percentage_diff <= 10.0:  # Within 10% - questionable
+            elif percentage_diff <= Decimal("10.0"):  # Within 10% - questionable
                 score += 0.07  # Low partial score
             else:
                 score += 0.03  # Very low partial score - likely wrong
         else:
             # For smaller amounts, use fixed thresholds
-            if diff <= 2.0:  # Within 2 SEK - very likely correct with small rounding
+            if diff <= Decimal("2.0"):  # Within 2 SEK - very likely correct with small rounding
                 score += 0.28  # Very high partial score
-            elif diff <= 5.0:  # Within 5 SEK - likely correct with small rounding/VAT differences
+            elif diff <= Decimal("5.0"):  # Within 5 SEK - likely correct with small rounding/VAT differences
                 score += 0.23  # High partial score
-            elif diff <= 20.0:  # Within 20 SEK - might be VAT or shipping
+            elif diff <= Decimal("20.0"):  # Within 20 SEK - might be VAT or shipping
                 score += 0.16  # Medium partial score
-            elif diff <= 50.0:  # Within 50 SEK - questionable
+            elif diff <= Decimal("50.0"):  # Within 50 SEK - questionable
                 score += 0.09  # Low-medium partial score
             else:
                 score += 0.05  # Low partial score - likely wrong
@@ -179,9 +181,9 @@ def score_total_amount_candidate(
         
         if amounts_in_footer:
             max_amount = max(amounts_in_footer)
-            if candidate >= max_amount * 0.98:  # Candidate is largest or very close to largest
+            if candidate_decimal >= max_amount * Decimal("0.98"):  # Candidate is largest or very close to largest
                 score += 0.08  # Full score (reduced from 0.10)
-            elif candidate >= max_amount * 0.90:  # Candidate is close to largest
+            elif candidate_decimal >= max_amount * Decimal("0.90"):  # Candidate is close to largest
                 score += 0.05  # Partial score (reduced proportionally)
     
     # Font size/weight signal (0.05 weight) - NEW
@@ -257,9 +259,9 @@ def score_total_amount_candidate(
 
 
 def validate_total_against_line_items(
-    total: float,
+    total: Union[float, Decimal],
     line_items: List[InvoiceLine],
-    tolerance: float = 1.0
+    tolerance: Union[float, Decimal] = 1.0
 ) -> bool:
     """Validate total amount against sum of line item totals.
     
@@ -297,7 +299,7 @@ def validate_total_against_line_items(
     return diff <= tolerance_decimal
 
 
-def _is_largest_in_footer(candidate: float, footer_rows: List[Row]) -> bool:
+def _is_largest_in_footer(candidate: Union[float, Decimal], footer_rows: List[Row]) -> bool:
     """Check if candidate is largest amount in footer rows.
     
     Args:
@@ -307,7 +309,7 @@ def _is_largest_in_footer(candidate: float, footer_rows: List[Row]) -> bool:
     Returns:
         True if candidate is largest numeric value in footer rows
     """
-    amounts = []
+    amounts: List[Decimal] = []
     for footer_row in footer_rows:
         for m in _AMOUNT_PATTERN.finditer(footer_row.text):
             v = _parse_amount_str(m.group(0))
@@ -315,7 +317,8 @@ def _is_largest_in_footer(candidate: float, footer_rows: List[Row]) -> bool:
                 amounts.append(v)
     if not amounts:
         return True
-    return candidate >= max(amounts)
+    candidate_decimal = _to_decimal(candidate) or Decimal("0")
+    return candidate_decimal >= max(amounts)
 
 
 def score_invoice_number_candidate(
@@ -567,11 +570,11 @@ def validate_and_score_invoice_line(line: InvoiceLine) -> Tuple[float, dict]:
                 discount_type = 'amount'
                 discount_amount = abs(discount)  # Make positive for calculation
                 expected_total = base_total - discount_amount
-            elif 0.0 <= discount <= 1.0:
+            elif Decimal("0") <= discount <= Decimal("1"):
                 # Likely percentage (0.0-1.0 range)
                 discount_type = 'percent'
                 discount_amount = base_total * discount
-                expected_total = base_total * (1 - discount)
+                expected_total = base_total * (Decimal("1") - discount)
             else:
                 # Value > 1.0 but not negative - could be percentage > 100% (unlikely) or amount
                 # Assume amount in SEK if it's reasonable (not > base_total * 2)
@@ -582,14 +585,14 @@ def validate_and_score_invoice_line(line: InvoiceLine) -> Tuple[float, dict]:
                 else:
                     # Very large value, likely extraction error - treat as percentage anyway
                     discount_type = 'percent'
-                    discount_amount = base_total * (discount / 100.0)  # Assume it was meant as percentage
-                    expected_total = base_total * (1 - discount / 100.0)
+                    discount_amount = base_total * (discount / Decimal("100"))  # Assume it was meant as percentage
+                    expected_total = base_total * (Decimal("1") - discount / Decimal("100"))
             
             validation_info['discount_type'] = discount_type
             
             # Validate: expected_total should match total_amount
             diff = abs(expected_total - total_amount)
-            tolerance = 0.01  # 1 öre tolerance for rounding
+            tolerance = Decimal("0.01")  # 1 öre tolerance for rounding
             
             if diff <= tolerance:
                 # Perfect match
@@ -597,7 +600,7 @@ def validate_and_score_invoice_line(line: InvoiceLine) -> Tuple[float, dict]:
                 validation_info['quantity_valid'] = True
                 validation_info['unit_price_valid'] = True
                 validation_info['discount_valid'] = True
-            elif diff <= 1.0:
+            elif diff <= Decimal("1.0"):
                 # Close match (within 1 SEK) - likely rounding or small extraction error
                 score += 0.20  # Partial credit
                 validation_info['quantity_valid'] = True
@@ -616,8 +619,8 @@ def validate_and_score_invoice_line(line: InvoiceLine) -> Tuple[float, dict]:
                     # Try to solve: total_amount = base_total × (1 - discount)
                     # If discount is correct, recalculate unit_price or quantity
                     if base_total > 0:
-                        corrected_discount_percent = 1 - (total_amount / base_total)
-                        if 0.0 <= corrected_discount_percent <= 1.0:
+                        corrected_discount_percent = Decimal("1") - (total_amount / base_total)
+                        if Decimal("0") <= corrected_discount_percent <= Decimal("1"):
                             validation_info['calculated_fields']['discount'] = corrected_discount_percent
                             validation_info['calculated_fields']['discount_type'] = 'percent'
                 else:
@@ -629,14 +632,14 @@ def validate_and_score_invoice_line(line: InvoiceLine) -> Tuple[float, dict]:
         else:
             # No discount: total_amount should equal quantity × unit_price
             diff = abs(base_total - total_amount)
-            tolerance = 0.01
+            tolerance = Decimal("0.01")
             
             if diff <= tolerance:
                 # Perfect match
                 score += 0.30
                 validation_info['quantity_valid'] = True
                 validation_info['unit_price_valid'] = True
-            elif diff <= 1.0:
+            elif diff <= Decimal("1.0"):
                 # Close match
                 score += 0.20
                 validation_info['quantity_valid'] = True
@@ -656,7 +659,7 @@ def validate_and_score_invoice_line(line: InvoiceLine) -> Tuple[float, dict]:
                 # Or try to calculate correct quantity
                 if unit_price > 0:
                     corrected_quantity = total_amount / unit_price
-                    if corrected_quantity > 0 and abs(corrected_quantity - round(corrected_quantity)) < 0.01:
+                    if corrected_quantity > 0 and abs(corrected_quantity - round(corrected_quantity)) < Decimal("0.01"):
                         # Quantity should be integer-like
                         validation_info['calculated_fields']['quantity'] = round(corrected_quantity)
     else:
@@ -676,7 +679,7 @@ def validate_and_score_invoice_line(line: InvoiceLine) -> Tuple[float, dict]:
                 calculated_quantity = total_amount / unit_price
                 if calculated_quantity > 0:
                     # Round to reasonable value
-                    if abs(calculated_quantity - round(calculated_quantity)) < 0.01:
+                    if abs(calculated_quantity - round(calculated_quantity)) < Decimal("0.01"):
                         calculated_quantity = round(calculated_quantity)
                     validation_info['calculated_fields']['quantity'] = calculated_quantity
                     validation_info['warnings'].append(
@@ -691,13 +694,13 @@ def validate_and_score_invoice_line(line: InvoiceLine) -> Tuple[float, dict]:
     
     # Step 3: Additional validation (field presence and reasonableness)
     if has_quantity and quantity is not None:
-        if 0.001 <= quantity <= 1000000:  # Reasonable range
+        if Decimal("0.001") <= quantity <= Decimal("1000000"):  # Reasonable range
             score += 0.10  # 10% weight for reasonable quantity
         else:
             validation_info['warnings'].append(f"Antal verkar orimligt: {quantity}")
     
     if has_unit_price and unit_price is not None:
-        if 0.01 <= unit_price <= 10000000:  # Reasonable range
+        if Decimal("0.01") <= unit_price <= Decimal("10000000"):  # Reasonable range
             score += 0.10  # 10% weight for reasonable unit_price
         else:
             validation_info['warnings'].append(f"A-pris verkar orimligt: {unit_price:.2f}")
@@ -711,7 +714,7 @@ def validate_and_score_invoice_line(line: InvoiceLine) -> Tuple[float, dict]:
     return min(score, max_score), validation_info
 
 
-def identify_discount_type(discount: float, base_total: float) -> Tuple[str, float]:
+def identify_discount_type(discount: Decimal, base_total: Decimal) -> Tuple[str, Decimal]:
     """Identify if discount is percentage or amount, and return normalized amount.
     
     Args:
@@ -724,11 +727,11 @@ def identify_discount_type(discount: float, base_total: float) -> Tuple[str, flo
         - discount_amount: Discount in SEK
     """
     if base_total <= 0:
-        return 'amount', 0.0
+        return 'amount', Decimal("0")
     
     # Heuristic: if discount is between 0.0 and 1.0, it's likely a percentage
     # But also check if it makes sense as a percentage (e.g., 0.10 = 10% discount)
-    if 0.0 <= discount <= 1.0:
+    if Decimal("0") <= discount <= Decimal("1"):
         # Check if this percentage makes sense (discount shouldn't be > 100% of base)
         discount_amount = base_total * discount
         if discount_amount <= base_total:

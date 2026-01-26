@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass, asdict
 from datetime import date
+from decimal import Decimal
 from typing import List, Optional, Dict, Any
 
 
@@ -37,7 +38,17 @@ class AIInvoiceRequest:
         # Convert date to string if present
         if data.get('invoice_date') and isinstance(data['invoice_date'], date):
             data['invoice_date'] = data['invoice_date'].isoformat()
-        return data
+        return _sanitize_decimals(data)
+
+
+def _sanitize_decimals(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {k: _sanitize_decimals(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_sanitize_decimals(v) for v in value]
+    if isinstance(value, Decimal):
+        return float(value)
+    return value
 
 
 @dataclass

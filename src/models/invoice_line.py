@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import TYPE_CHECKING, List, Optional
 
 if TYPE_CHECKING:
@@ -32,12 +33,12 @@ class InvoiceLine:
     
     rows: List[Row]
     description: str
-    quantity: Optional[float] = None
+    quantity: Optional[Decimal] = None
     unit: Optional[str] = None
-    unit_price: Optional[float] = None
-    discount: Optional[float] = None
-    total_amount: float = 0.0
-    vat_rate: Optional[float] = None
+    unit_price: Optional[Decimal] = None
+    discount: Optional[Decimal] = None
+    total_amount: Decimal = Decimal("0")
+    vat_rate: Optional[Decimal] = None
     line_number: int = 0
     segment: Optional[Segment] = None
     

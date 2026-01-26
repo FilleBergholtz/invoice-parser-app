@@ -3,6 +3,7 @@
 import json
 import shutil
 from datetime import datetime
+from decimal import Decimal
 from pathlib import Path
 from typing import Any, List, Optional
 
@@ -17,6 +18,8 @@ def _sanitize_for_json(obj: Any) -> Any:
         return {k: _sanitize_for_json(v) for k, v in obj.items()}
     if isinstance(obj, list):
         return [_sanitize_for_json(v) for v in obj]
+    if isinstance(obj, Decimal):
+        return float(obj)
     if isinstance(obj, (str, int, float, type(None), bool)):
         return obj
     if hasattr(obj, "item") and callable(getattr(obj, "item")):

@@ -130,6 +130,8 @@ def _try_ai_fallback(
             row.text for row in footer_segment.rows
         )
         line_items_sum = sum(line.total_amount for line in line_items) if line_items else None
+        if line_items_sum is not None:
+            line_items_sum = float(line_items_sum)
         cand = None
         if candidates:
             cand = [{"amount": c.get("amount"), "keyword_type": c.get("keyword_type")} for c in candidates[:10]]
