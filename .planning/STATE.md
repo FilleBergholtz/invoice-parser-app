@@ -12,11 +12,11 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 
 Milestone: **v2.1 Parsing robustness / EDI** (pågående).
 Phase: **19** — Svensk talnormalisering (klar).
-Plan: 19-01 genomförd (Svensk talnormalisering).
+Plan: 19-02 genomförd (Decimal ut i pipeline).
 Status: Phase 19 klar, redo för nästa fas (Phase 20).
-Last activity: 2026-01-26 — Completed 19-01-PLAN.md.
+Last activity: 2026-01-26 — Completed 19-02-PLAN.md.
 
-Progress: ████████████████████░ 68/69 (99%) — v1.0 (Phase 1–3) + v2.0 (Phase 5–15) genomförda och arkiverade; Phase 19 klar.
+Progress: ████████████████████░ 69/70 (99%) — v1.0 (Phase 1–3) + v2.0 (Phase 5–15) genomförda och arkiverade; Phase 19 klar.
 
 ## Accumulated Context
 
@@ -34,6 +34,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-26 19:41 UTC
-Stopped at: Completed 19-01-PLAN.md
+Last session: 2026-01-26 20:13 UTC
+Stopped at: Completed 19-02-PLAN.md
 Resume file: None
