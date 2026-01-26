@@ -65,8 +65,27 @@ None.
 ## Issues Encountered
 None.
 
+## Known Limitations
+
+**CRITICAL:** Single VAT rate only (25%)
+- Rader med 12% eller 6% moms identifieras inte som line items
+- Måste addresseras i Phase 21/22
+- Se: `20-LIMITATIONS.md` för fullständig dokumentation
+
+**MEDIUM:** Swedish-only footer keywords
+- Internationella fakturor kan extrahera footer-rader som line items
+
+**MINOR:** Multi-page tables utan header-upprepning
+- Phase 21 scope (multi-line items)
+
 ## Next Phase Readiness
 Phase 20 klar; redo för Phase 21 (multi-line items).
+
+**Handoff to Phase 21:**
+- ✅ Tabellblock-avgränsning fungerar
+- ✅ VAT%-anchored parsing implementerad
+- ⚠️ Multipla momssatser måste addresseras (kritisk begränsning)
+- 📋 Se `20-LIMITATIONS.md` för detaljer
 
 ---
 *Phase: 20-tabellsegment-kolumnregler*

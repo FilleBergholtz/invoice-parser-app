@@ -94,6 +94,9 @@ Plans:
   2. Rader parsas rad-för-rad inom tabellblocket.
   3. Nettobelopp identifieras som sista valuta-tal efter moms% enligt reglerna.
   4. Alternativ moms%+belopp-regex används för att undvika felkolumn.
+**Known Limitations**: 
+  - ⚠️ CRITICAL: Single VAT rate only (25%) - must address in Phase 21/22
+  - See: `.planning/phases/20-tabellsegment-kolumnregler/20-LIMITATIONS.md`
 **Plans**: 1 plan
 
 Plans:

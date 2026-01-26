@@ -503,26 +503,32 @@ Things that couldn't be fully resolved:
    - What we know: Current implementation requires this keyword to detect table end
    - What's unclear: Alternative patterns for invoices using "Total", "Subtotal", or other footer keywords
    - Recommendation: Extend footer keyword list with international variations; consider fallback to positional segmentation if no footer keyword found
+   - **Status:** Documented as MEDIUM limitation in `20-LIMITATIONS.md`
 
 2. **What's the optimal threshold for "large amount" in soft footer keyword matching?**
    - What we know: Current implementation uses simple `amount > 0` check
    - What's unclear: Whether threshold should be dynamic (percentage of largest line item) or fixed (e.g., 5000 SEK)
    - Recommendation: Analyze ground truth corpus to determine optimal threshold; consider making it configurable per supplier profile
 
-3. **How to handle multiple VAT rates (25%, 12%, 6%) in same invoice?**
+3. **How to handle multiple VAT rates (25%, 12%, 6%) in same invoice?** ⚠️ **CRITICAL LIMITATION**
    - What we know: Current implementation hardcodes `25.00` pattern (Swedish standard rate)
    - What's unclear: How to detect net amount when row has 12% or 6% VAT rate
    - Recommendation: Extend VAT pattern to `\b(25|12|6)[.,]00\b`; validate against expected rates in supplier profile
+   - **Status:** **Documented as CRITICAL limitation in `20-LIMITATIONS.md` - Must be addressed in Phase 21/22**
+   - **Impact:** Invoices with mixed VAT rates will have incomplete line item extraction
 
 4. **Should table boundary detection be per-page or per-document?**
    - What we know: Current implementation processes each page independently
    - What's unclear: Whether multi-page invoices can have table header only on first page, requiring cross-page boundary detection
    - Recommendation: Test with multi-page invoice corpus; implement cross-page table continuation detection if needed (Phase 21 scope)
+   - **Status:** Documented as MINOR limitation in `20-LIMITATIONS.md` (Phase 21 scope)
 
 5. **How to handle invoices with no table structure (pure text format)?**
    - What we know: Implementation assumes tabular layout with columns
    - What's unclear: Fallback strategy for text-format invoices (e.g., "Product: X, Quantity: 2, Price: 100 SEK")
    - Recommendation: Out of scope for Phase 20; consider separate parser for text-format invoices if encountered in production
+
+**See comprehensive limitation documentation:** `.planning/phases/20-tabellsegment-kolumnregler/20-LIMITATIONS.md`
 
 ## Sources
 

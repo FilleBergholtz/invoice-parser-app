@@ -31,6 +31,11 @@ _AMOUNT_PATTERN = re.compile(
     r'-?\d{1,3}(?:[ .]\d{3})+(?:[.,]\d{1,2})?-?|-?\d+(?:[.,]\d{1,2})?-?'
 )
 _TABLE_END_PATTERN = re.compile(r"nettobelopp\s+exkl\.?\s*moms", re.IGNORECASE)
+
+# KNOWN LIMITATION (Phase 20): Only 25% VAT supported
+# Invoices with mixed VAT rates (12%, 6%) will have incomplete line item extraction.
+# TODO (Phase 21/22): Extend pattern to r"\b(25|12|6)[.,]00\b" to support all Swedish VAT rates
+# See: .planning/phases/20-tabellsegment-kolumnregler/20-LIMITATIONS.md
 _MOMS_RATE_PATTERN = re.compile(r"\b25[.,]00\b")
 
 

@@ -27,6 +27,9 @@
 - [ ] **TABLE-03**: Nettobelopp identifieras som **sista valuta‑talet** efter moms% (25.00) på raden.
 - [ ] **TABLE-04**: Alternativ regex stöds för moms% + belopp, t.ex. `\\s25\\.00\\s<belopp>`, för att undvika felkolumn (t.ex. 35.1/38.9).
 
+**Known Limitations (Phase 20):**
+- ⚠️ **CRITICAL**: TABLE-03/04 stödjer endast 25% moms. Fakturor med blandade momssatser (12%, 6%) parsas inte korrekt. Måste addresseras i Phase 21/22. Se: `.planning/phases/20-tabellsegment-kolumnregler/20-LIMITATIONS.md`
+
 ### Multi‑line items
 
 - [ ] **LINE-01**: Om en rad saknar moms% + nettobelopp behandlas den som fortsättning på föregående item‑beskrivning.
@@ -88,8 +91,8 @@
 | NUM-04 | Phase 19: Svensk talnormalisering | Pending |
 | TABLE-01 | Phase 20: Tabellsegment & kolumnregler | Complete |
 | TABLE-02 | Phase 20: Tabellsegment & kolumnregler | Complete |
-| TABLE-03 | Phase 20: Tabellsegment & kolumnregler | Complete |
-| TABLE-04 | Phase 20: Tabellsegment & kolumnregler | Complete |
+| TABLE-03 | Phase 20: Tabellsegment & kolumnregler | Complete ⚠️ 25% only |
+| TABLE-04 | Phase 20: Tabellsegment & kolumnregler | Complete ⚠️ 25% only |
 | LINE-01 | Phase 21: Multi-line items | Pending |
 | LINE-02 | Phase 21: Multi-line items | Pending |
 | VAL-01 | Phase 22: Valideringsdriven om-extraktion | Pending |
