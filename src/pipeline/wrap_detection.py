@@ -121,8 +121,11 @@ def detect_wrapped_rows(
         all_rows = [product_row] + following_rows
     y_threshold = _calculate_adaptive_y_threshold(all_rows)
     
-    # Calculate X-position tolerance (±2% of page width)
-    tolerance = 0.02 * page.width
+    # Calculate X-position tolerance (±2% of page width for base alignment)
+    base_tolerance = 0.02 * page.width
+    
+    # Right-indent allowance (+5% of page width for indented sub-items)
+    right_indent_allowance = 0.05 * page.width
     
     # Get description column start position (first token's X)
     description_start_x = _get_description_column_start(product_row)
@@ -146,10 +149,18 @@ def detect_wrapped_rows(
         if _contains_amount(next_row):
             break
         
-        # Stop condition 4: X-start deviates beyond tolerance
+        # Stop condition 4: X-alignment check (two-tier tolerance)
         next_row_start_x = next_row.x_min
-        if abs(next_row_start_x - description_start_x) > tolerance:
-            break
+        delta_x = next_row_start_x - description_start_x
+        
+        # Allow:
+        # 1. Base tolerance: ±2% page width (aligned)
+        # 2. Right-indent allowance: +5% page width (indented sub-items, bullet points)
+        is_aligned = (abs(delta_x) <= base_tolerance or 
+                      (delta_x > 0 and delta_x <= right_indent_allowance))
+        
+        if not is_aligned:
+            break  # Too far left or too far right
         
         # Candidate is a wrap row
         wraps.append(next_row)
