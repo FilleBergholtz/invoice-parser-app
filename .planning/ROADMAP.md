@@ -26,7 +26,7 @@ See archived roadmap: `.planning/milestones/v2.0-ROADMAP.md`.
 
 </details>
 
-### 📋 v2.1 Parsing robustness / EDI (Planned)
+### 🚧 v2.1 Parsing robustness / EDI (In progress)
 
 **Milestone Goal:** Deterministisk parsing för EDI‑liknande PDF:er med text‑layer, robust tabellsegmentering och valideringsdriven om‑extraktion.
 
@@ -42,7 +42,7 @@ See archived roadmap: `.planning/milestones/v2.0-ROADMAP.md`.
 **Plans**: 1 plan
 
 Plans:
-- [ ] 16-01: Text-layer routing (OCR-skip)
+- [x] 16-01: Text-layer routing (OCR-skip)
 
 #### Phase 17: AI-policy (fallback only)
 **Goal**: AI används endast som sista fallback och aldrig som normalväg för EDI-liknande fakturor.
@@ -126,7 +126,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 16. Text-layer routing (OCR-skip) | v2.1 | 0/1 | Not started | - |
+| 16. Text-layer routing (OCR-skip) | v2.1 | 1/1 | Complete | 2026-01-26 |
 | 17. AI-policy (fallback only) | v2.1 | 0/TBD | Not started | - |
 | 18. Fakturaboundaries | v2.1 | 0/TBD | Not started | - |
 | 19. Svensk talnormalisering | v2.1 | 0/TBD | Not started | - |
