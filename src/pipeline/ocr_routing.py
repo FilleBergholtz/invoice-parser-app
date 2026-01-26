@@ -48,6 +48,14 @@ def _compile_anchors(anchors: Iterable[str]) -> List[re.Pattern]:
     return patterns
 
 
+def _match_patterns(text: str, patterns: Iterable[str]) -> List[str]:
+    compiled = _compile_anchors(patterns)
+    if not compiled:
+        return []
+    text = text or ""
+    return [p.pattern for p in compiled if p.search(text)]
+
+
 def evaluate_text_layer(
     text: str,
     tokens: Optional[List["Token"]],
@@ -98,5 +106,63 @@ def evaluate_text_layer(
         "text_quality": text_quality,
         "required_anchor_hits": required_hits,
         "extra_anchor_hits": extra_hits,
+        "reason_flags": reason_flags,
+    }
+
+
+def evaluate_edi_signals(
+    text: str,
+    text_layer_used: bool,
+    text_quality: Optional[float],
+    anchor_rules: Optional[Dict[str, Iterable[str]]],
+    table_patterns: Optional[Iterable[str]],
+    min_signals: int = 2,
+    min_text_quality: float = 0.5,
+) -> Dict[str, Any]:
+    """Evaluate EDI-like signals for AI policy decisions."""
+    rules = anchor_rules or {}
+    required = list(rules.get("required") or [])
+    extra = list(rules.get("extra") or [])
+    required_hits = _match_patterns(text, required)
+    extra_hits = _match_patterns(text, extra)
+    table_hits = _match_patterns(text, table_patterns or [])
+
+    signals = []
+    if text_layer_used:
+        signals.append("text_layer")
+    if text_quality is not None and text_quality >= min_text_quality:
+        signals.append("text_quality")
+    if required_hits:
+        signals.append("anchor_required")
+    if extra_hits:
+        signals.append("anchor_extra")
+    if table_hits:
+        signals.append("table_pattern")
+
+    signal_count = len(signals)
+    required_ok = True if not required else bool(required_hits)
+    edi_like = bool(text_layer_used and required_ok and signal_count >= max(1, min_signals))
+
+    reason_flags = []
+    if text_layer_used:
+        reason_flags.append("edi_text_layer")
+    if text_quality is not None and text_quality >= min_text_quality:
+        reason_flags.append("edi_text_quality")
+    if required_hits:
+        reason_flags.append("edi_anchor_required")
+    if extra_hits:
+        reason_flags.append("edi_anchor_extra")
+    if table_hits:
+        reason_flags.append("edi_table_pattern")
+    if edi_like:
+        reason_flags.append("edi_like")
+
+    return {
+        "edi_like": edi_like,
+        "signal_count": signal_count,
+        "signals": signals,
+        "required_anchor_hits": required_hits,
+        "extra_anchor_hits": extra_hits,
+        "table_pattern_hits": table_hits,
         "reason_flags": reason_flags,
     }

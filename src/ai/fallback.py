@@ -10,8 +10,119 @@ from typing import Any, Dict, List, Optional
 
 from .providers import AIProvider, AI_JSON_RETRY_COUNT, ClaudeProvider, OpenAIProvider
 from ..config import get_ai_key, get_ai_model, get_ai_provider
+from ..config.profile_manager import get_profile
+from ..models.validation_result import ValidationResult
+from ..pipeline.ocr_routing import evaluate_edi_signals
 
 logger = logging.getLogger(__name__)
+
+AI_POLICY_VERSION = "17-01"
+
+_DEFAULT_AI_POLICY: Dict[str, Any] = {
+    "allow_ai_for_edi": False,
+    "force_review_on_edi_fail": True,
+    "min_edi_signals": 2,
+    "min_text_quality": 0.5,
+    "edi_anchor_rules": {
+        "required": [r"Faktura\s"],
+        "extra": [r"Sida\s*\d+\s*/\s*\d+", r"Bankgiro"],
+    },
+    "edi_table_patterns": [
+        r"\bArtikel\b",
+        r"\bArt\.nr\b",
+        r"\bAntal\b",
+        r"\bQty\b",
+        r"\bPris\b",
+        r"\bBelopp\b",
+        r"\bAmount\b",
+    ],
+}
+
+
+def get_ai_policy_config(profile: Optional[Any] = None) -> Dict[str, Any]:
+    """Return AI policy config with defaults applied."""
+    active = profile or get_profile()
+    raw = getattr(active, "ai_policy", None)
+    if not isinstance(raw, dict):
+        raw = {}
+    merged = dict(_DEFAULT_AI_POLICY)
+    merged.update(raw)
+    anchor_rules = dict(_DEFAULT_AI_POLICY["edi_anchor_rules"])
+    anchor_rules.update(merged.get("edi_anchor_rules") or {})
+    anchor_rules["required"] = list(anchor_rules.get("required") or [])
+    anchor_rules["extra"] = list(anchor_rules.get("extra") or [])
+    merged["edi_anchor_rules"] = anchor_rules
+    merged["edi_table_patterns"] = list(merged.get("edi_table_patterns") or [])
+    return merged
+
+
+def evaluate_ai_policy(
+    extraction_source: Optional[str],
+    text_quality: Optional[float],
+    validation_result: Optional[ValidationResult],
+    edi_signals: Optional[Dict[str, Any]] = None,
+    policy_config: Optional[Dict[str, Any]] = None,
+    fallback_attempted: bool = False,
+    fallback_passed: Optional[bool] = None,
+) -> Dict[str, Any]:
+    """Evaluate AI policy gating decision for fallback usage."""
+    policy = policy_config or get_ai_policy_config()
+    allow_ai_for_edi = bool(policy.get("allow_ai_for_edi", False))
+    force_review_on_edi_fail = bool(policy.get("force_review_on_edi_fail", True))
+
+    signals = edi_signals or evaluate_edi_signals(
+        text="",
+        text_layer_used=extraction_source == "pdfplumber",
+        text_quality=text_quality,
+        anchor_rules=policy.get("edi_anchor_rules"),
+        table_patterns=policy.get("edi_table_patterns"),
+        min_signals=int(policy.get("min_edi_signals", 2) or 2),
+        min_text_quality=float(policy.get("min_text_quality", 0.5) or 0.5),
+    )
+    reason_flags = list(dict.fromkeys(signals.get("reason_flags") or []))
+    edi_like = bool(signals.get("edi_like"))
+
+    if validation_result is None:
+        reason_flags.append("validation_missing")
+        validation_ok = False
+    else:
+        validation_ok = validation_result.status in ("OK", "PARTIAL")
+        reason_flags.append("validation_passed" if validation_ok else "validation_failed")
+
+    if fallback_attempted:
+        reason_flags.append("fallback_attempted")
+        if fallback_passed is True:
+            reason_flags.append("fallback_passed")
+        elif fallback_passed is False:
+            reason_flags.append("fallback_failed")
+    else:
+        reason_flags.append("fallback_not_attempted")
+
+    if edi_like and validation_ok:
+        allow_ai = allow_ai_for_edi
+        if not allow_ai:
+            reason_flags.append("edi_blocked_validation_ok")
+    elif edi_like and not validation_ok:
+        if force_review_on_edi_fail:
+            allow_ai = False
+            reason_flags.append("edi_force_review")
+        else:
+            allow_ai = allow_ai_for_edi
+            if not allow_ai:
+                reason_flags.append("edi_blocked_validation_fail")
+    else:
+        allow_ai = True
+
+    if extraction_source:
+        reason_flags.append(f"source:{extraction_source}")
+
+    return {
+        "allow_ai": allow_ai,
+        "reason_flags": reason_flags,
+        "policy_version": AI_POLICY_VERSION,
+        "edi_like": edi_like,
+        "edi_signals": signals,
+    }
 
 
 class AIFallback:
