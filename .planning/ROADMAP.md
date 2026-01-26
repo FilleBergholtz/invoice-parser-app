@@ -79,10 +79,10 @@ Plans:
   2. Belopp med mellanslag som tusentalsseparator tolkas korrekt.
   3. Belopp med punkt som tusentalsseparator (endast följt av tre siffror) tolkas korrekt.
   4. Belopp med svensk decimal-komma tolkas korrekt.
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 19-01: TBD
+- [x] 19-01: Svensk talnormalisering (Decimal)
 
 #### Phase 20: Tabellsegment & kolumnregler
 **Goal**: Tabellblock och kolumnlogik parsas deterministiskt från text-layer.
@@ -130,7 +130,7 @@ Plans:
 | 16. Text-layer routing (OCR-skip) | v2.1 | 1/1 | Complete | 2026-01-26 |
 | 17. AI-policy (fallback only) | v2.1 | 2/2 | Complete | 2026-01-26 |
 | 18. Fakturaboundaries | v2.1 | 1/1 | Complete | 2026-01-26 |
-| 19. Svensk talnormalisering | v2.1 | 0/TBD | Not started | - |
+| 19. Svensk talnormalisering | v2.1 | 1/1 | Complete | 2026-01-26 |
 | 20. Tabellsegment & kolumnregler | v2.1 | 0/TBD | Not started | - |
 | 21. Multi-line items | v2.1 | 0/TBD | Not started | - |
 | 22. Valideringsdriven om-extraktion | v2.1 | 0/TBD | Not started | - |
