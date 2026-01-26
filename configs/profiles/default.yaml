@@ -127,3 +127,23 @@ ocr_routing:
   min_text_quality: 0.5
   allow_quality_override: true
   cache_pdfplumber_text: true
+
+# AI policy (fallback only)
+ai_policy:
+  allow_ai_for_edi: false
+  force_review_on_edi_fail: true
+  min_edi_signals: 2
+  edi_anchor_rules:
+    required:
+      - "Faktura\\s"
+    extra:
+      - "Sida\\s*\\d+\\s*/\\s*\\d+"
+      - "Bankgiro"
+  edi_table_patterns:
+    - "\\bArtikel\\b"
+    - "\\bArt\\.nr\\b"
+    - "\\bAntal\\b"
+    - "\\bQty\\b"
+    - "\\bPris\\b"
+    - "\\bBelopp\\b"
+    - "\\bAmount\\b"
