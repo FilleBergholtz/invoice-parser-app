@@ -32,13 +32,22 @@ _AMOUNT_PATTERN = re.compile(
 )
 
 
-def _parse_numeric_value(text: str) -> Optional[float]:
+def _parse_numeric_value(text: str) -> Optional[Decimal]:
     """Parse numeric text via Swedish normalizer."""
     try:
         value = normalize_swedish_decimal(text)
     except ValueError:
         return None
-    return float(value)
+    return value
+
+
+def _ensure_decimal(value: Optional[Decimal]) -> Optional[Decimal]:
+    """Ensure numeric values remain Decimal throughout parsing."""
+    if value is None:
+        return None
+    if isinstance(value, Decimal):
+        return value
+    return Decimal(str(value))
 
 
 def _row_has_total_like_amount(row: Row) -> bool:
@@ -130,7 +139,7 @@ def _is_footer_row(row: Row) -> bool:
     return False
 
 
-def _extract_amount_from_row_text(row: Row) -> Optional[Tuple[float, Optional[float], Optional[int]]]:
+def _extract_amount_from_row_text(row: Row) -> Optional[Tuple[Decimal, Optional[Decimal], Optional[int]]]:
     """Extract total amount and discount from row.text with support for thousand separators.
     
     Args:
@@ -188,7 +197,7 @@ def _extract_amount_from_row_text(row: Row) -> Optional[Tuple[float, Optional[fl
         is_negative = normalized < 0
         value = abs(normalized)
         if value > 0:  # Only process positive values (we handle sign separately)
-            amounts.append((float(value), is_negative, False, match.start(), match.end()))
+            amounts.append((value, is_negative, False, match.start(), match.end()))
     
     # Process percentage matches
     for match in percentage_matches:
@@ -204,7 +213,7 @@ def _extract_amount_from_row_text(row: Row) -> Optional[Tuple[float, Optional[fl
         
         percent_value = abs(percent_value)
         # Convert to decimal (100% = 1.0, 10.5% = 0.105, 67.00% = 0.67)
-        decimal_value = float(percent_value / Decimal("100"))
+        decimal_value = percent_value / Decimal("100")
         amounts.append((decimal_value, False, True, match.start(), match.end()))
     
     if not amounts:
@@ -626,7 +635,7 @@ def _extract_line_from_row(
                     # Skip if it looks like article number or line number
                     is_article_or_line_number = False
                     if i < 3:  # First few tokens
-                        if first_number_value and abs(numeric_value - first_number_value) < 0.01:
+                        if first_number_value and abs(numeric_value - first_number_value) < Decimal("0.01"):
                             is_article_or_line_number = True
                         elif numeric_value >= 10000 or len(str(int(numeric_value))) >= 5:
                             is_article_or_line_number = True
@@ -659,7 +668,7 @@ def _extract_line_from_row(
                 numeric_value = _parse_numeric_value(amount_text)
                 if numeric_value is not None:
                     # Unit price should be reasonable (not too small, not too large)
-                    if 0.01 <= numeric_value <= 1000000:  # Reasonable range
+                    if Decimal("0.01") <= numeric_value <= Decimal("1000000"):  # Reasonable range
                         unit_price = numeric_value
             else:
                 # Fallback: look for single numeric token
@@ -669,7 +678,7 @@ def _extract_line_from_row(
                         token_text = token.text.strip()
                         if re.match(r'^\d+([.,]\d+)?$', token_text.replace(' ', '')):
                             numeric_value = _parse_numeric_value(token_text)
-                            if numeric_value is not None and 0.01 <= numeric_value <= 1000000:
+                            if numeric_value is not None and Decimal("0.01") <= numeric_value <= Decimal("1000000"):
                                 unit_price = numeric_value
                                 break
     
@@ -693,7 +702,7 @@ def _extract_line_from_row(
                 if i < 2:  # First tokens
                     if numeric_value >= 100000:  # 6+ digits
                         is_article_number = True
-                    elif first_number_value and abs(numeric_value - first_number_value) < 0.01:
+                    elif first_number_value and abs(numeric_value - first_number_value) < Decimal("0.01"):
                         is_article_number = True
                     elif len(str(int(numeric_value))) >= 6:  # 6+ digits
                         is_article_number = True
@@ -732,11 +741,11 @@ def _extract_line_from_row(
     return InvoiceLine(
         rows=[row],  # In Phase 1, typically one row per line item (wraps come in Phase 2)
         description=description or "Unknown",
-        quantity=quantity,
+        quantity=_ensure_decimal(quantity),
         unit=unit,
-        unit_price=unit_price,
-        discount=discount,  # Extracted from negative amounts before total_amount
-        total_amount=total_amount,
+        unit_price=_ensure_decimal(unit_price),
+        discount=_ensure_decimal(discount),  # Extracted from negative amounts before total_amount
+        total_amount=_ensure_decimal(total_amount) or Decimal("0"),
         vat_rate=None,  # Not extracted in Phase 1
         line_number=line_number,
         segment=segment
