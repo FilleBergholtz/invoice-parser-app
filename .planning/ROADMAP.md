@@ -109,10 +109,11 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. Rader utan moms% + nettobelopp läggs till i föregående beskrivning.
   2. Nytt item startar när start-mönster eller individnr/konto/startdatum matchar.
-**Plans**: TBD
+**Research**: Complete (2026-01-26) - Adaptive Y-threshold, start-pattern detection, X-alignment tolerance
+**Plans**: 1 plan
 
 Plans:
-- [ ] 21-01: TBD
+- [ ] 21-01: Multi-line items (wrap detection enhancement)
 
 #### Phase 22: Valideringsdriven om-extraktion (mode B)
 **Goal**: Validering styr om-extraktion och sparar debug vid mismatch.
