@@ -1,15 +1,58 @@
 """Wrap detection for multi-line invoice items."""
 
+import statistics
 from typing import List
 
 from ..models.page import Page
 from ..models.row import Row
 
 
+def _calculate_adaptive_y_threshold(rows: List[Row]) -> float:
+    """Calculate adaptive Y-distance threshold based on median line height.
+    
+    Args:
+        rows: List of all table rows for analysis
+        
+    Returns:
+        Y-distance threshold (1.5× median line height)
+        
+    Algorithm:
+        1. Calculate Y-distance between consecutive rows
+        2. Compute median line height (robust against outliers)
+        3. Return 1.5× median (WCAG guideline for line spacing)
+        4. Fallback to 15.0 if no line heights available (typical 10-12pt font)
+    """
+    if not rows or len(rows) < 2:
+        return 15.0  # Fallback: ~10-12pt font × 1.5
+    
+    line_heights = []
+    
+    for i in range(len(rows) - 1):
+        current_row = rows[i]
+        next_row = rows[i + 1]
+        
+        # Y-distance between consecutive rows
+        y_distance = next_row.y_min - current_row.y_max
+        
+        if y_distance > 0:  # Skip overlapping rows
+            line_heights.append(y_distance)
+    
+    if not line_heights:
+        return 15.0  # Fallback
+    
+    # Median is more robust than mean (avoids skew from section breaks)
+    median_height = statistics.median(line_heights)
+    
+    # Threshold: 1.5× median line height
+    # (Based on WCAG 2.1 line spacing guidelines: 1.5× font size)
+    return median_height * 1.5
+
+
 def detect_wrapped_rows(
     product_row: Row,
     following_rows: List[Row],
-    page: Page
+    page: Page,
+    all_rows: List[Row] = None
 ) -> List[Row]:
     """Detect wrapped rows (continuation lines) for a product row.
     
@@ -17,21 +60,29 @@ def detect_wrapped_rows(
         product_row: Product row (InvoiceLine primary row)
         following_rows: List of rows following the product row
         page: Page reference for dimension calculation
+        all_rows: All table rows for adaptive Y-threshold calculation (optional)
         
     Returns:
         List of wrapped Row objects (continuation lines)
         
     Algorithm:
-    1. Get description column start position from product_row
-    2. Calculate X-position tolerance (±2% of page width)
-    3. Iterate through following_rows:
+    1. Calculate adaptive Y-distance threshold (1.5× median line height)
+    2. Get description column start position from product_row
+    3. Calculate X-position tolerance (±2% of page width)
+    4. Iterate through following_rows:
+       - Stop if Y-distance > threshold (too far apart)
        - Stop if next row contains amount (new product row)
        - Stop if X-start deviates > tolerance (different column)
-       - Stop if max 3 wraps reached
-    4. Return list of wrapped rows
+    5. Return list of wrapped rows
     """
     if not following_rows:
         return []
+    
+    # Calculate adaptive Y-distance threshold
+    if all_rows is None:
+        # Fallback: use product_row + following_rows for threshold calculation
+        all_rows = [product_row] + following_rows
+    y_threshold = _calculate_adaptive_y_threshold(all_rows)
     
     # Calculate X-position tolerance (±2% of page width)
     tolerance = 0.02 * page.width
@@ -40,23 +91,26 @@ def detect_wrapped_rows(
     description_start_x = _get_description_column_start(product_row)
     
     wraps = []
+    prev_row = product_row
     
     for next_row in following_rows:
-        # Stop condition 1: Next row contains amount (new product row)
+        # Stop condition 1: Y-distance check (adaptive threshold)
+        y_distance = next_row.y_min - prev_row.y_max
+        if y_distance > y_threshold:
+            break  # Too far apart = not a continuation
+        
+        # Stop condition 2: Next row contains amount (new product row)
         if _contains_amount(next_row):
             break
         
-        # Stop condition 2: X-start deviates beyond tolerance
+        # Stop condition 3: X-start deviates beyond tolerance
         next_row_start_x = next_row.x_min
         if abs(next_row_start_x - description_start_x) > tolerance:
             break
         
-        # Stop condition 3: Max 3 wraps per line item
-        if len(wraps) >= 3:
-            break
-        
         # Candidate is a wrap row
         wraps.append(next_row)
+        prev_row = next_row
     
     return wraps
 
