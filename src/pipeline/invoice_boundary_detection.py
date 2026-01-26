@@ -3,7 +3,7 @@
 import re
 import tempfile
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict, Any
 
 from ..models.document import Document
 from ..models.page import Page
@@ -283,3 +283,84 @@ def _has_high_confidence_total(
                     return True
     
     return False
+
+
+def _select_invoice_number_candidate(
+    rows: List[Row],
+    page: Page,
+    header_segment: Optional[Segment]
+) -> Optional[Dict[str, Any]]:
+    """Select highest confidence invoice number candidate for a page."""
+    if not rows:
+        return None
+    
+    label_patterns = [
+        r"fakturanummer",
+        r"fakturanr",
+        r"faktura\s*nr",
+        r"fakt\.?\s*nr",
+        r"faktnr",
+        r"invoice\s*number",
+        r"invoice\s*no",
+        r"inv\s*no",
+        r"inv#",
+    ]
+    label_re = re.compile(r"(?:%s)" % "|".join(label_patterns), re.IGNORECASE)
+    candidate_re = re.compile(r"\b([A-Z0-9][A-Z0-9\-]{3,19})\b", re.IGNORECASE)
+    
+    candidates: List[Dict[str, Any]] = []
+    header_rows = set(header_segment.rows) if header_segment and header_segment.rows else set()
+    
+    for idx, row in enumerate(rows):
+        if not label_re.search(row.text):
+            continue
+        row_text = row.text
+        label_match = label_re.search(row_text)
+        candidate = None
+        if label_match:
+            after = row_text[label_match.end():]
+            match = candidate_re.search(after)
+            if match:
+                candidate = match.group(1)
+        
+        if candidate is None:
+            # If label-only row, check next row for candidate
+            if idx + 1 < len(rows):
+                next_row = rows[idx + 1]
+                match = candidate_re.search(next_row.text)
+                if match:
+                    candidate = match.group(1)
+                    row = next_row
+        
+        if not candidate:
+            continue
+        
+        if not _validate_boundary_invoice_number(candidate):
+            continue
+        
+        score = score_invoice_number_candidate(candidate, row, page, rows)
+        if row in header_rows:
+            score = min(1.0, score + 0.10)
+        if row.y < 0.5 * page.height:
+            score = min(1.0, score + 0.05)
+        
+        candidates.append({
+            "candidate": candidate.strip(),
+            "row": row,
+            "score": score
+        })
+    
+    if not candidates:
+        return None
+    
+    candidates.sort(key=lambda c: c["score"], reverse=True)
+    return candidates[0]
+
+
+def _validate_boundary_invoice_number(candidate: str) -> bool:
+    """Validate candidate format for boundary detection (4-20 alphanumeric, hyphen allowed)."""
+    if not candidate:
+        return False
+    if not (4 <= len(candidate) <= 20):
+        return False
+    return bool(re.fullmatch(r"[A-Z0-9\-]+", candidate, re.IGNORECASE))
