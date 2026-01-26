@@ -183,6 +183,112 @@ def test_amount_parsing_swedish_separators(sample_page):
     assert isinstance(lines[1].total_amount, Decimal)
 
 
+def test_table_block_and_moms_column_rule(sample_page):
+    """Ensure table block filtering and moms% column rule are applied."""
+    header_tokens = [
+        Token(text="Artikelnr", x=10, y=250, width=60, height=12, page=sample_page),
+        Token(text="Benämning", x=90, y=250, width=70, height=12, page=sample_page),
+        Token(text="Moms", x=300, y=250, width=40, height=12, page=sample_page),
+        Token(text="Nettobelopp", x=360, y=250, width=80, height=12, page=sample_page),
+    ]
+    header_row = Row(
+        tokens=header_tokens,
+        y=250,
+        x_min=10,
+        x_max=440,
+        text="Artikelnr Benämning Moms % Nettobelopp",
+        page=sample_page
+    )
+
+    row1_tokens = [
+        Token(text="A123", x=10, y=300, width=40, height=12, page=sample_page),
+        Token(text="Filter", x=60, y=300, width=50, height=12, page=sample_page),
+        Token(text="35.1", x=220, y=300, width=40, height=12, page=sample_page),
+        Token(text="38.9", x=260, y=300, width=40, height=12, page=sample_page),
+        Token(text="25.00", x=320, y=300, width=40, height=12, page=sample_page),
+        Token(text="1 187,50", x=380, y=300, width=60, height=12, page=sample_page),
+    ]
+    row1 = Row(
+        tokens=row1_tokens,
+        y=300,
+        x_min=10,
+        x_max=440,
+        text="A123 Filter 35.1 38.9 25.00 1 187,50",
+        page=sample_page
+    )
+
+    continuation_tokens = [
+        Token(text="LUFTRENARE", x=10, y=320, width=80, height=12, page=sample_page),
+        Token(text="1100", x=95, y=320, width=40, height=12, page=sample_page),
+    ]
+    continuation_row = Row(
+        tokens=continuation_tokens,
+        y=320,
+        x_min=10,
+        x_max=140,
+        text="LUFTRENARE 1100",
+        page=sample_page
+    )
+
+    row2_tokens = [
+        Token(text="B234", x=10, y=340, width=40, height=12, page=sample_page),
+        Token(text="Service", x=60, y=340, width=60, height=12, page=sample_page),
+        Token(text="25,00", x=320, y=340, width=40, height=12, page=sample_page),
+        Token(text="250,00", x=380, y=340, width=60, height=12, page=sample_page),
+    ]
+    row2 = Row(
+        tokens=row2_tokens,
+        y=340,
+        x_min=10,
+        x_max=440,
+        text="B234 Service 25,00 250,00",
+        page=sample_page
+    )
+
+    end_tokens = [
+        Token(text="Nettobelopp", x=10, y=400, width=90, height=12, page=sample_page),
+        Token(text="exkl.", x=105, y=400, width=40, height=12, page=sample_page),
+        Token(text="moms:", x=150, y=400, width=50, height=12, page=sample_page),
+        Token(text="1 437,50", x=380, y=400, width=60, height=12, page=sample_page),
+    ]
+    end_row = Row(
+        tokens=end_tokens,
+        y=400,
+        x_min=10,
+        x_max=440,
+        text="Nettobelopp exkl. moms: 1 437,50",
+        page=sample_page
+    )
+
+    footer_tokens = [
+        Token(text="Att", x=10, y=430, width=20, height=12, page=sample_page),
+        Token(text="betala", x=35, y=430, width=40, height=12, page=sample_page),
+        Token(text="1 796,88", x=380, y=430, width=60, height=12, page=sample_page),
+    ]
+    footer_row = Row(
+        tokens=footer_tokens,
+        y=430,
+        x_min=10,
+        x_max=440,
+        text="Att betala 1 796,88",
+        page=sample_page
+    )
+
+    segment = Segment(
+        segment_type="items",
+        rows=[header_row, row1, continuation_row, row2, end_row, footer_row],
+        y_min=250,
+        y_max=430,
+        page=sample_page
+    )
+
+    lines = extract_invoice_lines(segment)
+
+    assert len(lines) == 2
+    assert lines[0].total_amount == Decimal("1187.50")
+    assert lines[1].total_amount == Decimal("250.00")
+
+
 def test_invoice_line_rows_traceability(sample_items_segment):
     """Test that InvoiceLine.rows maintains traceability."""
     lines = extract_invoice_lines(sample_items_segment)

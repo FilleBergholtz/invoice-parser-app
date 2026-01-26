@@ -94,10 +94,10 @@ Plans:
   2. Rader parsas rad-för-rad inom tabellblocket.
   3. Nettobelopp identifieras som sista valuta-tal efter moms% enligt reglerna.
   4. Alternativ moms%+belopp-regex används för att undvika felkolumn.
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 20-01: TBD
+- [x] 20-01: Tabellsegment & kolumnregler
 
 #### Phase 21: Multi-line items
 **Goal**: Fortsättningsrader blir del av item-beskrivning utan att skapa falska nya rader.
@@ -132,6 +132,6 @@ Plans:
 | 17. AI-policy (fallback only) | v2.1 | 2/2 | Complete | 2026-01-26 |
 | 18. Fakturaboundaries | v2.1 | 1/1 | Complete | 2026-01-26 |
 | 19. Svensk talnormalisering | v2.1 | 2/2 | Complete | 2026-01-26 |
-| 20. Tabellsegment & kolumnregler | v2.1 | 0/TBD | Not started | - |
+| 20. Tabellsegment & kolumnregler | v2.1 | 1/1 | Complete | 2026-01-26 |
 | 21. Multi-line items | v2.1 | 0/TBD | Not started | - |
 | 22. Valideringsdriven om-extraktion | v2.1 | 0/TBD | Not started | - |

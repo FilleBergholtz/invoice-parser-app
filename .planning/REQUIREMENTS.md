@@ -86,10 +86,10 @@
 | NUM-02 | Phase 19: Svensk talnormalisering | Pending |
 | NUM-03 | Phase 19: Svensk talnormalisering | Pending |
 | NUM-04 | Phase 19: Svensk talnormalisering | Pending |
-| TABLE-01 | Phase 20: Tabellsegment & kolumnregler | Pending |
-| TABLE-02 | Phase 20: Tabellsegment & kolumnregler | Pending |
-| TABLE-03 | Phase 20: Tabellsegment & kolumnregler | Pending |
-| TABLE-04 | Phase 20: Tabellsegment & kolumnregler | Pending |
+| TABLE-01 | Phase 20: Tabellsegment & kolumnregler | Complete |
+| TABLE-02 | Phase 20: Tabellsegment & kolumnregler | Complete |
+| TABLE-03 | Phase 20: Tabellsegment & kolumnregler | Complete |
+| TABLE-04 | Phase 20: Tabellsegment & kolumnregler | Complete |
 | LINE-01 | Phase 21: Multi-line items | Pending |
 | LINE-02 | Phase 21: Multi-line items | Pending |
 | VAL-01 | Phase 22: Valideringsdriven om-extraktion | Pending |

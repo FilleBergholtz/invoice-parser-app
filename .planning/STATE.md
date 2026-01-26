@@ -6,17 +6,17 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 
 **Core value:** 100% korrekt på fakturanummer och totalsumma, eller tydlig REVIEW-status. Allt som systemet exporterar som OK är garanterat korrekt. Osäkra fall går alltid till REVIEW (ingen tyst gissning).
 
-**Current focus:** v2.1 Phase 20 planerad efter verifierad Phase 19.
+**Current focus:** v2.1 Phase 21 planerad efter verifierad Phase 20.
 
 ## Current Position
 
 Milestone: **v2.1 Parsing robustness / EDI** (pågående).
-Phase: **19** — Svensk talnormalisering (klar).
-Plan: 19-02 genomförd (Decimal ut i pipeline).
-Status: Phase 19 klar, redo för nästa fas (Phase 20).
-Last activity: 2026-01-26 — Completed 19-02-PLAN.md.
+Phase: **20** — Tabellsegment & kolumnregler (klar).
+Plan: 20-01 genomförd (tabellblock + moms%-kolumnregel).
+Status: Phase 20 klar, redo för nästa fas (Phase 21).
+Last activity: 2026-01-26 — Completed 20-01-PLAN.md.
 
-Progress: ████████████████████░ 69/70 (99%) — v1.0 (Phase 1–3) + v2.0 (Phase 5–15) genomförda och arkiverade; Phase 19 klar.
+Progress: ████████████████████░ 70/71 (99%) — v1.0 (Phase 1–3) + v2.0 (Phase 5–15) genomförda och arkiverade; Phase 20 klar.
 
 ## Accumulated Context
 
@@ -34,6 +34,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-26 20:13 UTC
-Stopped at: Completed 19-02-PLAN.md
+Last session: 2026-01-26 21:25 UTC
+Stopped at: Completed 20-01-PLAN.md
 Resume file: None

@@ -30,6 +30,36 @@ _FOOTER_SOFT_KEYWORDS = frozenset([
 _AMOUNT_PATTERN = re.compile(
     r'-?\d{1,3}(?:[ .]\d{3})+(?:[.,]\d{1,2})?-?|-?\d+(?:[.,]\d{1,2})?-?'
 )
+_TABLE_END_PATTERN = re.compile(r"nettobelopp\s+exkl\.?\s*moms", re.IGNORECASE)
+_MOMS_RATE_PATTERN = re.compile(r"\b25[.,]00\b")
+
+
+def _is_table_header_row(text_lower: str) -> bool:
+    if "nettobelopp" not in text_lower:
+        return False
+    return any(keyword in text_lower for keyword in ("artikelnr", "artikel", "benämning"))
+
+
+def _get_table_block_rows(rows: List[Row]) -> Tuple[List[Row], bool]:
+    start_idx = None
+    end_idx = None
+
+    for idx, row in enumerate(rows):
+        if not row.text:
+            continue
+        text_lower = row.text.lower()
+        if start_idx is None and _is_table_header_row(text_lower):
+            start_idx = idx + 1
+            continue
+        if start_idx is not None and _TABLE_END_PATTERN.search(text_lower):
+            end_idx = idx
+            break
+
+    if start_idx is None:
+        return rows, False
+    if end_idx is None or end_idx <= start_idx:
+        return rows[start_idx:], True
+    return rows[start_idx:end_idx], True
 
 
 def _parse_numeric_value(text: str) -> Optional[Decimal]:
@@ -139,7 +169,10 @@ def _is_footer_row(row: Row) -> bool:
     return False
 
 
-def _extract_amount_from_row_text(row: Row) -> Optional[Tuple[Decimal, Optional[Decimal], Optional[int]]]:
+def _extract_amount_from_row_text(
+    row: Row,
+    require_moms: bool = False
+) -> Optional[Tuple[Decimal, Optional[Decimal], Optional[int]]]:
     """Extract total amount and discount from row.text with support for thousand separators.
     
     Args:
@@ -176,6 +209,12 @@ def _extract_amount_from_row_text(row: Row) -> Optional[Tuple[Decimal, Optional[
         r'(\d{1,3}(?:[ .]\d{3})*(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?)\s*%'
     )
     
+    moms_match = None
+    if require_moms:
+        moms_match = _MOMS_RATE_PATTERN.search(row_text)
+        if not moms_match:
+            return None
+
     # Find all amount matches in row.text
     amount_matches = list(amount_pattern.finditer(row_text))
     percentage_matches = list(percentage_pattern.finditer(row_text))
@@ -216,6 +255,9 @@ def _extract_amount_from_row_text(row: Row) -> Optional[Tuple[Decimal, Optional[
         decimal_value = percent_value / Decimal("100")
         amounts.append((decimal_value, False, True, match.start(), match.end()))
     
+    if require_moms and moms_match:
+        amounts = [amount for amount in amounts if amount[3] > moms_match.end()]
+
     if not amounts:
         return None
     
@@ -352,8 +394,9 @@ def extract_invoice_lines(items_segment: Segment) -> List[InvoiceLine]:
     invoice_lines = []
     line_number = 1
     processed_row_indices = set()  # Track rows already processed as wraps
-    
-    for row_index, row in enumerate(items_segment.rows):
+    table_rows, use_table_rules = _get_table_block_rows(items_segment.rows)
+
+    for row_index, row in enumerate(table_rows):
         # Skip rows already processed as wraps
         if row_index in processed_row_indices:
             continue
@@ -363,16 +406,21 @@ def extract_invoice_lines(items_segment: Segment) -> List[InvoiceLine]:
             continue
         
         # Try to extract line item from row
-        invoice_line = _extract_line_from_row(row, items_segment, line_number)
+        invoice_line = _extract_line_from_row(
+            row,
+            items_segment,
+            line_number,
+            require_moms=use_table_rules
+        )
         
         if invoice_line:
             # Detect wrapped rows
-            following_rows = items_segment.rows[row_index + 1:]
+            following_rows = table_rows[row_index + 1:]
             wrapped_rows = detect_wrapped_rows(row, following_rows, items_segment.page)
             
             # Mark wrapped rows as processed
             for wrapped_row in wrapped_rows:
-                wrapped_index = items_segment.rows.index(wrapped_row)
+                wrapped_index = table_rows.index(wrapped_row)
                 processed_row_indices.add(wrapped_index)
             
             # Update InvoiceLine with wrapped rows
@@ -392,7 +440,8 @@ def extract_invoice_lines(items_segment: Segment) -> List[InvoiceLine]:
 def _extract_line_from_row(
     row: Row,
     segment: Segment,
-    line_number: int
+    line_number: int,
+    require_moms: bool = False
 ) -> Optional[InvoiceLine]:
     """Extract InvoiceLine from a single row.
     
@@ -408,7 +457,7 @@ def _extract_line_from_row(
     # Check if row contains a numeric amount
     
     # Extract amount and discount from row.text (supports thousand separators across tokens)
-    result = _extract_amount_from_row_text(row)
+    result = _extract_amount_from_row_text(row, require_moms=require_moms)
     if result is None:
         return None
     
