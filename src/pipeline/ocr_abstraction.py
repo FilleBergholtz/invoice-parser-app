@@ -165,77 +165,125 @@ class TesseractOCREngine(OCREngine):
                 scale_x = 72.0 / 300.0
                 scale_y = 72.0 / 300.0
 
-            # Use TSV output to get bbox + confidence (output_type 4 = TSV, robust across pytesseract versions)
-            # TSV format: level page_num block_num par_num line_num word_num left top width height conf text
-            output_tsv = getattr(getattr(pytesseract, "Output", None), "TSV", 4)
-            out_type: str | int = output_tsv if isinstance(output_tsv, (str, int)) else 4
-            tsv_data = pytesseract.image_to_data(
-                img,
-                lang=self.lang,
-                output_type=out_type,  # type: ignore[arg-type]
-                config='--psm 6'  # Assume uniform block of text
-            )
+            # Use stable output_type (DICT/STRING) to avoid KeyError across pytesseract versions.
+            output_enum = getattr(pytesseract, "Output", None)
+            output_dict = getattr(output_enum, "DICT", None)
+            output_string = getattr(output_enum, "STRING", None)
+            out_type = output_dict or output_string or "dict"
+            try:
+                tsv_data = pytesseract.image_to_data(
+                    img,
+                    lang=self.lang,
+                    output_type=out_type,  # type: ignore[arg-type]
+                    config='--psm 6'  # Assume uniform block of text
+                )
+            except KeyError:
+                fallback_type = output_string or output_dict or "string"
+                tsv_data = pytesseract.image_to_data(
+                    img,
+                    lang=self.lang,
+                    output_type=fallback_type,  # type: ignore[arg-type]
+                    config='--psm 6'
+                )
             
             tokens = []
             
-            # Parse TSV data
-            lines = tsv_data.strip().split('\n')
-            headers = lines[0].split('\t')
-            
-            # Find column indices
-            try:
-                text_idx = headers.index('text')
-                left_idx = headers.index('left')
-                top_idx = headers.index('top')
-                width_idx = headers.index('width')
-                height_idx = headers.index('height')
-                conf_idx = headers.index('conf')
-            except ValueError as e:
-                raise OCRException(f"Unexpected TSV format: {str(e)}") from e
-            
-            # Process each word (level 5 in TSV)
-            for line in lines[1:]:
-                if not line.strip():
-                    continue
+            if isinstance(tsv_data, dict):
+                texts = tsv_data.get("text", []) or []
+                lefts = tsv_data.get("left", []) or []
+                tops = tsv_data.get("top", []) or []
+                widths = tsv_data.get("width", []) or []
+                heights = tsv_data.get("height", []) or []
+                confs = tsv_data.get("conf", []) or []
+                for idx, text in enumerate(texts):
+                    if not str(text).strip():
+                        continue
+                    try:
+                        x_px = float(lefts[idx])
+                        y_px = float(tops[idx])
+                        w_px = float(widths[idx])
+                        h_px = float(heights[idx])
+                        conf = float(confs[idx])
+                    except (ValueError, IndexError):
+                        continue
+                    if conf < 0:
+                        continue
+                    confidence = conf
+                    x = x_px * scale_x
+                    y = y_px * scale_y
+                    width = w_px * scale_x
+                    height = h_px * scale_y
+                    token = Token(
+                        text=str(text),
+                        x=x,
+                        y=y,
+                        width=width,
+                        height=height,
+                        page=page,
+                        font_size=None,
+                        font_name=None,
+                        confidence=confidence,
+                    )
+                    tokens.append(token)
+            else:
+                # Parse TSV string data
+                lines = str(tsv_data).strip().split('\n')
+                headers = lines[0].split('\t') if lines else []
                 
-                fields = line.split('\t')
-                
-                # Get word text
-                text = fields[text_idx].strip()
-                if not text:
-                    continue
-                
-                # Get bounding box (pixels) and confidence
+                # Find column indices
                 try:
-                    x_px = float(fields[left_idx])
-                    y_px = float(fields[top_idx])
-                    w_px = float(fields[width_idx])
-                    h_px = float(fields[height_idx])
-                    conf = float(fields[conf_idx])
-                except (ValueError, IndexError):
-                    continue  # Skip invalid rows
-                # Exclude layout rows: conf == -1 for level 1–4; only level 5 (word) has conf 0–100.
-                # Mean is used for DPI retry sensitivity, median for routing robustness.
-                if conf < 0:
-                    continue
-                confidence = conf  # 0–100 scale, stored on Token for aggregation
-                # Scale to page coordinates (points) for segment_identification
-                x = x_px * scale_x
-                y = y_px * scale_y
-                width = w_px * scale_x
-                height = h_px * scale_y
-                token = Token(
-                    text=text,
-                    x=x,
-                    y=y,
-                    width=width,
-                    height=height,
-                    page=page,
-                    font_size=None,
-                    font_name=None,
-                    confidence=confidence,
-                )
-                tokens.append(token)
+                    text_idx = headers.index('text')
+                    left_idx = headers.index('left')
+                    top_idx = headers.index('top')
+                    width_idx = headers.index('width')
+                    height_idx = headers.index('height')
+                    conf_idx = headers.index('conf')
+                except ValueError as e:
+                    raise OCRException(f"Unexpected TSV format: {str(e)}") from e
+                
+                # Process each word (level 5 in TSV)
+                for line in lines[1:]:
+                    if not line.strip():
+                        continue
+                    
+                    fields = line.split('\t')
+                    
+                    # Get word text
+                    text = fields[text_idx].strip()
+                    if not text:
+                        continue
+                    
+                    # Get bounding box (pixels) and confidence
+                    try:
+                        x_px = float(fields[left_idx])
+                        y_px = float(fields[top_idx])
+                        w_px = float(fields[width_idx])
+                        h_px = float(fields[height_idx])
+                        conf = float(fields[conf_idx])
+                    except (ValueError, IndexError):
+                        continue  # Skip invalid rows
+                    # Exclude layout rows: conf == -1 for level 1–4; only level 5 (word) has conf 0–100.
+                    # Mean is used for DPI retry sensitivity, median for routing robustness.
+                    if conf < 0:
+                        continue
+                    confidence = conf  # 0–100 scale, stored on Token for aggregation
+                    # Scale to page coordinates (points) for segment_identification
+                    x = x_px * scale_x
+                    y = y_px * scale_y
+                    width = w_px * scale_x
+                    height = h_px * scale_y
+                    token = Token(
+                        text=text,
+                        x=x,
+                        y=y,
+                        width=width,
+                        height=height,
+                        page=page,
+                        font_size=None,
+                        font_name=None,
+                        confidence=confidence,
+                    )
+                    tokens.append(token)
             
             # Sort tokens by reading order (top-to-bottom, left-to-right)
             tokens.sort(key=lambda t: (t.y, t.x))
