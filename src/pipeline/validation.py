@@ -28,7 +28,7 @@ def _to_decimal(value: Optional[Union[float, str, Decimal]]) -> Optional[Decimal
 
 def validate_line_items(
     line_items: List[InvoiceLine],
-    tolerance: float = 0.01
+    tolerance: Decimal = Decimal("0.01")
 ) -> List[str]:
     """Validate each line item using comprehensive validation and confidence scoring.
     
@@ -62,7 +62,7 @@ def validate_line_items(
         discount_type = validation_info.get('discount_type')
         if discount_type and line.discount is not None:
             if discount_type == 'percent':
-                discount_pct = line.discount * 100
+                discount_pct = line.discount * Decimal("100")
                 warnings.append(
                     f"Rad {line.line_number}: Rabatt identifierad som procent ({discount_pct:.1f}%)"
                 )
@@ -83,7 +83,7 @@ def validate_line_items(
                 discount_val = calculated_fields['discount']
                 discount_type_calc = calculated_fields.get('discount_type', 'amount')
                 if discount_type_calc == 'percent':
-                    suggestions.append(f"Föreslaget rabatt: {discount_val * 100:.1f}%")
+                    suggestions.append(f"Föreslaget rabatt: {discount_val * Decimal('100'):.1f}%")
                 else:
                     suggestions.append(f"Föreslaget rabatt: {discount_val:.2f} SEK")
             
@@ -96,10 +96,10 @@ def validate_line_items(
 
 
 def calculate_validation_values(
-    total_amount: Optional[float],
+    total_amount: Optional[Union[float, str, Decimal]],
     line_items: List[InvoiceLine],
-    tolerance: float = 1.0
-) -> Tuple[float, Optional[float], bool]:
+    tolerance: Decimal = Decimal("1.0")
+) -> Tuple[Decimal, Optional[Decimal], bool]:
     """Calculate validation values (lines_sum, diff, validation_passed).
     
     Args:
@@ -113,10 +113,10 @@ def calculate_validation_values(
         - diff: total_amount - lines_sum (signed difference, None if total_amount is None)
         - validation_passed: True if abs(diff) <= tolerance (False if diff is None)
     """
-    lines_sum_decimal = sum(
-        (_to_decimal(line.total_amount) or Decimal("0")) for line in line_items
-    ) if line_items else Decimal("0")
-    lines_sum = float(lines_sum_decimal)
+    lines_sum = sum(
+        (_to_decimal(line.total_amount) or Decimal("0") for line in line_items),
+        Decimal("0")
+    )
     
     if total_amount is None:
         return lines_sum, None, False
@@ -125,10 +125,10 @@ def calculate_validation_values(
     if total_decimal is None:
         return lines_sum, None, False
 
-    diff_decimal = total_decimal - lines_sum_decimal
+    diff_decimal = total_decimal - lines_sum
     validation_passed = validate_total_against_line_items(total_decimal, line_items, tolerance)
     
-    return lines_sum, float(diff_decimal), validation_passed
+    return lines_sum, diff_decimal, validation_passed
 
 
 def validate_invoice(
@@ -161,7 +161,7 @@ def validate_invoice(
     lines_sum, diff, validation_passed = calculate_validation_values(
         invoice_header.total_amount,
         line_items,
-        tolerance=1.0
+        tolerance=Decimal("1.0")
     )
     
     # Step 3: Assign status
@@ -169,7 +169,7 @@ def validate_invoice(
     warnings = []
     
     # Step 3a: Validate individual line items (quantity × unit_price ≈ total_amount)
-    line_item_warnings = validate_line_items(line_items, tolerance=0.01)
+    line_item_warnings = validate_line_items(line_items, tolerance=Decimal("0.01"))
     warnings.extend(line_item_warnings)
     
     if not hard_gate_passed:
@@ -194,7 +194,7 @@ def validate_invoice(
         status=status,
         lines_sum=lines_sum,
         diff=diff,
-        tolerance=1.0,
+        tolerance=Decimal("1.0"),
         hard_gate_passed=hard_gate_passed,
         invoice_number_confidence=invoice_header.invoice_number_confidence,
         total_confidence=invoice_header.total_confidence,
