@@ -11,12 +11,12 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 ## Current Position
 
 Milestone: **v2.1 Parsing robustness / EDI** (pågående).
-Phase: **17** — AI-policy fallback only (pågående).
-Plan: 17-01 genomförd (AI-policy gating och tester).
-Status: Phase 17 pågående, redo för nästa plansteg.
-Last activity: 2026-01-26 — Phase 17-01 implementerad (AI-policy fallback only).
+Phase: **17** — AI-policy fallback only (klar).
+Plan: 17-02 genomförd (compare-path AI-policy gating).
+Status: Phase 17 klar, redo för nästa fas (Phase 18).
+Last activity: 2026-01-26 — Completed 17-02-PLAN.md.
 
-Progress: ████████████████████ 65/65 (100%) — v1.0 (Phase 1–3) + v2.0 (Phase 5–15) genomförda och arkiverade; Phase 16 klar.
+Progress: ███████████████████░ 66/67 (98%) — v1.0 (Phase 1–3) + v2.0 (Phase 5–15) genomförda och arkiverade; Phase 17 klar.
 
 ## Accumulated Context
 
@@ -34,6 +34,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-26 18:43 UTC
-Stopped at: Phase 16 verifierad och klar
+Last session: 2026-01-26 18:54 UTC
+Stopped at: Completed 17-02-PLAN.md
 Resume file: None
