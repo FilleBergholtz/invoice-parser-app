@@ -364,3 +364,54 @@ def _validate_boundary_invoice_number(candidate: str) -> bool:
     if not (4 <= len(candidate) <= 20):
         return False
     return bool(re.fullmatch(r"[A-Z0-9\-]+", candidate, re.IGNORECASE))
+
+
+def _parse_page_number(rows: List[Row]) -> Optional[Dict[str, Any]]:
+    """Parse page numbering like 'Sida 1/2', 'Sida 2 av 3', 'Page 1/2', or '1/2'."""
+    if not rows:
+        return None
+    
+    label_re = re.compile(r"\b(?:sida|page)\s*(\d{1,3})\s*(?:/|av)\s*(\d{1,3})\b", re.IGNORECASE)
+    fraction_re = re.compile(r"\b(\d{1,3})\s*/\s*(\d{1,3})\b")
+    
+    for row in rows:
+        m = label_re.search(row.text)
+        if m:
+            current = int(m.group(1))
+            total = int(m.group(2))
+            if current >= 1 and total >= 1 and current <= total:
+                return {
+                    "current": current,
+                    "total": total,
+                    "raw": m.group(0),
+                    "source": "label",
+                    "row_text": row.text
+                }
+        m = fraction_re.search(row.text)
+        if m:
+            current = int(m.group(1))
+            total = int(m.group(2))
+            if current >= 1 and total >= 1 and current <= total:
+                return {
+                    "current": current,
+                    "total": total,
+                    "raw": m.group(0),
+                    "source": "fraction",
+                    "row_text": row.text
+                }
+    return None
+
+
+def _is_page_number_sequential(prev_info: Dict[str, Any], current_info: Dict[str, Any]) -> bool:
+    """Check if page numbering is sequential without jumps."""
+    prev_current = prev_info.get("current")
+    prev_total = prev_info.get("total")
+    current_current = current_info.get("current")
+    current_total = current_info.get("total")
+    if not isinstance(prev_current, int) or not isinstance(current_current, int):
+        return False
+    if prev_current + 1 != current_current:
+        return False
+    if prev_total and current_total and prev_total != current_total:
+        return False
+    return True
