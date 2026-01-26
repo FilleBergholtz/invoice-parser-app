@@ -14,6 +14,21 @@ Ett system som automatiskt läser, förstår och strukturerar svenska PDF-faktur
 
 **100% korrekt på fakturanummer och totalsumma, eller tydlig REVIEW-status.** Allt som systemet exporterar som OK är garanterat korrekt. Osäkra fall går alltid till REVIEW (ingen tyst gissning).
 
+## Current Milestone: v2.1 Parsing robustness / EDI
+
+**Goal:** Deterministisk parsing för EDI‑liknande PDF:er med text‑layer, robust tabellsegmentering och valideringsdriven om‑extraktion. OCR och AI används endast som fallback.
+
+**Target features:**
+- Skippa OCR per sida när text‑layer räcker (konfigurerbart tröskelvärde)
+- Bugfix: åtgärda `KeyError: 4` i OCR/pdfplumber‑jämförelsen
+- Tabellsegment + kolumnregler (nettobelopp efter moms% 25.00)
+- Multi‑line items: fortsättningsrader för beskrivning
+- Svensk talnormalisering via en gemensam funktion → `Decimal`
+- Valideringskedja som triggar table‑parser mode B (position/kolumn) och sparar debug vid mismatch
+- Fakturaboundaries via `Faktura <nr>` + sidnummer (groupby invoice_no)
+- AI som sista fallback (ej normalväg)
+- Konfig: `min_text_chars`, ankare (t.ex. "Faktura", "Sida 1/2", "Ramirent"), `table_parser_mode=auto|text|pos`
+
 ## Requirements
 
 ### Validated
