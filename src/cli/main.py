@@ -1065,7 +1065,30 @@ def process_pdf(
         extraction_path = route_extraction_path(doc)
         
         # Step 3: Detect invoice boundaries
-        boundaries = detect_invoice_boundaries(doc, extraction_path, verbose, output_dir=output_dir)
+        boundary_decisions = [] if (compare_extraction and verbose) else None
+        boundaries = detect_invoice_boundaries(
+            doc,
+            extraction_path,
+            verbose,
+            output_dir=output_dir,
+            decision_log=boundary_decisions
+        )
+        if boundary_decisions is not None:
+            print("  Boundary decisions (compare-path):")
+            for entry in boundary_decisions:
+                invoice_no = entry.get("invoice_no")
+                page_no = entry.get("page_number")
+                page_no_str = None
+                if page_no:
+                    page_no_str = f"{page_no.get('current')}/{page_no.get('total')}"
+                details = []
+                if invoice_no:
+                    details.append(f"invoice_no={invoice_no}")
+                if page_no_str:
+                    details.append(f"page_no={page_no_str}")
+                reasons = ", ".join(entry.get("reason", [])) if entry.get("reason") else ""
+                info = " ".join(details) if details else "no signals"
+                print(f"    - Page {entry.get('page')}: {entry.get('decision')} ({info}; {reasons})")
         
         if not boundaries:
             # Fail-safe: treat entire PDF as one invoice
