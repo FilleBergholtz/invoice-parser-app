@@ -1,5 +1,7 @@
 """Unit tests for line item extraction."""
 
+from decimal import Decimal
+
 import pytest
 from src.models.document import Document
 from src.models.page import Page
@@ -123,15 +125,19 @@ def test_field_extraction(sample_items_segment):
     line1 = lines[0]
     # Note: Current implementation might keep quantity/price in description string if position based cleaning is conservative
     assert "Product" in line1.description
-    assert line1.quantity == 2.0
+    assert line1.quantity == Decimal("2")
+    assert isinstance(line1.quantity, Decimal)
     assert line1.unit == "st"
-    assert line1.unit_price == 150.00
-    assert line1.total_amount == 300.00
+    assert line1.unit_price == Decimal("150.00")
+    assert isinstance(line1.unit_price, Decimal)
+    assert line1.total_amount == Decimal("300.00")
+    assert isinstance(line1.total_amount, Decimal)
     
     # Second line may not have quantity/unit_price
     line2 = lines[1]
     assert "Service" in line2.description
     assert line2.total_amount > 0
+    assert isinstance(line2.total_amount, Decimal)
 
 
 def test_amount_parsing_swedish_separators(sample_page):
@@ -171,8 +177,10 @@ def test_amount_parsing_swedish_separators(sample_page):
     lines = extract_invoice_lines(segment)
 
     assert len(lines) == 2
-    assert lines[0].total_amount == pytest.approx(9345.67)
-    assert lines[1].total_amount == pytest.approx(12.50)
+    assert lines[0].total_amount == Decimal("9345.67")
+    assert lines[1].total_amount == Decimal("12.50")
+    assert isinstance(lines[0].total_amount, Decimal)
+    assert isinstance(lines[1].total_amount, Decimal)
 
 
 def test_invoice_line_rows_traceability(sample_items_segment):
@@ -262,4 +270,4 @@ def test_footer_rows_filtered(sample_page):
     # Should only extract product row, footer row should be filtered out
     assert len(lines) == 1
     assert "Product" in lines[0].description
-    assert lines[0].total_amount == 100.00
+    assert lines[0].total_amount == Decimal("100.00")

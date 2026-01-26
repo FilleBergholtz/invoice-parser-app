@@ -1,5 +1,7 @@
 """Unit tests for validation logic."""
 
+from decimal import Decimal
+
 import pytest
 
 from src.models.invoice_header import InvoiceHeader
@@ -38,7 +40,7 @@ def invoice_header_high_confidence(mock_segment):
         segment=mock_segment,
         invoice_number="INV-001",
         invoice_number_confidence=0.96,
-        total_amount=100.0,
+        total_amount=Decimal("100.0"),
         total_confidence=0.97
     )
     return header
@@ -51,7 +53,7 @@ def invoice_header_low_confidence(mock_segment):
         segment=mock_segment,
         invoice_number="INV-001",
         invoice_number_confidence=0.90,
-        total_amount=100.0,
+        total_amount=Decimal("100.0"),
         total_confidence=0.92
     )
     return header
@@ -91,18 +93,18 @@ def invoice_lines_valid():
         InvoiceLine(
             rows=[row1], 
             description="Product 1", 
-            total_amount=60.0, 
-            quantity=1.0, 
-            unit_price=60.0, 
+            total_amount=Decimal("60.0"),
+            quantity=Decimal("1.0"),
+            unit_price=Decimal("60.0"),
             line_number=1, 
             segment=segment
         ),
         InvoiceLine(
             rows=[row2], 
             description="Product 2", 
-            total_amount=40.0, 
-            quantity=1.0, 
-            unit_price=40.0, 
+            total_amount=Decimal("40.0"),
+            quantity=Decimal("1.0"),
+            unit_price=Decimal("40.0"),
             line_number=2, 
             segment=segment
         ),
@@ -128,9 +130,9 @@ def invoice_lines_mismatch():
         InvoiceLine(
             rows=[row1], 
             description="Product 1", 
-            total_amount=60.0, 
-            quantity=1.0, 
-            unit_price=60.0,
+            total_amount=Decimal("60.0"),
+            quantity=Decimal("1.0"),
+            unit_price=Decimal("60.0"),
             line_number=1, 
             segment=segment
         ),
@@ -144,9 +146,9 @@ class TestValidationResult:
         """Test ValidationResult creation with all fields."""
         result = ValidationResult(
             status="OK",
-            lines_sum=100.0,
-            diff=0.0,
-            tolerance=1.0,
+            lines_sum=Decimal("100.0"),
+            diff=Decimal("0.0"),
+            tolerance=Decimal("1.0"),
             hard_gate_passed=True,
             invoice_number_confidence=0.96,
             total_confidence=0.97,
@@ -155,9 +157,9 @@ class TestValidationResult:
         )
         
         assert result.status == "OK"
-        assert result.lines_sum == 100.0
-        assert result.diff == 0.0
-        assert result.tolerance == 1.0
+        assert result.lines_sum == Decimal("100.0")
+        assert result.diff == Decimal("0.0")
+        assert result.tolerance == Decimal("1.0")
         assert result.hard_gate_passed is True
         assert result.invoice_number_confidence == 0.96
         assert result.total_confidence == 0.97
@@ -168,11 +170,11 @@ class TestValidationResult:
         """Test ValidationResult default values."""
         result = ValidationResult(
             status="OK",
-            lines_sum=100.0,
-            diff=0.0
+            lines_sum=Decimal("100.0"),
+            diff=Decimal("0.0")
         )
         
-        assert result.tolerance == 1.0
+        assert result.tolerance == Decimal("1.0")
         assert result.hard_gate_passed is False
         assert result.invoice_number_confidence == 0.0
         assert result.total_confidence == 0.0
@@ -182,20 +184,20 @@ class TestValidationResult:
     def test_status_validation(self):
         """Test that status must be OK, PARTIAL, or REVIEW."""
         with pytest.raises(ValueError, match="status must be 'OK', 'PARTIAL', or 'REVIEW'"):
-            ValidationResult(status="INVALID", lines_sum=100.0, diff=0.0)
+            ValidationResult(status="INVALID", lines_sum=Decimal("100.0"), diff=Decimal("0.0"))
     
     def test_lines_sum_validation(self):
         """Test that lines_sum must be >= 0."""
         with pytest.raises(ValueError, match="lines_sum must be >= 0"):
-            ValidationResult(status="OK", lines_sum=-10.0, diff=0.0)
+            ValidationResult(status="OK", lines_sum=Decimal("-10.0"), diff=Decimal("0.0"))
     
     def test_confidence_validation(self):
         """Test that confidence scores must be 0.0-1.0."""
         with pytest.raises(ValueError, match="invoice_number_confidence must be between 0.0 and 1.0"):
-            ValidationResult(status="OK", lines_sum=100.0, diff=0.0, invoice_number_confidence=1.5)
+            ValidationResult(status="OK", lines_sum=Decimal("100.0"), diff=Decimal("0.0"), invoice_number_confidence=1.5)
         
         with pytest.raises(ValueError, match="total_confidence must be between 0.0 and 1.0"):
-            ValidationResult(status="OK", lines_sum=100.0, diff=0.0, total_confidence=-0.1)
+            ValidationResult(status="OK", lines_sum=Decimal("100.0"), diff=Decimal("0.0"), total_confidence=-0.1)
 
 
 class TestCalculateValidationValues:
@@ -204,13 +206,13 @@ class TestCalculateValidationValues:
     def test_with_total_and_lines(self, invoice_lines_valid):
         """Test calculation with total_amount and line_items."""
         lines_sum, diff, validation_passed = calculate_validation_values(
-            100.0,
+            Decimal("100.0"),
             invoice_lines_valid,
-            tolerance=1.0
+            tolerance=Decimal("1.0")
         )
         
-        assert lines_sum == 100.0  # 60 + 40
-        assert diff == 0.0  # 100 - 100
+        assert lines_sum == Decimal("100.0")  # 60 + 40
+        assert diff == Decimal("0.0")  # 100 - 100
         assert validation_passed is True
 
     def test_with_total_as_swedish_string(self, invoice_lines_valid):
@@ -218,11 +220,45 @@ class TestCalculateValidationValues:
         lines_sum, diff, validation_passed = calculate_validation_values(
             "100,00",
             invoice_lines_valid,
-            tolerance=1.0
+            tolerance=Decimal("1.0")
         )
 
-        assert lines_sum == 100.0
-        assert diff == 0.0
+        assert lines_sum == Decimal("100.0")
+        assert diff == Decimal("0.0")
+        assert validation_passed is True
+
+    def test_with_total_swedish_thousands_string(self):
+        """Test calculation with Swedish thousands and decimal separators."""
+        from src.models.page import Page
+        from src.models.document import Document
+        from src.models.token import Token
+
+        doc = Document(filename="test.pdf", filepath="test.pdf", page_count=0, pages=[])
+        page = Page(page_number=1, width=612, height=792, document=doc)
+        doc.pages.append(page)
+        doc.page_count = 1
+        token = Token(text="Service", x=0, y=100, width=60, height=12, page=page)
+        row = Row(tokens=[token], text="Service", x_min=0, x_max=200, y=100, page=page)
+        segment = Segment(segment_type="items", rows=[row], page=page, y_min=237.6, y_max=554.4)
+
+        line = InvoiceLine(
+            rows=[row],
+            description="Service",
+            total_amount=Decimal("9345.67"),
+            line_number=1,
+            segment=segment
+        )
+
+        lines_sum, diff, validation_passed = calculate_validation_values(
+            "9.345,67",
+            [line],
+            tolerance=Decimal("0.01")
+        )
+
+        assert lines_sum == Decimal("9345.67")
+        assert diff == Decimal("0.00")
+        assert isinstance(lines_sum, Decimal)
+        assert isinstance(diff, Decimal)
         assert validation_passed is True
     
     def test_with_total_none(self, invoice_lines_valid):
@@ -230,43 +266,43 @@ class TestCalculateValidationValues:
         lines_sum, diff, validation_passed = calculate_validation_values(
             None,
             invoice_lines_valid,
-            tolerance=1.0
+            tolerance=Decimal("1.0")
         )
         
-        assert lines_sum == 100.0
+        assert lines_sum == Decimal("100.0")
         assert diff is None
         assert validation_passed is False
     
     def test_with_empty_line_items(self):
         """Test calculation with empty line_items."""
         lines_sum, diff, validation_passed = calculate_validation_values(
-            100.0,
+            Decimal("100.0"),
             [],
-            tolerance=1.0
+            tolerance=Decimal("1.0")
         )
         
-        assert lines_sum == 0.0
-        assert diff == 100.0  # 100 - 0
+        assert lines_sum == Decimal("0")
+        assert diff == Decimal("100.0")  # 100 - 0
         assert validation_passed is False
     
     def test_with_tolerance(self, invoice_lines_valid):
         """Test tolerance handling."""
         # Within tolerance (±1.0)
         _, diff, validation_passed = calculate_validation_values(
-            100.5,
+            Decimal("100.5"),
             invoice_lines_valid,
-            tolerance=1.0
+            tolerance=Decimal("1.0")
         )
-        assert abs(diff) == 0.5
+        assert abs(diff) == Decimal("0.5")
         assert validation_passed is True
         
         # Outside tolerance
         _, diff, validation_passed = calculate_validation_values(
-            102.0,
+            Decimal("102.0"),
             invoice_lines_valid,
-            tolerance=1.0
+            tolerance=Decimal("1.0")
         )
-        assert abs(diff) == 2.0
+        assert abs(diff) == Decimal("2.0")
         assert validation_passed is False
 
 
@@ -279,22 +315,22 @@ class TestValidateInvoice:
         
         assert result.status == "OK"
         assert result.hard_gate_passed is True
-        assert result.lines_sum == 100.0
-        assert result.diff == 0.0
+        assert result.lines_sum == Decimal("100.0")
+        assert result.diff == Decimal("0.0")
         assert len(result.errors) == 0
         assert len(result.warnings) == 0
     
     def test_partial_status(self, invoice_header_high_confidence, invoice_lines_mismatch):
         """Test PARTIAL status: hard gate pass + diff > ±1 SEK."""
         # Set total to 100 but lines sum to 60 (diff = 40)
-        invoice_header_high_confidence.total_amount = 100.0
+        invoice_header_high_confidence.total_amount = Decimal("100.0")
         
         result = validate_invoice(invoice_header_high_confidence, invoice_lines_mismatch)
         
         assert result.status == "PARTIAL"
         assert result.hard_gate_passed is True
-        assert result.lines_sum == 60.0
-        assert result.diff == 40.0
+        assert result.lines_sum == Decimal("60.0")
+        assert result.diff == Decimal("40.0")
         assert len(result.errors) == 0
         # Should contain sum mismatch warning
         assert any("Sum mismatch" in w for w in result.warnings)
@@ -322,7 +358,7 @@ class TestValidateInvoice:
         result = validate_invoice(invoice_header_high_confidence, [])
         
         assert result.status == "REVIEW"
-        assert result.lines_sum == 0.0
+        assert result.lines_sum == Decimal("0")
         assert len(result.errors) == 1
         assert "No invoice lines extracted" in result.errors[0]
     
@@ -332,7 +368,7 @@ class TestValidateInvoice:
             segment=mock_segment,
             invoice_number="INV-001",
             invoice_number_confidence=0.96,
-            total_amount=100.0,
+            total_amount=Decimal("100.0"),
             total_confidence=0.92  # Below 0.95
         )
         
@@ -347,7 +383,7 @@ class TestValidateInvoice:
             segment=mock_segment,
             invoice_number="INV-001",
             invoice_number_confidence=0.92,  # Below 0.95
-            total_amount=100.0,
+            total_amount=Decimal("100.0"),
             total_confidence=0.96
         )
         
@@ -378,14 +414,14 @@ class TestValidateLineItems:
         line = InvoiceLine(
             rows=[row1],
             description="Product 1",
-            quantity=5.0,
-            unit_price=12.0,
-            total_amount=60.0,
+            quantity=Decimal("5.0"),
+            unit_price=Decimal("12.0"),
+            total_amount=Decimal("60.0"),
             line_number=1,
             segment=segment
         )
         
-        warnings = validate_line_items([line], tolerance=0.01)
+        warnings = validate_line_items([line], tolerance=Decimal("0.01"))
         assert len(warnings) == 0
     
     def test_warning_when_quantity_price_mismatch(self, invoice_lines_valid):
@@ -406,14 +442,14 @@ class TestValidateLineItems:
         line = InvoiceLine(
             rows=[row1],
             description="Product 1",
-            quantity=5.0,
-            unit_price=12.0,
-            total_amount=50.0,
+            quantity=Decimal("5.0"),
+            unit_price=Decimal("12.0"),
+            total_amount=Decimal("50.0"),
             line_number=1,
             segment=segment
         )
         
-        warnings = validate_line_items([line], tolerance=0.01)
+        warnings = validate_line_items([line], tolerance=Decimal("0.01"))
         assert len(warnings) >= 1  # May include proposal warnings
         # Check for specific mismatch warning
         assert any("60.00" in w and "50.00" in w for w in warnings)
@@ -436,14 +472,14 @@ class TestValidateLineItems:
         line = InvoiceLine(
             rows=[row1],
             description="Product 1",
-            quantity=5.0,
-            unit_price=12.0,
-            total_amount=60.005,
+            quantity=Decimal("5.0"),
+            unit_price=Decimal("12.0"),
+            total_amount=Decimal("60.005"),
             line_number=1,
             segment=segment
         )
         
-        warnings = validate_line_items([line], tolerance=0.01)
+        warnings = validate_line_items([line], tolerance=Decimal("0.01"))
         assert len(warnings) == 0
     
     def test_validation_when_missing_quantity_or_price(self, invoice_lines_valid):
@@ -465,8 +501,8 @@ class TestValidateLineItems:
             rows=[row1],
             description="Product 1",
             quantity=None,
-            unit_price=12.0,
-            total_amount=60.0,
+            unit_price=Decimal("12.0"),
+            total_amount=Decimal("60.0"),
             line_number=1,
             segment=segment
         )
@@ -475,14 +511,14 @@ class TestValidateLineItems:
         line2 = InvoiceLine(
             rows=[row1],
             description="Product 1",
-            quantity=5.0,
+            quantity=Decimal("5.0"),
             unit_price=None,
-            total_amount=60.0,
+            total_amount=Decimal("60.0"),
             line_number=2,
             segment=segment
         )
         
-        warnings = validate_line_items([line1, line2], tolerance=0.01)
+        warnings = validate_line_items([line1, line2], tolerance=Decimal("0.01"))
         # Should have calculation warnings/info
         assert len(warnings) > 0
         assert any("Antal saknas" in w for w in warnings)
@@ -508,9 +544,9 @@ class TestValidateLineItems:
         line1 = InvoiceLine(
             rows=[row1],
             description="Product 1",
-            quantity=5.0,
-            unit_price=12.0,
-            total_amount=50.0,
+            quantity=Decimal("5.0"),
+            unit_price=Decimal("12.0"),
+            total_amount=Decimal("50.0"),
             line_number=1,
             segment=segment
         )
@@ -519,12 +555,12 @@ class TestValidateLineItems:
         line2 = InvoiceLine(
             rows=[row2],
             description="Product 2",
-            quantity=3.0,
-            unit_price=10.0,
-            total_amount=25.0,
+            quantity=Decimal("3.0"),
+            unit_price=Decimal("10.0"),
+            total_amount=Decimal("25.0"),
             line_number=2,
             segment=segment
         )
         
-        warnings = validate_line_items([line1, line2], tolerance=0.01)
+        warnings = validate_line_items([line1, line2], tolerance=Decimal("0.01"))
         assert len(warnings) >= 2
