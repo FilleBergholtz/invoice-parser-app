@@ -6,15 +6,15 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 
 **Core value:** 100% korrekt på fakturanummer och totalsumma, eller tydlig REVIEW-status. Allt som systemet exporterar som OK är garanterat korrekt. Osäkra fall går alltid till REVIEW (ingen tyst gissning).
 
-**Current focus:** v2.0 milestone complete 2026-01-26. Planning next milestone.
+**Current focus:** v2.1 Parsing robustness / EDI planerad och klar för start.
 
 ## Current Position
 
-Milestone: **Ingen aktiv** — v2.0 arkiverad.
-Phase: —
-Plan: —
-Status: Mellan milstolpar. ROADMAP.md och REQUIREMENTS.md borttagna; arkiv i `.planning/milestones/`.
-Last activity: 2026-01-26 — `/gsd:complete-milestone` för v2.0.
+Milestone: **v2.1 Parsing robustness / EDI** (planerad).
+Phase: **16** — Text-layer routing (OCR-skip).
+Plan: ROADMAP.md skapad, Traceability uppdaterad i REQUIREMENTS.md.
+Status: Planerad, ej påbörjad.
+Last activity: 2026-01-26 — v2.1 ROADMAP/STATE/REQUIREMENTS uppdaterade.
 
 Progress: v1.0 (Phase 1–3) + v2.0 (Phase 5–15) genomförda och arkiverade.
 

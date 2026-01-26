@@ -73,13 +73,30 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| OCR-*       | TBD   | Pending |
-| TABLE-*     | TBD   | Pending |
-| LINE-*      | TBD   | Pending |
-| NUM-*       | TBD   | Pending |
-| VAL-*       | TBD   | Pending |
-| BOUND-*     | TBD   | Pending |
-| AI-*        | TBD   | Pending |
+| OCR-01 | Phase 16: Text-layer routing (OCR-skip) | Pending |
+| OCR-02 | Phase 16: Text-layer routing (OCR-skip) | Pending |
+| OCR-03 | Phase 16: Text-layer routing (OCR-skip) | Pending |
+| OCR-04 | Phase 16: Text-layer routing (OCR-skip) | Pending |
+| AI-01  | Phase 17: AI-policy (fallback only) | Pending |
+| AI-02  | Phase 17: AI-policy (fallback only) | Pending |
+| BOUND-01 | Phase 18: Fakturaboundaries | Pending |
+| BOUND-02 | Phase 18: Fakturaboundaries | Pending |
+| BOUND-03 | Phase 18: Fakturaboundaries | Pending |
+| NUM-01 | Phase 19: Svensk talnormalisering | Pending |
+| NUM-02 | Phase 19: Svensk talnormalisering | Pending |
+| NUM-03 | Phase 19: Svensk talnormalisering | Pending |
+| NUM-04 | Phase 19: Svensk talnormalisering | Pending |
+| TABLE-01 | Phase 20: Tabellsegment & kolumnregler | Pending |
+| TABLE-02 | Phase 20: Tabellsegment & kolumnregler | Pending |
+| TABLE-03 | Phase 20: Tabellsegment & kolumnregler | Pending |
+| TABLE-04 | Phase 20: Tabellsegment & kolumnregler | Pending |
+| LINE-01 | Phase 21: Multi-line items | Pending |
+| LINE-02 | Phase 21: Multi-line items | Pending |
+| VAL-01 | Phase 22: Valideringsdriven om-extraktion | Pending |
+| VAL-02 | Phase 22: Valideringsdriven om-extraktion | Pending |
+| VAL-03 | Phase 22: Valideringsdriven om-extraktion | Pending |
+| VAL-04 | Phase 22: Valideringsdriven om-extraktion | Pending |
+| VAL-05 | Phase 22: Valideringsdriven om-extraktion | Pending |
 
 ---
 *Requirements defined: 2026-01-26*
