@@ -1,10 +1,47 @@
 """Wrap detection for multi-line invoice items."""
 
+import re
 import statistics
 from typing import List
 
 from ..models.page import Page
 from ..models.row import Row
+
+
+def _matches_start_pattern(row: Row) -> bool:
+    """Check if row matches new item start pattern.
+    
+    Args:
+        row: Row object to check
+        
+    Returns:
+        True if row starts with a pattern indicating a new item, False otherwise
+        
+    Patterns detected:
+    - Article numbers: ^\d{5,} (5+ digits), ^\w{3,}\d+ (alphanumeric)
+    - Dates: ^\d{4}-\d{2}-\d{2} (ISO), ^\d{2}/\d{2} (Swedish format)
+    - Individnr: ^\d{6,8}-\d{4} (YYYYMMDD-XXXX format)
+    - Account codes: ^\d{4}\s (4-digit followed by space)
+    """
+    if not row.text:
+        return False
+    
+    text = row.text.strip()
+    
+    # Combined pattern for all start patterns
+    # Article numbers, dates, individnr, account codes
+    start_pattern = re.compile(
+        r'^(?:'
+        r'\d{5,}|'                    # Article number: 5+ digits
+        r'\w{3,}\d+|'                 # Article number: alphanumeric (ABC123)
+        r'\d{4}-\d{2}-\d{2}|'         # Date: ISO format (2026-01-26)
+        r'\d{2}/\d{2}|'               # Date: Swedish format (26/01)
+        r'\d{6,8}-\d{4}|'             # Individnr: YYYYMMDD-XXXX
+        r'\d{4}\s'                    # Account code: 4 digits + space
+        r')'
+    )
+    
+    return bool(start_pattern.match(text))
 
 
 def _calculate_adaptive_y_threshold(rows: List[Row]) -> float:
@@ -94,16 +131,22 @@ def detect_wrapped_rows(
     prev_row = product_row
     
     for next_row in following_rows:
-        # Stop condition 1: Y-distance check (adaptive threshold)
+        # Stop condition 1: Start-pattern check (override spatial proximity)
+        # If row matches article number, date, individnr, or account code pattern,
+        # it's a new item regardless of spatial proximity
+        if _matches_start_pattern(next_row):
+            break  # New item starts here
+        
+        # Stop condition 2: Y-distance check (adaptive threshold)
         y_distance = next_row.y_min - prev_row.y_max
         if y_distance > y_threshold:
             break  # Too far apart = not a continuation
         
-        # Stop condition 2: Next row contains amount (new product row)
+        # Stop condition 3: Next row contains amount (new product row)
         if _contains_amount(next_row):
             break
         
-        # Stop condition 3: X-start deviates beyond tolerance
+        # Stop condition 4: X-start deviates beyond tolerance
         next_row_start_x = next_row.x_min
         if abs(next_row_start_x - description_start_x) > tolerance:
             break
