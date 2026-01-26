@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 def _matches_start_pattern(row: Row) -> bool:
-    """Check if row matches new item start pattern.
+    r"""Check if row matches new item start pattern.
     
     Args:
         row: Row object to check
