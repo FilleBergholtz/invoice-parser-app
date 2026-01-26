@@ -257,6 +257,7 @@ def extract_total_amount(
     rows_above_footer: Optional[List[Row]] = None,
     page_context_for_ai: Optional[str] = None,
     image_path_for_ai: Optional[str] = None,
+    allow_ai: bool = True,
 ) -> None:
     """Extract total amount from footer segment using keyword matching and confidence scoring.
     
@@ -271,6 +272,7 @@ def extract_total_amount(
         page_context_for_ai: Full page text (header/items/footer) for AI so it sees
             PDF:ens hela data; används vid AI-fallback när kandidater kan vara fel.
         image_path_for_ai: Optional path to rendered page image for AI vision when text quality is low.
+        allow_ai: If False, skip AI fallback regardless of configuration.
         
     Algorithm:
     1. Extract all amount candidates from footer segment rows
@@ -615,7 +617,7 @@ def extract_total_amount(
     
     # Step 5: Try AI fallback when confidence low or no candidates
     ai_result = None
-    if get_ai_enabled():
+    if allow_ai and get_ai_enabled():
         if not get_ai_key():
             logger.info("AI fallback skipped: no API key configured")
         elif scored_candidates:

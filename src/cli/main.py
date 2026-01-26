@@ -38,11 +38,12 @@ from ..pipeline.pdf_renderer import (
     OCR_MEAN_CONF_RETRY_THRESHOLD,
 )
 from ..pipeline.ocr_abstraction import extract_tokens_with_ocr, ocr_page_metrics, OCRException, OCR_MEDIAN_CONF_ROUTING_THRESHOLD
-from ..pipeline.ocr_routing import evaluate_text_layer, get_ocr_routing_config
+from ..pipeline.ocr_routing import evaluate_text_layer, get_ocr_routing_config, evaluate_edi_signals
 from ..pipeline.text_quality import score_text_quality, score_ocr_quality
 from ..pipeline.header_extractor import extract_header_fields
 from ..pipeline.footer_extractor import extract_total_amount
-from ..pipeline.validation import validate_invoice
+from ..pipeline.validation import validate_invoice, validation_passed
+from ..pipeline.retry_extraction import extract_with_retry, run_deterministic_fallback
 from ..pipeline.invoice_boundary_detection import detect_invoice_boundaries
 from ..export.excel_export import export_to_excel
 from ..export.review_report import create_review_report
@@ -58,6 +59,7 @@ from ..pipeline.confidence_calibration import (
 from ..config.profile_manager import set_profile, get_profile
 from ..run_summary import RunSummary
 from ..ai.client import AIClient, AIClientError, AIConnectionError, AIAPIError, create_ai_diff, save_ai_artifacts
+from ..ai.fallback import evaluate_ai_policy, get_ai_policy_config
 from ..ai.schemas import AIInvoiceRequest, AIInvoiceLineRequest
 from ..debug.artifact_index import create_manifest_for_run
 from ..quality.score import calculate_quality_score
@@ -315,35 +317,106 @@ def process_invoice(
                 header_progress = None
             extract_header_fields(header_segment, invoice_header, progress_callback=header_progress)
         
-        # Extract total amount from footer with retry
+        deterministic_validation_result = None
+        ai_policy_decision = None
+        fallback_attempted = False
+        fallback_passed = None
+
+        # Extract total amount from footer with retry (deterministic only)
         if footer_segment and invoice_header:
-            from ..pipeline.retry_extraction import extract_with_retry
-            
-            page_context_for_ai = _build_page_context_for_ai(last_page_segments)
-            
-            def extract_total(strategy=None):
+            def extract_total_deterministic(strategy=None):
                 extract_total_amount(
                     footer_segment, all_invoice_lines, invoice_header,
                     strategy=strategy, rows_above_footer=rows_above_footer,
-                    page_context_for_ai=page_context_for_ai
+                    page_context_for_ai=page_context_for_ai,
+                    allow_ai=False,
                 )
                 return invoice_header
-            
+
             if verbose:
                 def total_progress(msg, conf, attempt):
                     print(f"  {msg} (confidence: {conf*100:.1f}%)")
                 extract_with_retry(
-                    extract_total,
+                    extract_total_deterministic,
                     target_confidence=0.90,
                     max_attempts=5,
-                    progress_callback=total_progress
+                    progress_callback=total_progress,
                 )
             else:
                 extract_with_retry(
-                    extract_total,
+                    extract_total_deterministic,
                     target_confidence=0.90,
-                    max_attempts=5
+                    max_attempts=5,
                 )
+
+            deterministic_validation_result = validate_invoice(invoice_header, all_invoice_lines)
+            if not validation_passed(deterministic_validation_result):
+                fallback_attempted = True
+                if verbose:
+                    def _fallback_progress(msg, conf, attempt):
+                        print(f"  {msg} (fallback, confidence: {conf*100:.1f}%)")
+                    fallback_progress = _fallback_progress
+                else:
+                    fallback_progress = None
+                run_deterministic_fallback(
+                    extract_total_deterministic,
+                    target_confidence=0.90,
+                    max_attempts=3,
+                    progress_callback=fallback_progress,
+                )
+                deterministic_validation_result = validate_invoice(invoice_header, all_invoice_lines)
+                fallback_passed = validation_passed(deterministic_validation_result)
+
+            policy_config = get_ai_policy_config()
+            edi_signals = evaluate_edi_signals(
+                text=page_context_for_ai,
+                text_layer_used=text_layer_used,
+                text_quality=text_quality,
+                anchor_rules=policy_config.get("edi_anchor_rules"),
+                table_patterns=policy_config.get("edi_table_patterns"),
+                min_signals=int(policy_config.get("min_edi_signals", 2) or 2),
+                min_text_quality=float(policy_config.get("min_text_quality", 0.5) or 0.5),
+            )
+            ai_policy_decision = evaluate_ai_policy(
+                extraction_source=extraction_path,
+                text_quality=text_quality,
+                validation_result=deterministic_validation_result,
+                edi_signals=edi_signals,
+                policy_config=policy_config,
+                fallback_attempted=fallback_attempted,
+                fallback_passed=fallback_passed,
+            )
+
+            if ai_policy_decision.get("allow_ai") and (
+                invoice_header.total_amount is None or invoice_header.total_confidence < 0.95
+            ):
+                extract_total_amount(
+                    footer_segment, all_invoice_lines, invoice_header,
+                    strategy=None, rows_above_footer=rows_above_footer,
+                    page_context_for_ai=page_context_for_ai,
+                    allow_ai=True,
+                )
+
+        if invoice_header and ai_policy_decision is None:
+            policy_config = get_ai_policy_config()
+            edi_signals = evaluate_edi_signals(
+                text=page_context_for_ai,
+                text_layer_used=text_layer_used,
+                text_quality=text_quality,
+                anchor_rules=policy_config.get("edi_anchor_rules"),
+                table_patterns=policy_config.get("edi_table_patterns"),
+                min_signals=int(policy_config.get("min_edi_signals", 2) or 2),
+                min_text_quality=float(policy_config.get("min_text_quality", 0.5) or 0.5),
+            )
+            ai_policy_decision = evaluate_ai_policy(
+                extraction_source=extraction_path,
+                text_quality=text_quality,
+                validation_result=deterministic_validation_result,
+                edi_signals=edi_signals,
+                policy_config=policy_config,
+                fallback_attempted=fallback_attempted,
+                fallback_passed=fallback_passed,
+            )
         
         # Step 7.5: Optional AI enrichment
         ai_enriched = False
@@ -577,7 +650,7 @@ def process_virtual_invoice(
                         else:
                             tokens = []
 
-                if return_last_page_tokens and page == invoice_pages[-1]:
+                if page == invoice_pages[-1]:
                     last_page_tokens = tokens or []
                     last_page_source = page_source
 
@@ -618,6 +691,22 @@ def process_virtual_invoice(
             items_on_footer_page = next((s for s in last_page_segments if s.segment_type == "items"), None)
             if items_on_footer_page and items_on_footer_page.rows:
                 rows_above_footer = items_on_footer_page.rows[-2:]
+
+        page_context_for_ai = _build_page_context_for_ai(last_page_segments)
+        text_quality = None
+        if last_page_tokens:
+            joined_text = " ".join(getattr(t, "text", "") for t in last_page_tokens)
+            if last_page_source == "ocr":
+                text_quality = score_ocr_quality(last_page_tokens)
+            else:
+                text_quality = score_text_quality(joined_text, last_page_tokens)
+        text_layer_used = last_page_source == "pdfplumber"
+        if page_routing_decisions:
+            all_text_layer = all(
+                decision.get("use_text_layer", True)
+                for decision in page_routing_decisions.values()
+            )
+            text_layer_used = text_layer_used or all_text_layer
         
         # Create InvoiceHeader
         invoice_header = None
@@ -764,17 +853,26 @@ def process_virtual_invoice(
             validation_result=validation_result,
             error=None
         )
+
+        if result.extraction_detail is None:
+            result.extraction_detail = {"method_used": extraction_path}
+        if ai_policy_decision is not None:
+            result.extraction_detail["ai_policy"] = ai_policy_decision
         
         # Store AI data for later artifact saving
         result.ai_request = ai_request_data
         result.ai_response = ai_response_data
         result.ai_error = ai_error
 
-        if page_routing_decisions and result.extraction_detail is None:
-            result.extraction_detail = {
-                "method_used": extraction_path,
-                "page_routing": page_routing_decisions,
-            }
+        if page_routing_decisions:
+            if result.extraction_detail is None:
+                result.extraction_detail = {
+                    "method_used": extraction_path,
+                    "page_routing": page_routing_decisions,
+                }
+            else:
+                result.extraction_detail.setdefault("method_used", extraction_path)
+                result.extraction_detail.setdefault("page_routing", page_routing_decisions)
 
         if return_last_page_tokens or return_page_routing:
             return_extra: Dict[str, Any] = {}

@@ -229,3 +229,21 @@ def extract_with_retry(
             max_attempts
         )
     return best_result, best_confidence, attempts
+
+
+def run_deterministic_fallback(
+    extract_func: Callable,
+    target_confidence: float,
+    max_attempts: int = 3,
+    strategy_variations: Optional[list] = None,
+    progress_callback: Optional[Callable[[str, float, int], None]] = None,
+) -> Tuple[Any, float, list]:
+    """Run a deterministic fallback pass before AI is allowed."""
+    strategies = strategy_variations or ["aggressive", "extended_patterns", "broader_search"]
+    return extract_with_retry(
+        extract_func=extract_func,
+        target_confidence=target_confidence,
+        max_attempts=max_attempts,
+        strategy_variations=strategies,
+        progress_callback=progress_callback,
+    )

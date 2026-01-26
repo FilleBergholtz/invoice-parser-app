@@ -179,3 +179,12 @@ def validate_invoice(
         errors=errors,
         warnings=warnings
     )
+
+
+def validation_passed(result: Optional[ValidationResult]) -> bool:
+    """Return True when total matches line_items_sum within tolerance."""
+    if result is None:
+        return False
+    if result.diff is None:
+        return False
+    return abs(result.diff) <= result.tolerance
