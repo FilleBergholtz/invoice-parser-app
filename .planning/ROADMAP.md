@@ -65,10 +65,10 @@ Plans:
   1. Fler-sidiga fakturor grupperas korrekt via fakturanummer per sida.
   2. Sidnummer används som stöd för att samla sidor per faktura.
   3. Segmentering fungerar utan att vänta på “total found”.
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 18-01: TBD
+- [x] 18-01: Fakturaboundaries (invoice_no grouping)
 
 #### Phase 19: Svensk talnormalisering
 **Goal**: Alla belopp parsas konsekvent som Decimal med svensk notation.
@@ -129,7 +129,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 16. Text-layer routing (OCR-skip) | v2.1 | 1/1 | Complete | 2026-01-26 |
 | 17. AI-policy (fallback only) | v2.1 | 2/2 | Complete | 2026-01-26 |
-| 18. Fakturaboundaries | v2.1 | 0/TBD | Not started | - |
+| 18. Fakturaboundaries | v2.1 | 1/1 | Complete | 2026-01-26 |
 | 19. Svensk talnormalisering | v2.1 | 0/TBD | Not started | - |
 | 20. Tabellsegment & kolumnregler | v2.1 | 0/TBD | Not started | - |
 | 21. Multi-line items | v2.1 | 0/TBD | Not started | - |
