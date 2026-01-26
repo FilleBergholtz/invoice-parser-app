@@ -24,8 +24,8 @@ def _excel_safe_dataframe(df: pd.DataFrame) -> pd.DataFrame:
             def _cell(value: Any) -> Any:
                 if value is None or (isinstance(value, float) and pd.isna(value)):
                     return value
-                tz = getattr(value, "tzinfo", None)
-                if tz is not None and hasattr(value, "strftime"):
+                # Narrow type for pyright: only datetime-like has tzinfo + strftime
+                if isinstance(value, _dt.datetime) and value.tzinfo is not None:
                     return value.strftime("%Y-%m-%d %H:%M:%S")
                 return value
             df[col] = df[col].map(_cell, na_action="ignore")
@@ -192,7 +192,8 @@ def export_to_excel(
         
         # Column indices by name (robust when columns are added)
         def _idx(name: str) -> int:
-            return df.columns.get_loc(name) if name in df.columns else -1
+            loc = df.columns.get_loc(name) if name in df.columns else -1
+            return int(loc) if isinstance(loc, int) else -1
         
         summa_idx = _idx("Summa")
         hela_summan_idx = _idx("Hela summan")
@@ -284,7 +285,12 @@ def apply_corrections_to_excel(
         return False
 
     if fakturatotal_col not in df.columns:
-        df.insert(df.columns.get_loc(tot_col), fakturatotal_col, None)
+        loc = df.columns.get_loc(tot_col)
+        df.insert(int(loc) if isinstance(loc, int) else 0, fakturatotal_col, None)
+
+    # Säkerställ float-dtyp så att decimaler (t.ex. 32891.1) accepteras; pandas kan ha läst int64
+    df[tot_col] = cast(pd.Series, pd.to_numeric(df[tot_col], errors="coerce")).astype("float64")
+    df[fakturatotal_col] = cast(pd.Series, pd.to_numeric(df[fakturatotal_col], errors="coerce")).astype("float64")
 
     updated = 0
     for idx, inv_id in enumerate(df[id_col]):
