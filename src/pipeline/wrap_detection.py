@@ -71,8 +71,20 @@ def _calculate_adaptive_y_threshold(rows: List[Row]) -> float:
         current_row = rows[i]
         next_row = rows[i + 1]
         
-        # Y-distance between consecutive rows
-        y_distance = next_row.y_min - current_row.y_max
+        # Calculate y_max for current row (y + token height)
+        current_y_max = getattr(current_row, 'y_max', None)
+        if current_y_max is None:
+            current_y_max = current_row.y
+            if current_row.tokens and hasattr(current_row.tokens[0], 'height'):
+                current_y_max = current_row.y + current_row.tokens[0].height
+            else:
+                current_y_max = current_row.y + 12  # Fallback: typical font height
+        
+        # Get next row's y_min or fallback to y
+        next_y_min = getattr(next_row, 'y_min', next_row.y)
+        
+        # Y-distance between consecutive rows (gap between rows)
+        y_distance = next_y_min - current_y_max
         
         if y_distance > 0:  # Skip overlapping rows
             line_heights.append(y_distance)
@@ -144,7 +156,18 @@ def detect_wrapped_rows(
             break  # New item starts here
         
         # Stop condition 2: Y-distance check (adaptive threshold)
-        y_distance = next_row.y_min - prev_row.y_max
+        # Calculate y_max for prev_row (handle cases where y_min/y_max not set)
+        prev_y_max = getattr(prev_row, 'y_max', None)
+        if prev_y_max is None:
+            prev_y_max = prev_row.y
+            if prev_row.tokens and hasattr(prev_row.tokens[0], 'height'):
+                prev_y_max = prev_row.y + prev_row.tokens[0].height
+            else:
+                prev_y_max = prev_row.y + 12  # Fallback: typical font height
+        
+        next_y_min = getattr(next_row, 'y_min', next_row.y)
+        
+        y_distance = next_y_min - prev_y_max
         if y_distance > y_threshold:
             break  # Too far apart = not a continuation
         
@@ -153,7 +176,7 @@ def detect_wrapped_rows(
             break
         
         # Stop condition 4: X-alignment check (two-tier tolerance)
-        next_row_start_x = next_row.x_min
+        next_row_start_x = getattr(next_row, 'x_min', next_row.tokens[0].x if next_row.tokens else 0)
         delta_x = next_row_start_x - description_start_x
         
         # Allow:

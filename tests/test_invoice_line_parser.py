@@ -377,3 +377,254 @@ def test_footer_rows_filtered(sample_page):
     assert len(lines) == 1
     assert "Product" in lines[0].description
     assert lines[0].total_amount == Decimal("100.00")
+
+
+# ============================================================================
+# Phase 21 Regression Tests: Multi-line items (wrap detection)
+# ============================================================================
+
+def test_line_items_with_wrapped_descriptions(sample_page):
+    """Test wrapped items extracted correctly with full description."""
+    # Product row with amount
+    product_tokens = [
+        Token(text="Product", x=10, y=300, width=50, height=12, page=sample_page),
+        Token(text="description", x=70, y=300, width=80, height=12, page=sample_page),
+        Token(text="100.00", x=300, y=300, width=60, height=12, page=sample_page),
+    ]
+    product_row = Row(
+        tokens=product_tokens,
+        y=300,
+        x_min=10,
+        x_max=360,
+        text="Product description 100.00",
+        page=sample_page
+    )
+    product_row.y_min = 300
+    product_row.y_max = 312
+    
+    # Wrapped row 1 (no amount, close Y-distance)
+    wrap1_tokens = [
+        Token(text="Continuation", x=10, y=315, width=80, height=12, page=sample_page),
+        Token(text="line", x=95, y=315, width=30, height=12, page=sample_page),
+    ]
+    wrap1_row = Row(
+        tokens=wrap1_tokens,
+        y=315,
+        x_min=10,
+        x_max=125,
+        text="Continuation line 1",
+        page=sample_page
+    )
+    wrap1_row.y_min = 315
+    wrap1_row.y_max = 327
+    
+    # Wrapped row 2 (no amount, close Y-distance)
+    wrap2_tokens = [
+        Token(text="Continuation", x=10, y=330, width=80, height=12, page=sample_page),
+        Token(text="line", x=95, y=330, width=30, height=12, page=sample_page),
+        Token(text="2", x=130, y=330, width=10, height=12, page=sample_page),
+    ]
+    wrap2_row = Row(
+        tokens=wrap2_tokens,
+        y=330,
+        x_min=10,
+        x_max=140,
+        text="Continuation line 2",
+        page=sample_page
+    )
+    wrap2_row.y_min = 330
+    wrap2_row.y_max = 342
+    
+    segment = Segment(
+        segment_type="items",
+        rows=[product_row, wrap1_row, wrap2_row],
+        y_min=300,
+        y_max=342,
+        page=sample_page
+    )
+    
+    lines = extract_invoice_lines(segment)
+    
+    # Should extract 1 line with wrapped description
+    assert len(lines) == 1
+    assert "Product description" in lines[0].description
+    assert "Continuation line 1" in lines[0].description
+    assert "Continuation line 2" in lines[0].description
+    assert lines[0].total_amount == Decimal("100.00")
+    # Verify traceability: InvoiceLine.rows should contain all 3 rows
+    assert len(lines[0].rows) == 3
+
+
+def test_wrapped_items_with_start_patterns(sample_page):
+    """Test that article numbers start new items even with tight spacing."""
+    # First product row
+    product1_tokens = [
+        Token(text="ABC123", x=10, y=300, width=50, height=12, page=sample_page),
+        Token(text="Product", x=70, y=300, width=50, height=12, page=sample_page),
+        Token(text="50.00", x=300, y=300, width=50, height=12, page=sample_page),
+    ]
+    product1_row = Row(
+        tokens=product1_tokens,
+        y=300,
+        x_min=10,
+        x_max=350,
+        text="ABC123 Product One 50.00",
+        page=sample_page
+    )
+    product1_row.y_min = 300
+    product1_row.y_max = 312
+    
+    # Second product row with article number (tight spacing - only 3pt gap)
+    product2_tokens = [
+        Token(text="XYZ789", x=10, y=315, width=50, height=12, page=sample_page),
+        Token(text="Product", x=70, y=315, width=50, height=12, page=sample_page),
+        Token(text="75.00", x=300, y=315, width=50, height=12, page=sample_page),
+    ]
+    product2_row = Row(
+        tokens=product2_tokens,
+        y=315,
+        x_min=10,
+        x_max=350,
+        text="XYZ789 Product Two 75.00",
+        page=sample_page
+    )
+    product2_row.y_min = 315
+    product2_row.y_max = 327
+    
+    segment = Segment(
+        segment_type="items",
+        rows=[product1_row, product2_row],
+        y_min=300,
+        y_max=327,
+        page=sample_page
+    )
+    
+    lines = extract_invoice_lines(segment)
+    
+    # Should extract 2 separate items (start-pattern prevents merge)
+    assert len(lines) == 2
+    # Article numbers are skipped from description (separate field)
+    assert "Product" in lines[0].description
+    assert lines[0].total_amount == Decimal("50.00")
+    assert "Product" in lines[1].description
+    assert lines[1].total_amount == Decimal("75.00")
+
+
+def test_no_false_wraps_from_footer(sample_page):
+    """Test footer rows are not wrapped to items."""
+    # Product row
+    product_tokens = [
+        Token(text="Product", x=10, y=300, width=50, height=12, page=sample_page),
+        Token(text="100.00", x=300, y=300, width=60, height=12, page=sample_page),
+    ]
+    product_row = Row(
+        tokens=product_tokens,
+        y=300,
+        x_min=10,
+        x_max=360,
+        text="Product 100.00",
+        page=sample_page
+    )
+    product_row.y_min = 300
+    product_row.y_max = 312
+    
+    # Footer row (close spacing, but should not be wrapped)
+    footer_tokens = [
+        Token(text="Summa", x=10, y=320, width=50, height=12, page=sample_page),
+        Token(text="100.00", x=300, y=320, width=60, height=12, page=sample_page),
+    ]
+    footer_row = Row(
+        tokens=footer_tokens,
+        y=320,
+        x_min=10,
+        x_max=360,
+        text="Summa 100.00",
+        page=sample_page
+    )
+    footer_row.y_min = 320
+    footer_row.y_max = 332
+    
+    segment = Segment(
+        segment_type="items",
+        rows=[product_row, footer_row],
+        y_min=300,
+        y_max=332,
+        page=sample_page
+    )
+    
+    lines = extract_invoice_lines(segment)
+    
+    # Should extract 1 line (footer filtered out)
+    assert len(lines) == 1
+    assert "Product" in lines[0].description
+    assert "Summa" not in lines[0].description
+    assert lines[0].total_amount == Decimal("100.00")
+    # Verify no footer row wrapped
+    assert len(lines[0].rows) == 1
+
+
+def test_phase_20_backward_compatibility(sample_page):
+    """Test Phase 20 functionality still works with Phase 21 enhancements."""
+    # Table header
+    header_tokens = [
+        Token(text="Artikelnr", x=10, y=250, width=60, height=12, page=sample_page),
+        Token(text="Benämning", x=90, y=250, width=70, height=12, page=sample_page),
+        Token(text="Moms", x=300, y=250, width=40, height=12, page=sample_page),
+        Token(text="Nettobelopp", x=360, y=250, width=80, height=12, page=sample_page),
+    ]
+    header_row = Row(
+        tokens=header_tokens,
+        y=250,
+        x_min=10,
+        x_max=440,
+        text="Artikelnr Benämning Moms % Nettobelopp",
+        page=sample_page
+    )
+    
+    # Product row with VAT% (Phase 20 requirement)
+    row1_tokens = [
+        Token(text="A123", x=10, y=300, width=40, height=12, page=sample_page),
+        Token(text="Product", x=60, y=300, width=60, height=12, page=sample_page),
+        Token(text="25.00", x=320, y=300, width=40, height=12, page=sample_page),
+        Token(text="500.00", x=380, y=300, width=60, height=12, page=sample_page),
+    ]
+    row1 = Row(
+        tokens=row1_tokens,
+        y=300,
+        x_min=10,
+        x_max=440,
+        text="A123 Product 25.00 500.00",
+        page=sample_page
+    )
+    row1.y_min = 300
+    row1.y_max = 312
+    
+    # Footer
+    end_tokens = [
+        Token(text="Nettobelopp", x=10, y=350, width=90, height=12, page=sample_page),
+        Token(text="exkl.", x=105, y=350, width=40, height=12, page=sample_page),
+        Token(text="moms:", x=150, y=350, width=50, height=12, page=sample_page),
+        Token(text="500.00", x=380, y=350, width=60, height=12, page=sample_page),
+    ]
+    end_row = Row(
+        tokens=end_tokens,
+        y=350,
+        x_min=10,
+        x_max=440,
+        text="Nettobelopp exkl. moms: 500.00",
+        page=sample_page
+    )
+    
+    segment = Segment(
+        segment_type="items",
+        rows=[header_row, row1, end_row],
+        y_min=250,
+        y_max=350,
+        page=sample_page
+    )
+    
+    lines = extract_invoice_lines(segment)
+    
+    # Phase 20 functionality: VAT%-anchored extraction
+    assert len(lines) == 1
+    assert lines[0].total_amount == Decimal("500.00")
