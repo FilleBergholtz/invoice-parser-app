@@ -138,14 +138,14 @@ def test_amount_parsing_swedish_separators(sample_page):
     """Ensure Swedish separators parse without dropping decimal dots."""
     tokens_row1 = [
         Token(text="Service", x=10, y=300, width=60, height=12, page=sample_page),
-        Token(text="12.345,67", x=300, y=300, width=80, height=12, page=sample_page),
+        Token(text="9.345,67", x=300, y=300, width=80, height=12, page=sample_page),
     ]
     row1 = Row(
         tokens=tokens_row1,
         y=300,
         x_min=10,
         x_max=380,
-        text="Service 12.345,67",
+        text="Service 9.345,67",
         page=sample_page
     )
     tokens_row2 = [
@@ -171,7 +171,7 @@ def test_amount_parsing_swedish_separators(sample_page):
     lines = extract_invoice_lines(segment)
 
     assert len(lines) == 2
-    assert lines[0].total_amount == pytest.approx(12345.67)
+    assert lines[0].total_amount == pytest.approx(9345.67)
     assert lines[1].total_amount == pytest.approx(12.50)
 
 

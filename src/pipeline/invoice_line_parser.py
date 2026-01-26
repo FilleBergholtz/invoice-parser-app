@@ -27,6 +27,9 @@ _FOOTER_SOFT_KEYWORDS = frozenset([
     'lista', 'spec', 'bifogad', 'bifogadspec', 'hyraställning', 'hyraställningen',
     'fraktavgift', 'avgiftsbeskrivning', 'avgift',
 ])
+_AMOUNT_PATTERN = re.compile(
+    r'-?\d{1,3}(?:[ .]\d{3})+(?:[.,]\d{1,2})?-?|-?\d+(?:[.,]\d{1,2})?-?'
+)
 
 
 def _parse_numeric_value(text: str) -> Optional[float]:
@@ -156,9 +159,7 @@ def _extract_amount_from_row_text(row: Row) -> Optional[Tuple[float, Optional[fl
     
     # Pattern for amounts with thousand separators (spaces or dots), optional decimals,
     # and optional trailing minus (e.g. "1 234,00-", "12.345,67").
-    amount_pattern = re.compile(
-        r'-?\d{1,3}(?:[ .]\d{3})+(?:[.,]\d{1,2})?-?|-?\d+(?:[.,]\d{1,2})?-?'
-    )
+    amount_pattern = _AMOUNT_PATTERN
     
     # Pattern for percentage discounts: "100,0%", "10,5%", "25%", etc.
     # Matches: digits with optional decimal, followed by %
@@ -651,7 +652,7 @@ def _extract_line_from_row(
             
             # Pattern for amounts with thousand separators (spaces or dots)
             # Matches: "123,45", "1 234,56", "1 034,00", "3.717,35" (punkt som tusentalsavgränsare), "8302.00" (punkt som decimal)
-            match = amount_pattern.search(unit_to_amount_text)
+            match = _AMOUNT_PATTERN.search(unit_to_amount_text)
             
             if match:
                 amount_text = match.group(0)
