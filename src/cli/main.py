@@ -949,6 +949,11 @@ def process_virtual_invoice(
                 result.extraction_detail.setdefault("method_used", extraction_path)
                 result.extraction_detail.setdefault("page_routing", page_routing_decisions)
 
+        if ai_policy_decision is not None:
+            if result.extraction_detail is None:
+                result.extraction_detail = {"method_used": extraction_path}
+            result.extraction_detail.setdefault("ai_policy", ai_policy_decision)
+
         if return_last_page_tokens or return_page_routing:
             return_extra: Dict[str, Any] = {}
             if return_last_page_tokens:
