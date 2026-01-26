@@ -38,6 +38,7 @@ from ..pipeline.pdf_renderer import (
     OCR_MEAN_CONF_RETRY_THRESHOLD,
 )
 from ..pipeline.ocr_abstraction import extract_tokens_with_ocr, ocr_page_metrics, OCRException, OCR_MEDIAN_CONF_ROUTING_THRESHOLD
+from ..pipeline.ocr_routing import evaluate_text_layer, get_ocr_routing_config
 from ..pipeline.text_quality import score_text_quality, score_ocr_quality
 from ..pipeline.header_extractor import extract_header_fields
 from ..pipeline.footer_extractor import extract_total_amount
@@ -114,6 +115,24 @@ def _build_page_context_for_ai(last_page_segments: list) -> str:
     return "\n".join(parts)
 
 
+def _get_pdfplumber_text(
+    page_number: int,
+    pdfplumber_page: "pdfplumber.page.Page",
+    cache: Optional[Dict[int, str]],
+    cache_enabled: bool
+) -> str:
+    """Extract pdfplumber text with optional per-page cache."""
+    if cache_enabled and cache is not None and page_number in cache:
+        return cache[page_number]
+    try:
+        text = pdfplumber_page.extract_text() or ""
+    except Exception:
+        text = ""
+    if cache_enabled and cache is not None:
+        cache[page_number] = text
+    return text
+
+
 def process_invoice(
     pdf_path: str,
     output_dir: str,
@@ -158,27 +177,46 @@ def process_invoice(
         pdf = None
         if extraction_path == "pdfplumber":
             pdf = pdfplumber.open(doc.filepath)
-        ocr_render_dir = Path(output_dir) / "ocr_render" if extraction_path == "ocr" else None
+        ocr_render_dir = Path(output_dir) / "ocr_render" if output_dir else None
+        routing_config = get_ocr_routing_config()
+        cache_pdf_text = bool(routing_config.get("cache_pdfplumber_text", True))
+        text_cache: Optional[Dict[int, str]] = {} if cache_pdf_text else None
 
         try:
             for page in doc.pages:
+                tokens = []
+                pdfplumber_page = None
+                use_text_layer = extraction_path == "pdfplumber"
                 if extraction_path == "pdfplumber" and pdf:
                     pdfplumber_page = pdf.pages[page.page_number - 1]
+                    page_text = _get_pdfplumber_text(
+                        page.page_number,
+                        pdfplumber_page,
+                        text_cache,
+                        cache_pdf_text
+                    )
+                    decision = evaluate_text_layer(page_text, [], routing_config)
+                    use_text_layer = decision["use_text_layer"]
+                if use_text_layer and pdfplumber_page is not None:
                     tokens = extract_tokens_from_page(page, pdfplumber_page)
-                elif extraction_path == "ocr" and ocr_render_dir is not None:
+                elif ocr_render_dir is not None:
                     try:
                         render_page_to_image(page, str(ocr_render_dir))
                         tokens = extract_tokens_with_ocr(page)
                     except OCRException as e:
                         if verbose:
                             print(f"  OCR failed for page {page.page_number}: {e}")
-                        tokens = []
+                        if pdfplumber_page is not None:
+                            tokens = extract_tokens_from_page(page, pdfplumber_page)
+                        else:
+                            tokens = []
                     except Exception as e:
                         if verbose:
                             print(f"  Render/OCR failed for page {page.page_number}: {e}")
-                        tokens = []
-                else:
-                    tokens = []
+                        if pdfplumber_page is not None:
+                            tokens = extract_tokens_from_page(page, pdfplumber_page)
+                        else:
+                            tokens = []
                 
                 if not tokens:
                     continue
@@ -430,6 +468,9 @@ def process_virtual_invoice(
     output_dir: Optional[str] = None,
     ocr_render_dir: Optional[str] = None,
     return_last_page_tokens: bool = False,
+    page_routing: Optional[Dict[int, Dict[str, Any]]] = None,
+    fallback_to_ocr: bool = False,
+    return_page_routing: bool = False,
 ):
     """Process a single virtual invoice within a PDF (given page range).
 
@@ -453,23 +494,59 @@ def process_virtual_invoice(
         return (out, {"last_page_tokens": []}) if return_last_page_tokens else out
 
     pdf = None
-    if extraction_path == "pdfplumber":
+    use_pdfplumber = extraction_path == "pdfplumber" or page_routing is not None
+    if use_pdfplumber:
         pdf = pdfplumber.open(doc.filepath)
-    render_dir = Path(ocr_render_dir) if ocr_render_dir else ((Path(output_dir) / "ocr_render") if (extraction_path == "ocr" and output_dir) else None)
+    render_dir = Path(ocr_render_dir) if ocr_render_dir else (Path(output_dir) / "ocr_render" if output_dir else None)
+    routing_config = get_ocr_routing_config()
+    cache_pdf_text = bool(routing_config.get("cache_pdfplumber_text", True))
+    text_cache: Optional[Dict[int, str]] = {} if cache_pdf_text else None
 
     all_invoice_lines = []
     all_segments = []
     line_number_global = 1
     last_page_tokens: List[Any] = []
     ocr_dpi_used: Optional[int] = None  # 15-04: DPI used for last OCR page when extraction_path=="ocr"
+    last_page_source: Optional[str] = None
+    page_routing_decisions: Dict[int, Dict[str, Any]] = {}
 
     try:
         try:
             for page in invoice_pages:
-                if extraction_path == "pdfplumber" and pdf:
+                tokens: List[Any] = []
+                pdfplumber_page = None
+                decision: Optional[Dict[str, Any]] = None
+                page_source = "ocr"
+
+                if pdf:
                     pdfplumber_page = pdf.pages[page.page_number - 1]
+                    if page_routing and page.page_number in page_routing:
+                        decision = page_routing[page.page_number]
+                    else:
+                        should_eval = fallback_to_ocr or return_page_routing
+                        if should_eval:
+                            page_text = _get_pdfplumber_text(
+                                page.page_number,
+                                pdfplumber_page,
+                                text_cache,
+                                cache_pdf_text
+                            )
+                            decision = evaluate_text_layer(page_text, [], routing_config)
+                    if decision:
+                        page_routing_decisions[page.page_number] = decision
+
+                use_text_layer = extraction_path == "pdfplumber"
+                if extraction_path == "pdfplumber" and fallback_to_ocr and decision and not decision["use_text_layer"]:
+                    use_text_layer = False
+                elif extraction_path == "ocr":
+                    use_text_layer = False
+                    if decision and decision["use_text_layer"]:
+                        use_text_layer = True
+
+                if use_text_layer and pdfplumber_page is not None:
                     tokens = extract_tokens_from_page(page, pdfplumber_page)
-                elif extraction_path == "ocr" and render_dir is not None:
+                    page_source = "pdfplumber"
+                elif render_dir is not None:
                     dpi_used = BASELINE_DPI
                     try:
                         render_page_to_image(page, str(render_dir), dpi=BASELINE_DPI)
@@ -482,19 +559,27 @@ def process_virtual_invoice(
                                 tokens = extract_tokens_with_ocr(page)
                                 dpi_used = RETRY_DPI
                         ocr_dpi_used = dpi_used
+                        page_source = "ocr"
                     except OCRException as e:
                         if verbose:
                             print(f"  OCR failed for page {page.page_number}: {e}")
-                        tokens = []
+                        if pdfplumber_page is not None:
+                            tokens = extract_tokens_from_page(page, pdfplumber_page)
+                            page_source = "pdfplumber"
+                        else:
+                            tokens = []
                     except Exception as e:
                         if verbose:
                             print(f"  Render/OCR failed for page {page.page_number}: {e}")
-                        tokens = []
-                else:
-                    tokens = []
+                        if pdfplumber_page is not None:
+                            tokens = extract_tokens_from_page(page, pdfplumber_page)
+                            page_source = "pdfplumber"
+                        else:
+                            tokens = []
 
                 if return_last_page_tokens and page == invoice_pages[-1]:
                     last_page_tokens = tokens or []
+                    last_page_source = page_source
 
                 if not tokens:
                     continue
@@ -685,8 +770,19 @@ def process_virtual_invoice(
         result.ai_response = ai_response_data
         result.ai_error = ai_error
 
-        if return_last_page_tokens:
-            return_extra: Dict[str, Any] = {"last_page_tokens": last_page_tokens}
+        if page_routing_decisions and result.extraction_detail is None:
+            result.extraction_detail = {
+                "method_used": extraction_path,
+                "page_routing": page_routing_decisions,
+            }
+
+        if return_last_page_tokens or return_page_routing:
+            return_extra: Dict[str, Any] = {}
+            if return_last_page_tokens:
+                return_extra["last_page_tokens"] = last_page_tokens
+                return_extra["last_page_source"] = last_page_source
+            if return_page_routing:
+                return_extra["page_routing"] = page_routing_decisions
             if extraction_path == "ocr" and ocr_dpi_used is not None:
                 return_extra["dpi_used"] = ocr_dpi_used
             return (result, return_extra)
@@ -702,8 +798,13 @@ def process_virtual_invoice(
             status="FAILED",
             error=f"Processing error: {str(e)}"
         )
-        if return_last_page_tokens:
-            return (err_result, {"last_page_tokens": last_page_tokens})
+        if return_last_page_tokens or return_page_routing:
+            return_extra: Dict[str, Any] = {}
+            if return_last_page_tokens:
+                return_extra["last_page_tokens"] = last_page_tokens
+            if return_page_routing:
+                return_extra["page_routing"] = page_routing_decisions
+            return (err_result, return_extra)
         return err_result
 
 
@@ -810,18 +911,20 @@ def process_pdf(
                     print(f"  Compare: kör pdfplumber för sidor {page_start}-{page_end} …")
                 out_pdf = process_virtual_invoice(
                     doc, page_start, page_end, index, "pdfplumber", verbose,
-                    output_dir=output_dir, return_last_page_tokens=True,
+                    output_dir=output_dir, return_last_page_tokens=True, return_page_routing=True,
+                    fallback_to_ocr=False,
                 )
                 r_pdf = out_pdf[0] if isinstance(out_pdf, tuple) else out_pdf
                 extra_pdf = out_pdf[1] if isinstance(out_pdf, tuple) else {}
                 tokens_pdf = extra_pdf.get("last_page_tokens") or []
+                page_routing = extra_pdf.get("page_routing") or {}
                 pdf_text_quality = score_text_quality(" ".join(getattr(t, "text", "") for t in tokens_pdf), tokens_pdf) if tokens_pdf else 0.0
                 inc = _invoice_number_confidence(r_pdf)
                 tc = _total_confidence(r_pdf)
                 critical_conf = min(inc, tc) if (r_pdf.invoice_header and inc is not None and tc is not None) else 0.0
 
-                accept_pdf = critical_conf >= CRITICAL_FIELDS_CONF_THRESHOLD and pdf_text_quality >= TEXT_QUALITY_THRESHOLD
-                if accept_pdf:
+                needs_ocr_pages = [p for p, d in page_routing.items() if not d.get("use_text_layer", True)]
+                if not needs_ocr_pages:
                     r_pdf.extraction_source = "pdfplumber"
                     r_pdf.extraction_detail = {
                         "method_used": "pdfplumber",
@@ -831,11 +934,12 @@ def process_pdf(
                         "ocr_mean_conf": None,
                         "low_conf_fraction": None,
                         "dpi_used": None,
-                        "reason_flags": [],
+                        "reason_flags": ["routing_text_layer_sufficient"],
                         "vision_reason": None,
+                        "page_routing": page_routing,
                     }
                     if verbose:
-                        print(f"  [{r_pdf.virtual_invoice_id}] accept pdfplumber (conf={critical_conf:.2f}, pdf_tq={pdf_text_quality:.2f})")
+                        print(f"  [{r_pdf.virtual_invoice_id}] accept pdfplumber (routing: text-layer sufficient)")
                     results.append(r_pdf)
                     continue
 
@@ -845,72 +949,68 @@ def process_pdf(
                 out_ocr = process_virtual_invoice(
                     doc, page_start, page_end, index, "ocr", verbose,
                     output_dir=output_dir, ocr_render_dir=ocr_render, return_last_page_tokens=True,
+                    page_routing=page_routing,
                 )
                 r_ocr = out_ocr[0] if isinstance(out_ocr, tuple) else out_ocr
                 extra_ocr = out_ocr[1] if isinstance(out_ocr, tuple) else {}
                 tokens_ocr = extra_ocr.get("last_page_tokens") or []
-                ocr_text_quality = score_ocr_quality(tokens_ocr) if tokens_ocr else 0.0
-                ocr_metrics = ocr_page_metrics(tokens_ocr) if tokens_ocr else None
+                last_page_source = extra_ocr.get("last_page_source")
+                ocr_text_quality = score_ocr_quality(tokens_ocr) if (tokens_ocr and last_page_source == "ocr") else 0.0
+                ocr_metrics = ocr_page_metrics(tokens_ocr) if (tokens_ocr and last_page_source == "ocr") else None
                 ocr_median = (ocr_metrics.median_conf if ocr_metrics else 0.0) or 0.0
                 critical_conf_ocr = min(_invoice_number_confidence(r_ocr), _total_confidence(r_ocr)) if r_ocr.invoice_header else 0.0
                 accept_ocr = (
                     critical_conf_ocr >= CRITICAL_FIELDS_CONF_THRESHOLD
-                    and ocr_median >= OCR_MEDIAN_CONF_ROUTING_THRESHOLD
-                    and ocr_text_quality >= TEXT_QUALITY_THRESHOLD
+                    and (ocr_median >= OCR_MEDIAN_CONF_ROUTING_THRESHOLD if last_page_source == "ocr" else pdf_text_quality >= TEXT_QUALITY_THRESHOLD)
                 )
-                if accept_ocr:
-                    r_ocr.extraction_source = "ocr"
-                    _flags = []
-                    if pdf_text_quality is not None and pdf_text_quality < TEXT_QUALITY_THRESHOLD:
-                        _flags.append("pdf_text_quality<0.5")
-                    r_ocr.extraction_detail = {
-                        "method_used": "ocr",
+                if r_ocr.status == "FAILED":
+                    r_pdf.extraction_source = "pdfplumber"
+                    r_pdf.extraction_detail = {
+                        "method_used": "pdfplumber",
                         "pdf_text_quality": pdf_text_quality,
-                        "ocr_text_quality": ocr_text_quality,
-                        "ocr_median_conf": ocr_median,
-                        "ocr_mean_conf": ocr_metrics.mean_conf if ocr_metrics else None,
-                        "low_conf_fraction": ocr_metrics.low_conf_fraction if ocr_metrics else None,
-                        "dpi_used": extra_ocr.get("dpi_used"),
-                        "reason_flags": _flags,
+                        "ocr_text_quality": None,
+                        "ocr_median_conf": None,
+                        "ocr_mean_conf": None,
+                        "low_conf_fraction": None,
+                        "dpi_used": None,
+                        "reason_flags": ["ocr_failed_fallback"],
                         "vision_reason": None,
+                        "page_routing": page_routing,
                     }
                     if verbose:
-                        print(f"  [{r_ocr.virtual_invoice_id}] accept OCR (conf={critical_conf:.2f}, ocr_tq={ocr_text_quality:.2f}, median={ocr_median:.1f})")
-                    results.append(r_ocr)
+                        print(f"  [{r_pdf.virtual_invoice_id}] OCR failed, fallback to pdfplumber")
+                    results.append(r_pdf)
                     continue
 
-                chosen, source = _choose_best_extraction_result(r_pdf, r_ocr)
-                chosen.extraction_source = source
+                r_ocr.extraction_source = "ocr"
                 _flags = []
                 if pdf_text_quality is not None and pdf_text_quality < TEXT_QUALITY_THRESHOLD:
                     _flags.append("pdf_text_quality<0.5")
-                if ocr_median is not None and ocr_median < OCR_MEDIAN_CONF_ROUTING_THRESHOLD:
+                if last_page_source == "ocr" and ocr_median is not None and ocr_median < OCR_MEDIAN_CONF_ROUTING_THRESHOLD:
                     _flags.append("ocr_median_conf<70")
-                if ocr_text_quality is not None and ocr_text_quality < TEXT_QUALITY_THRESHOLD:
-                    _flags.append("text_quality<0.5")
-                chosen.extraction_detail = {
-                    "method_used": source,
+                if last_page_source == "ocr" and ocr_text_quality is not None and ocr_text_quality < TEXT_QUALITY_THRESHOLD:
+                    _flags.append("ocr_text_quality<0.5")
+                if not accept_ocr:
+                    _flags.append("ocr_fallback_used")
+                r_ocr.extraction_detail = {
+                    "method_used": "ocr",
                     "pdf_text_quality": pdf_text_quality,
-                    "ocr_text_quality": ocr_text_quality,
-                    "ocr_median_conf": ocr_median if tokens_ocr else None,
+                    "ocr_text_quality": ocr_text_quality if last_page_source == "ocr" else None,
+                    "ocr_median_conf": ocr_median if last_page_source == "ocr" else None,
                     "ocr_mean_conf": ocr_metrics.mean_conf if ocr_metrics else None,
                     "low_conf_fraction": ocr_metrics.low_conf_fraction if ocr_metrics else None,
                     "dpi_used": extra_ocr.get("dpi_used"),
                     "reason_flags": _flags,
                     "vision_reason": None,
+                    "page_routing": page_routing,
                 }
                 if verbose:
-                    vp = _validation_passed(chosen)
-                    conf = _total_confidence(chosen)
-                    print(
-                        f"  [{chosen.virtual_invoice_id}] using {source} "
-                        f"(validation_passed={vp}, confidence={conf})"
-                    )
-                results.append(chosen)
+                    print(f"  [{r_ocr.virtual_invoice_id}] OCR fallback used (pages: {needs_ocr_pages})")
+                results.append(r_ocr)
             else:
                 out = process_virtual_invoice(
                     doc, page_start, page_end, index, extraction_path, verbose,
-                    output_dir=output_dir,
+                    output_dir=output_dir, fallback_to_ocr=(extraction_path == "pdfplumber"),
                 )
                 result = out[0] if isinstance(out, tuple) else out
                 result.extraction_source = extraction_path

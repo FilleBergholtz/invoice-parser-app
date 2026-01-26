@@ -12,6 +12,25 @@ from ..models.segment import Segment
 from ..pipeline.confidence_scoring import score_invoice_number_candidate
 from ..pipeline.row_grouping import group_tokens_to_rows
 from ..pipeline.segment_identification import identify_segments
+from ..pipeline.ocr_routing import evaluate_text_layer, get_ocr_routing_config
+
+
+def _get_pdfplumber_text(
+    page_number: int,
+    pdfplumber_page: "pdfplumber.page.Page",
+    cache: Optional[dict],
+    cache_enabled: bool
+) -> str:
+    """Extract pdfplumber text with optional cache."""
+    if cache_enabled and cache is not None and page_number in cache:
+        return cache[page_number]
+    try:
+        text = pdfplumber_page.extract_text() or ""
+    except Exception:
+        text = ""
+    if cache_enabled and cache is not None:
+        cache[page_number] = text
+    return text
 
 
 def detect_invoice_boundaries(
@@ -52,11 +71,40 @@ def detect_invoice_boundaries(
     if extraction_path == "pdfplumber":
         import pdfplumber
         pdf = pdfplumber.open(doc.filepath)
+        routing_config = get_ocr_routing_config()
+        cache_pdf_text = bool(routing_config.get("cache_pdfplumber_text", True))
+        text_cache: Optional[dict] = {} if cache_pdf_text else None
+        ocr_render_dir: Optional[Path] = None
         try:
             from ..pipeline.tokenizer import extract_tokens_from_page
+            from ..pipeline.pdf_renderer import render_page_to_image
+            from ..pipeline.ocr_abstraction import extract_tokens_with_ocr, OCRException
             for page in doc.pages:
                 pdfplumber_page = pdf.pages[page.page_number - 1]
-                tokens = extract_tokens_from_page(page, pdfplumber_page)
+                page_text = _get_pdfplumber_text(
+                    page.page_number,
+                    pdfplumber_page,
+                    text_cache,
+                    cache_pdf_text
+                )
+                decision = evaluate_text_layer(page_text, [], routing_config)
+                if decision["use_text_layer"]:
+                    tokens = extract_tokens_from_page(page, pdfplumber_page)
+                else:
+                    if ocr_render_dir is None:
+                        ocr_render_dir = Path(output_dir) / "ocr_render" if output_dir else Path(tempfile.mkdtemp(prefix="ocr_boundary_"))
+                        ocr_render_dir.mkdir(parents=True, exist_ok=True)
+                    try:
+                        render_page_to_image(page, str(ocr_render_dir))
+                        tokens = extract_tokens_with_ocr(page)
+                    except OCRException as e:
+                        if verbose:
+                            print(f"  OCR failed for boundary detection page {page.page_number}: {e}")
+                        tokens = extract_tokens_from_page(page, pdfplumber_page)
+                    except Exception as e:
+                        if verbose:
+                            print(f"  Render/OCR failed for boundary detection page {page.page_number}: {e}")
+                        tokens = extract_tokens_from_page(page, pdfplumber_page)
                 if not tokens:
                     continue
                 rows = group_tokens_to_rows(tokens)
