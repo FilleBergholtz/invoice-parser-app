@@ -114,3 +114,16 @@ tolerances:
   line_item_tolerance: 0.01      # Line item validation tolerance
   row_grouping_tolerance: 5.0   # Row grouping Y-tolerance (points or 2% of page height)
   wrap_detection_tolerance: 0.02 # Wrap detection X-tolerance (2% of page width)
+
+# OCR routing (per-page text-layer decision)
+ocr_routing:
+  min_text_chars: 500
+  required_anchors:
+    - "Faktura\\s"
+  extra_anchors:
+    - "Sida\\s*\\d+\\s*/\\s*\\d+"
+    - "Ramirent"
+  min_word_tokens: 40
+  min_text_quality: 0.5
+  allow_quality_override: true
+  cache_pdfplumber_text: true

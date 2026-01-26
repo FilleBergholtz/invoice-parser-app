@@ -15,6 +15,7 @@ class ProfileConfig:
     footer: Dict[str, Any] = field(default_factory=dict)
     zones: Dict[str, float] = field(default_factory=dict)
     tolerances: Dict[str, float] = field(default_factory=dict)
+    ocr_routing: Dict[str, Any] = field(default_factory=dict)
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'ProfileConfig':
@@ -25,7 +26,8 @@ class ProfileConfig:
             header=data.get('header', {}),
             footer=data.get('footer', {}),
             zones=data.get('zones', {}),
-            tolerances=data.get('tolerances', {})
+            tolerances=data.get('tolerances', {}),
+            ocr_routing=data.get('ocr_routing', {})
         )
     
     def to_dict(self) -> Dict[str, Any]:
@@ -36,7 +38,8 @@ class ProfileConfig:
             'header': self.header,
             'footer': self.footer,
             'zones': self.zones,
-            'tolerances': self.tolerances
+            'tolerances': self.tolerances,
+            'ocr_routing': self.ocr_routing
         }
 
 
