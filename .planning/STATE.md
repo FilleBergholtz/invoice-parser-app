@@ -2,85 +2,38 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-01-24)
+See: .planning/PROJECT.md (updated 2026-01-26)
 
 **Core value:** 100% korrekt på fakturanummer och totalsumma, eller tydlig REVIEW-status. Allt som systemet exporterar som OK är garanterat korrekt. Osäkra fall går alltid till REVIEW (ingen tyst gissning).
 
-**Current focus:** Phase 15 exekverad. Status och roadmap uppdaterade 2026-01-25.
+**Current focus:** v2.0 milestone complete 2026-01-26. Planning next milestone.
 
 ## Current Position
 
-Milestone: v2.0 Features + polish
-Phase: **Phase 15** — Extraction quality hardening (klar)
-Plans: 15-01 … 15-08 (8/8 genomförda; 15-07 delvis)
-Status: Phase 15 exekverad 2026-01-25. SUMMARY för 15-01 … 15-08 skrivna.
-Last activity: 2026-01-25 — Phase 15 execute-phase: D1–D6, D8 implementerade; D4 DPI-retry + D8 traceability i main; D7 delvis (refaktor uppskjuten).
+Milestone: **Ingen aktiv** — v2.0 arkiverad.
+Phase: —
+Plan: —
+Status: Mellan milstolpar. ROADMAP.md och REQUIREMENTS.md borttagna; arkiv i `.planning/milestones/`.
+Last activity: 2026-01-26 — `/gsd:complete-milestone` för v2.0.
 
-Progress: Phase 1–3 (v1) + Phase 5–15 (v2) genomförda.
-
-## Performance Metrics
-
-**Velocity:**
-- Total plans completed: 48 (Phase 1–3, 5–13; Phase 4 borttagen)
-- v2.0 phases 5–13: alla genomförda (5→6→7→8→9→10→11→12→13)
-
-**By Phase (v2.0):**
-
-| Phase | Plans | Status |
-|-------|-------|--------|
-| 5. Confidence Scoring | 3/3 | ✓ |
-| 6. Manual Validation UI | 4/4 | ✓ |
-| 7. Learning System | 6/6 | ✓ |
-| 8. AI Integration | 3/3 | ✓ |
-| 9. AI Data Analysis | 3/3 | ✓ |
-| 10. AI Fallback Fixes | 2/2 | ✓ |
-| 11. Pdfplumber/OCR compare | 3/3 | ✓ |
-| 12. UI Polish | 5/5 | ✓ |
-| 13. About + icons | 3/3 | ✓ |
-
-*Uppdaterad 2026-01-25 — progress/roadmap-synk*
+Progress: v1.0 (Phase 1–3) + v2.0 (Phase 5–15) genomförda och arkiverade.
 
 ## Accumulated Context
 
 ### Decisions
 
-Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
-
-- [v2.0]: AI fallback pattern — AI only when confidence < 0.95 (avoid over-reliance)
-- [v2.0]: Learning system — SQLite database, supplier-specific patterns, local storage
-- [v2.0]: Manual validation — Clickable PDF with candidate selection, one-click workflow
-- [v2.0]: Confidence calibration — Map confidence to actual accuracy from start
+Se PROJECT.md Key Decisions. v2.0-beslut: AI fallback endast vid confidence < 0,95; inlärning SQLite och leverantörsspecifika mönster; manuell validering med klickbar PDF och kandidatval; dual extraction och fallback-kedja pdfplumber → OCR → AI → vision.
 
 ### Pending Todos
 
-[From .planning/todos/pending/ — ideas captured during sessions]
-
-None yet.
-
-### Roadmap Evolution
-
-- Phase 10 added: AI Fallback Fixes and Verification — document fixes, address gaps, verify AI fallback works well.
-- Phase 11 added: Pdfplumber och OCR: kör båda, jämför, använd bästa — dual extraction, compare results, use best.
-- Phase 11 planned: 11-01 (OCR wiring), 11-02 (dual-run compare), 11-03 (use best downstream).
-- Phase 13 added: About page + app icons (branding & help) — Om-dialog, Hjälp-meny, fönsterikoner. Discuss-phase 13: 13-DISCUSS.md with tabbed About (Om appen + Hjälp), QRC/icons, Windows .ico. Plans: 13-01 (About + Help menu), 13-02 (QRC + apply icons), 13-03 (Windows .ico + build).
-- Phase 14 added: Extraction fallback optimization (pdfplumber → OCR → AI → vision) — optimera fallback-kedjan för textextraktion.
-- Phase 14 discussed: 14-DISCUSS.md + 14-CONTEXT.md. Beslut: per-page routing, text quality scoring, Token.confidence, AI text vs vision, artifacts; redo för plan-phase.
-- Phase 14 discuss uppdaterad: mål "robust, accurate, cost-efficient"; steg 3 uttryckligen "AI (text-only)"; fyra begränsade research-uppgifter R1–R4 (OCR-rendering, OCR-confidence, AI vision-gränser, AI-routing) med leverabler och constraints; implementation post-research (6 uppgifter); run_summary ska förklara *varför* OCR/AI användes.
-- Phase 14 research R1–R4 genomförd (14-RESEARCH.md): R1 baseline 300 DPI, retry 400 vid mean_conf<55; R2 median_conf, exkl. conf<0, tröskel 70; R3 vision PNG/JPEG max 4096px 20MB; R4 routing-tabell + text_quality 0.5 + retry-regler. Konstanter klara för implementation.
-- Phase 14 planerad: 6 planer (14-01…14-06). Wave 1: Token+OCR confidence, pdfplumber tokenizer. Wave 2: text_quality, rendering DPI. Wave 3: AI vision+retry. Wave 4: orchestration + run_summary/vision_reason.
-- Phase 15 tillagd: Extraction quality hardening (OCR confidence + routing + parser robustness). 15-CONTEXT.md, 15-VERIFICATION.md skapade. Redo för /gsd:plan-phase 15.
-- Phase 15 discuss genomförd (15-DISCUSS.md): OBJECTIVE (D1–D8), SCOPE, FILES IN SCOPE, REQUIRED CONSTANTS (R1–R4), DELIVERABLES, NON-GOALS, TESTING/VERIFICATION, ACCEPTANCE CRITERIA. CONTEXT och VERIFICATION uppdaterade att peka på DISCUSS. Redo för /gsd:plan-phase 15.
-- Phase 15 plan-phase genomförd: 8 planer (15-01 … 15-08). Wave 1: 15-01 (D1), 15-02 (D2), 15-05 (D5), 15-06 (D6). Wave 2: 15-03 (D3), 15-04 (D4), 15-07 (D7). Wave 3: 15-08 (D8). CONTEXT Plans-tabell, DISCUSS PLAN MAPPING, VERIFICATION per-plan-tabell, ROADMAP Phase 15-planlista uppdaterade.
+None.
 
 ### Blockers/Concerns
 
-[Issues that affect future work]
-
-None yet.
+None.
 
 ## Session Continuity
 
-Last session: 2026-01-25
-Stopped at: Phase 13 executed (About dialog, Help menu, icons QRC, Windows app.ico + spec).
+Last session: 2026-01-26
+Stopped at: v2.0 complete-milestone executed.
 Resume file: None
