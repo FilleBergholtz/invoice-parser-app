@@ -11,10 +11,10 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 ## Current Position
 
 Milestone: **v2.1 Parsing robustness / EDI** (pågående).
-Phase: **16** — Text-layer routing (OCR-skip) (klar).
-Plan: 16-01 genomförd; verifiering passerad.
-Status: Phase 16 klar, redo för Phase 17 (AI-policy fallback).
-Last activity: 2026-01-26 — Phase 16 verifierad (runtime OK, compare-path utan crash).
+Phase: **17** — AI-policy fallback only (pågående).
+Plan: 17-01 genomförd (AI-policy gating och tester).
+Status: Phase 17 pågående, redo för nästa plansteg.
+Last activity: 2026-01-26 — Phase 17-01 implementerad (AI-policy fallback only).
 
 Progress: ████████████████████ 65/65 (100%) — v1.0 (Phase 1–3) + v2.0 (Phase 5–15) genomförda och arkiverade; Phase 16 klar.
 
@@ -22,7 +22,7 @@ Progress: ████████████████████ 65/65 (10
 
 ### Decisions
 
-Se PROJECT.md Key Decisions. v2.0-beslut: AI fallback endast vid confidence < 0,95; inlärning SQLite och leverantörsspecifika mönster; manuell validering med klickbar PDF och kandidatval; dual extraction och fallback-kedja pdfplumber → OCR → AI → vision. Inga nya beslut i Phase 16.
+Se PROJECT.md Key Decisions. v2.0-beslut: AI fallback endast vid confidence < 0,95; inlärning SQLite och leverantörsspecifika mönster; manuell validering med klickbar PDF och kandidatval; dual extraction och fallback-kedja pdfplumber → OCR → AI → vision. Nya beslut i Phase 17: AI-policybeslut baseras på EDI-lik signal (text-layer, ankare, tabellmönster) och sparas i extraction_detail.ai_policy; deterministisk fallback körs före AI.
 
 ### Pending Todos
 
