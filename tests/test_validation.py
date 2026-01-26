@@ -212,6 +212,18 @@ class TestCalculateValidationValues:
         assert lines_sum == 100.0  # 60 + 40
         assert diff == 0.0  # 100 - 100
         assert validation_passed is True
+
+    def test_with_total_as_swedish_string(self, invoice_lines_valid):
+        """Test calculation with Swedish-formatted total_amount string."""
+        lines_sum, diff, validation_passed = calculate_validation_values(
+            "100,00",
+            invoice_lines_valid,
+            tolerance=1.0
+        )
+
+        assert lines_sum == 100.0
+        assert diff == 0.0
+        assert validation_passed is True
     
     def test_with_total_none(self, invoice_lines_valid):
         """Test calculation with total_amount None."""

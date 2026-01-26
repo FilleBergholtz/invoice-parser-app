@@ -134,6 +134,47 @@ def test_field_extraction(sample_items_segment):
     assert line2.total_amount > 0
 
 
+def test_amount_parsing_swedish_separators(sample_page):
+    """Ensure Swedish separators parse without dropping decimal dots."""
+    tokens_row1 = [
+        Token(text="Service", x=10, y=300, width=60, height=12, page=sample_page),
+        Token(text="12.345,67", x=300, y=300, width=80, height=12, page=sample_page),
+    ]
+    row1 = Row(
+        tokens=tokens_row1,
+        y=300,
+        x_min=10,
+        x_max=380,
+        text="Service 12.345,67",
+        page=sample_page
+    )
+    tokens_row2 = [
+        Token(text="Fee", x=10, y=330, width=40, height=12, page=sample_page),
+        Token(text="12.50", x=300, y=330, width=50, height=12, page=sample_page),
+    ]
+    row2 = Row(
+        tokens=tokens_row2,
+        y=330,
+        x_min=10,
+        x_max=350,
+        text="Fee 12.50",
+        page=sample_page
+    )
+    segment = Segment(
+        segment_type="items",
+        rows=[row1, row2],
+        y_min=300,
+        y_max=330,
+        page=sample_page
+    )
+
+    lines = extract_invoice_lines(segment)
+
+    assert len(lines) == 2
+    assert lines[0].total_amount == pytest.approx(12345.67)
+    assert lines[1].total_amount == pytest.approx(12.50)
+
+
 def test_invoice_line_rows_traceability(sample_items_segment):
     """Test that InvoiceLine.rows maintains traceability."""
     lines = extract_invoice_lines(sample_items_segment)
