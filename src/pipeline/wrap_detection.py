@@ -1,11 +1,14 @@
 """Wrap detection for multi-line invoice items."""
 
+import logging
 import re
 import statistics
 from typing import List
 
 from ..models.page import Page
 from ..models.row import Row
+
+logger = logging.getLogger(__name__)
 
 
 def _matches_start_pattern(row: Row) -> bool:
@@ -161,6 +164,14 @@ def detect_wrapped_rows(
         
         if not is_aligned:
             break  # Too far left or too far right
+        
+        # Soft limit: Warn if unusually long wrapped item (anomaly detection)
+        if len(wraps) >= 10:
+            logger.warning(
+                f"Unusually long wrapped item ({len(wraps)} lines) on page {page.page_number}. "
+                "This may indicate footer proximity or detection error."
+            )
+            # Continue collecting wraps - no hard limit
         
         # Candidate is a wrap row
         wraps.append(next_row)
