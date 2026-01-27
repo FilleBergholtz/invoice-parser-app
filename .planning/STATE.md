@@ -6,15 +6,15 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 
 **Core value:** 100% korrekt på fakturanummer och totalsumma, eller tydlig REVIEW-status. Allt som systemet exporterar som OK är garanterat korrekt. Osäkra fall går alltid till REVIEW (ingen tyst gissning).
 
-**Current focus:** v2.1 Phase 22 planerad efter genomförd Phase 21.
+**Current focus:** v2.1 Phase 22 planerad, redo för implementation.
 
 ## Current Position
 
 Milestone: **v2.1 Parsing robustness / EDI** (pågående).
-Phase: **21** — Multi-line items (klar).
-Plan: 21-01 genomförd (adaptiv wrap detection, start-patterns, right-indent).
-Status: Phase 21 klar, redo för nästa fas (Phase 22).
-Last activity: 2026-01-26 — Completed 21-01-PLAN.md.
+Phase: **22** — Valideringsdriven om-extraktion (planerad).
+Plan: 22-01 planerad (validering, mode B, debug artifacts).
+Status: Phase 22 planerad, redo för implementation.
+Last activity: 2026-01-26 — Completed 22-01-PLAN.md.
 
 Progress: █████████████████████ 71/71 (100%) — v1.0 (Phase 1–3) + v2.0 (Phase 5–15) + v2.1 Phase 16-21 genomförda.
 

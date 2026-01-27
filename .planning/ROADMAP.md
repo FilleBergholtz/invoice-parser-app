@@ -123,10 +123,10 @@ Plans:
   1. Nettosumma och moms kontrolleras mot fakturans totalsummor inom ±0,50 SEK.
   2. Vid valideringsfel körs table-parser mode B enligt konfigurerat läge.
   3. Vid kvarstående mismatch markeras REVIEW och debug-artefakter sparas.
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 22-01: TBD
+- [ ] 22-01: Valideringsdriven om-extraktion (mode B)
 
 ## Progress
 
