@@ -11,10 +11,10 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 ## Current Position
 
 Milestone: **v2.1 Parsing robustness / EDI** (pågående).
-Phase: **22** — Valideringsdriven om-extraktion (planerad).
-Plan: 22-01 planerad (validering, mode B, debug artifacts).
-Status: Phase 22 planerad, redo för implementation.
-Last activity: 2026-01-26 — Completed 22-01-PLAN.md.
+Phase: **22** — Valideringsdriven om-extraktion (klar).
+Plan: 22-01 genomförd (validering, mode B, debug artifacts).
+Status: Phase 22 komplett - alla krav uppfyllda och verifierade.
+Last activity: 2026-01-26 — Completed 22-01 implementation, verification, och SUMMARY.md.
 
 Progress: █████████████████████ 71/71 (100%) — v1.0 (Phase 1–3) + v2.0 (Phase 5–15) + v2.1 Phase 16-21 genomförda.
 

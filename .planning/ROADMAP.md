@@ -127,7 +127,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 22-01: Valideringsdriven om-extraktion (mode B)
+- [x] 22-01: Valideringsdriven om-extraktion (mode B)
 
 ## Progress
 
@@ -139,4 +139,4 @@ Plans:
 | 19. Svensk talnormalisering | v2.1 | 2/2 | Complete | 2026-01-26 |
 | 20. Tabellsegment & kolumnregler | v2.1 | 1/1 | Complete | 2026-01-26 |
 | 21. Multi-line items | v2.1 | 1/1 | Complete | 2026-01-26 |
-| 22. Valideringsdriven om-extraktion | v2.1 | 0/TBD | Not started | - |
+| 22. Valideringsdriven om-extraktion | v2.1 | 1/1 | Complete | 2026-01-26 |
