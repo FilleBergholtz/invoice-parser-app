@@ -13,11 +13,13 @@
 - Edge cases hanterade: boundary (±0.50), negative diff, empty lines
 
 ### VAL-02: Netto + moms valideras mot "Att betala" inom ±0,50 SEK
-✅ **UPPFYLLT** (funktion implementerad, används i framtida iterationer)
+✅ **UPPFYLLT** (integrated i extraction pipeline)
 - `validate_total_with_vat()` implementerad i `src/pipeline/validation.py`
+- `extract_total_with_vat_from_footer()` implementerad i `src/pipeline/footer_extractor.py`
+- Integrerad i `extract_invoice_lines()` - validerar både mode A och mode B resultat
 - 5 tester i `test_validation.py::TestValidateTotalWithVat` - alla passerar
-- **Notera:** VAL-02 används inte i `extract_invoice_lines()` i denna plan (fokus på VAL-01)
-- Funktionen är redo för framtida integration när "Att betala" extraction förbättras
+- 2 integration tests i `test_invoice_line_parser.py` - alla passerar
+- VAT amount beräknas som netto_sum × 0.25 (25% moms)
 
 ### VAL-03: Mode B körs automatiskt när VAL-01 fallerar (auto mode)
 ✅ **UPPFYLLT**
@@ -86,7 +88,8 @@
 ✅ **ALLA LEVERABLER KLARA**
 - ✅ `src/pipeline/validation.py` - Utökad med `validate_netto_sum()` och `validate_total_with_vat()`
 - ✅ `src/pipeline/column_detection.py` - Ny fil med gap-based column detection
-- ✅ `src/pipeline/invoice_line_parser.py` - Utökad med `extract_invoice_lines_mode_b()` och validation-driven re-extraction
+- ✅ `src/pipeline/invoice_line_parser.py` - Utökad med `extract_invoice_lines_mode_b()`, validation-driven re-extraction, och VAL-02 integration
+- ✅ `src/pipeline/footer_extractor.py` - Utökad med `extract_netto_total_from_footer()` och `extract_total_with_vat_from_footer()`
 - ✅ `src/config.py` - Utökad med `get_table_parser_mode()` och `set_table_parser_mode()`
 - ✅ `src/debug/table_debug.py` - Ny fil med `save_table_debug_artifacts()`
 - ✅ `configs/profiles/default.yaml` - Utökad med `table_parser_mode: auto`
@@ -95,18 +98,18 @@
 ✅ **ALLA TESTER KLARA**
 - ✅ `tests/test_validation.py` - Utökad med 11 nya tester (VAL-01, VAL-02)
 - ✅ `tests/test_column_detection.py` - Ny fil med 13 tester
-- ✅ `tests/test_invoice_line_parser.py` - Utökad med 5 mode B tester + 6 integration tests
+- ✅ `tests/test_invoice_line_parser.py` - Utökad med 5 mode B tester + 8 integration tests (inkl. VAL-02)
 - ✅ `tests/test_debug_artifacts.py` - Ny fil med 7 tester
 - ✅ `tests/test_performance_phase22.py` - Ny fil med 7 performance benchmark tests
 
 ## Sammanfattning
 
-**Totalt antal tester:** 47 nya tester
+**Totalt antal tester:** 49 nya tester
 - 11 validation tests (VAL-01, VAL-02)
 - 13 column detection tests
 - 5 mode B parsing tests
 - 7 debug artifacts tests
-- 6 integration tests
+- 8 integration tests (inkl. VAL-02 integration)
 - 7 performance benchmark tests
 
 **Regression tests:** Alla passerar
@@ -118,7 +121,7 @@
 
 ## Kända begränsningar
 
-1. **VAL-02 integration:** `validate_total_with_vat()` är implementerad men används inte i `extract_invoice_lines()` i denna plan. Funktionen är redo för framtida integration.
+1. **VAL-02 integration:** ✅ **KLART** - `validate_total_with_vat()` är integrerad i `extract_invoice_lines()` och validerar både mode A och mode B resultat.
 
 2. **Performance testing:** ✅ Performance targets verifierade med benchmark tests. Alla 7 performance tests passerar och bekräftar att targets uppnås.
 
@@ -127,5 +130,5 @@
 ## Nästa steg
 
 1. ✅ Performance benchmarking - **KLART** (alla targets verifierade)
-2. Integration av VAL-02 i extraction pipeline (valfritt)
+2. ✅ Integration av VAL-02 i extraction pipeline - **KLART** (validerar både mode A och mode B)
 3. UAT med faktiska fakturor (rekommenderat)

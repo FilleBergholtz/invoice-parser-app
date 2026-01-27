@@ -26,7 +26,10 @@ from ..pipeline.column_detection import (
     assign_tokens_to_columns
 )
 from ..pipeline.validation import validate_netto_sum, validate_total_with_vat
-from ..pipeline.footer_extractor import extract_netto_total_from_footer
+from ..pipeline.footer_extractor import (
+    extract_netto_total_from_footer,
+    extract_total_with_vat_from_footer
+)
 from ..debug.table_debug import save_table_debug_artifacts
 
 logger = logging.getLogger(__name__)
@@ -501,9 +504,31 @@ def extract_invoice_lines(
                 tolerance=Decimal("0.50")
             )
             
+            # Phase 22: Also validate total with VAT (VAL-02) if available
+            total_with_vat = extract_total_with_vat_from_footer(footer_segment, rows_above_footer)
+            if total_with_vat is not None:
+                # Calculate VAT amount (typically 25% of netto_sum)
+                netto_sum = sum((line.total_amount for line in invoice_lines), Decimal("0"))
+                vat_amount = netto_sum * Decimal("0.25")  # 25% VAT
+                
+                validation_passed_vat, diff_vat = validate_total_with_vat(
+                    netto_sum,
+                    vat_amount,
+                    total_with_vat,
+                    tolerance=Decimal("0.50")
+                )
+                
+                # If VAL-02 fails, also trigger mode B fallback
+                if not validation_passed_vat:
+                    logger.info(
+                        f"Mode A VAL-02 failed: diff={diff_vat:.2f} SEK, "
+                        f"falling back to mode B (position-based)"
+                    )
+                    validation_passed = False  # Trigger mode B fallback
+            
             if not validation_passed:
                 logger.info(
-                    f"Mode A validation failed: diff={diff:.2f} SEK, "
+                    f"Mode A VAL-01 failed: diff={diff:.2f} SEK, "
                     f"falling back to mode B (position-based)"
                 )
                 # Fallback to mode B
@@ -519,9 +544,34 @@ def extract_invoice_lines(
                     
                     if validation_passed_b:
                         logger.info(
-                            f"Mode B validation passed: diff={diff_b:.2f} SEK, "
+                            f"Mode B VAL-01 passed: diff={diff_b:.2f} SEK, "
                             f"using mode B result"
                         )
+                        
+                        # Phase 22: Validate total with VAT (VAL-02)
+                        total_with_vat = extract_total_with_vat_from_footer(footer_segment, rows_above_footer)
+                        if total_with_vat is not None:
+                            # Calculate VAT amount (typically 25% of netto_sum)
+                            netto_sum_b = sum((line.total_amount for line in mode_b_lines), Decimal("0"))
+                            vat_amount = netto_sum_b * Decimal("0.25")  # 25% VAT
+                            
+                            validation_passed_vat, diff_vat = validate_total_with_vat(
+                                netto_sum_b,
+                                vat_amount,
+                                total_with_vat,
+                                tolerance=Decimal("0.50")
+                            )
+                            
+                            if not validation_passed_vat:
+                                logger.warning(
+                                    f"Mode B VAL-02 failed: diff={diff_vat:.2f} SEK, "
+                                    f"but VAL-01 passed, using mode B result"
+                                )
+                            else:
+                                logger.info(
+                                    f"Mode B VAL-02 passed: diff={diff_vat:.2f} SEK"
+                                )
+                        
                         return mode_b_lines
                     else:
                         logger.warning(

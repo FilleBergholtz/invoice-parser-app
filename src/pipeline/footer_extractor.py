@@ -850,3 +850,102 @@ def extract_netto_total_from_footer(
                     continue
     
     return None
+
+
+def extract_total_with_vat_from_footer(
+    footer_segment: Optional[Segment],
+    rows_above_footer: Optional[List[Row]] = None
+) -> Optional[Decimal]:
+    """Extract "Att betala" (total with VAT) from footer segment.
+    
+    Args:
+        footer_segment: Footer segment (or None if not found)
+        rows_above_footer: Optional rows immediately above footer
+        
+    Returns:
+        Total with VAT ("Att betala") as Decimal, or None if not found
+        
+    Note:
+        This is a simplified extraction for validation purposes.
+        Uses same patterns as extract_total_amount but only looks for
+        "with_vat" keyword type amounts.
+    """
+    if footer_segment is None or not footer_segment.rows:
+        return None
+    
+    # Keywords for total WITH VAT (same as in extract_total_amount)
+    total_with_vat_patterns = [
+        r"att\s+betala\s+sek\s*:",
+        r"att\s+betala\s+sek",
+        r"attbetala\s+sek\s*:",
+        r"attbetala\s+sek",
+        r"att\s+betala\s*:",
+        r"att\s+betala",
+        r"attbetala",
+        r"ATT\s+BETALA",
+        r"summa\s+att\s+betala",
+        r"SUMMA\s+ATT\s+BETALA",
+        r"fakturabelopp",
+        r"Fakturabelopp",
+        r"belopp\s+att\s+betala",
+        r"betalningsbelopp",
+        r"totalt\s+inkl\.?\s*moms",
+        r"total\s+inkl\.?\s*moms",
+        r"inkl\.?\s*moms",
+    ]
+    
+    # Amount pattern (same as in extract_total_amount)
+    amount_pattern = re.compile(
+        r'\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|'
+        r'\d+\.\d{1,2}(?!\d)|'
+        r'\d{1,3}(?:\s+\d{3})*(?:[.,]\d{1,2})?|'
+        r'\d+(?:,\d{1,2})?'
+    )
+    
+    # Check rows above footer for keyword type
+    keyword_type_above = None
+    if rows_above_footer:
+        for r in reversed(rows_above_footer):
+            t = r.text.lower()
+            if any(re.search(p, t, re.IGNORECASE) for p in total_with_vat_patterns):
+                keyword_type_above = "with_vat"
+                break
+    
+    # Search footer rows for "with_vat" amounts
+    for row_index, row in enumerate(footer_segment.rows):
+        row_lower = row.text.lower()
+        
+        # Check if row contains "with VAT" keywords
+        has_keyword = any(
+            re.search(pattern, row_lower, re.IGNORECASE)
+            for pattern in total_with_vat_patterns
+        )
+        
+        # Extract amounts
+        row_text = row.text
+        amount_matches = list(amount_pattern.finditer(row_text))
+        use_row = row
+        
+        # If keyword row has no amount, check next row
+        if has_keyword and not amount_matches and row_index + 1 < len(footer_segment.rows):
+            next_row = footer_segment.rows[row_index + 1]
+            amount_matches = list(amount_pattern.finditer(next_row.text))
+            use_row = next_row
+        
+        # Use keyword from row above footer if first footer row has amounts only
+        use_keyword_type = "with_vat" if has_keyword else None
+        if not has_keyword and amount_matches and row_index == 0 and keyword_type_above == "with_vat":
+            use_keyword_type = "with_vat"
+        
+        # If we found a "with_vat" amount, return it
+        if use_keyword_type == "with_vat" and amount_matches:
+            for match in amount_matches:
+                amount_text = match.group(0)
+                try:
+                    amount = normalize_swedish_decimal(amount_text)
+                    if amount > 0:
+                        return amount
+                except ValueError:
+                    continue
+    
+    return None
