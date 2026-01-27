@@ -2,7 +2,7 @@
 
 ## Status 2026-01-26
 
-**Var vi är:** v1.0 och v2.0 är genomförda och arkiverade. v2.0 slutförd 2026-01-26. Nästa steg: `/gsd:discuss-milestone` → `/gsd:new-milestone` för att planera nästa version. Arkiv: `.planning/milestones/`, sammanfattning: `.planning/MILESTONES.md`.
+**Var vi är:** v1.0, v2.0 och v2.1 är genomförda. v2.1 slutförd 2026-01-26 med alla phases 16-22 kompletta. UAT skapad (`.planning/milestones/v2.1-UAT.md`). Nästa steg: UAT execution eller milestone completion. Arkiv: `.planning/milestones/`, sammanfattning: `.planning/MILESTONES.md`.
 
 ---
 
@@ -14,9 +14,11 @@ Ett system som automatiskt läser, förstår och strukturerar svenska PDF-faktur
 
 **100% korrekt på fakturanummer och totalsumma, eller tydlig REVIEW-status.** Allt som systemet exporterar som OK är garanterat korrekt. Osäkra fall går alltid till REVIEW (ingen tyst gissning).
 
-## Current Milestone: v2.1 Parsing robustness / EDI
+## Current Milestone: v2.1 Parsing robustness / EDI (Complete, UAT pending)
 
 **Goal:** Deterministisk parsing för EDI‑liknande PDF:er med text‑layer, robust tabellsegmentering och valideringsdriven om‑extraktion. OCR och AI används endast som fallback.
+
+**Status:** Alla phases 16-22 genomförda. UAT skapad och redo för execution. Se `.planning/milestones/v2.1-UAT.md`.
 
 **Target features:**
 - Skippa OCR per sida när text‑layer räcker (konfigurerbart tröskelvärde)

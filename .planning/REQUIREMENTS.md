@@ -32,34 +32,34 @@
 
 ### Multi‑line items
 
-- [ ] **LINE-01**: Om en rad saknar moms% + nettobelopp behandlas den som fortsättning på föregående item‑beskrivning.
-- [ ] **LINE-02**: Nytt item startar när raden matchar start‑mönster (t.ex. `^\\w{3,}\\d+` eller `^\\d{5,}`) eller innehåller individnr/konto/startdatum‑mönster.
+- [x] **LINE-01**: Om en rad saknar moms% + nettobelopp behandlas den som fortsättning på föregående item‑beskrivning.
+- [x] **LINE-02**: Nytt item startar när raden matchar start‑mönster (t.ex. `^\\w{3,}\\d+` eller `^\\d{5,}`) eller innehåller individnr/konto/startdatum‑mönster.
 
 ### Svensk talnormalisering
 
-- [ ] **NUM-01**: All valutaparssning använder **en gemensam normaliseringsfunktion** som returnerar `Decimal`.
-- [ ] **NUM-02**: Normalisering tar bort mellanslag som tusentalsseparator.
-- [ ] **NUM-03**: Normalisering tar bort punkt som tusentalsseparator **endast** när den följs av tre siffror.
-- [ ] **NUM-04**: Normalisering byter `,` → `.` innan `Decimal`‑parsning.
+- [x] **NUM-01**: All valutaparssning använder **en gemensam normaliseringsfunktion** som returnerar `Decimal`.
+- [x] **NUM-02**: Normalisering tar bort mellanslag som tusentalsseparator.
+- [x] **NUM-03**: Normalisering tar bort punkt som tusentalsseparator **endast** när den följs av tre siffror.
+- [x] **NUM-04**: Normalisering byter `,` → `.` innan `Decimal`‑parsning.
 
 ### Valideringsdriven om‑extraktion
 
-- [ ] **VAL-01**: `sum(line_items.netto)` matchar “Nettobelopp exkl. moms” inom ±0,50 SEK.
-- [ ] **VAL-02**: `netto + moms` matchar “Att betala” inom ±0,50 SEK.
-- [ ] **VAL-03**: Om VAL‑01 fallerar körs **table‑parser mode B** (position/kolumn‑baserad andra pass).
-- [ ] **VAL-04**: Om mismatch kvarstår → status REVIEW och **debug‑artefakter** sparas (tabellblockets råtext + tolkade rader).
-- [ ] **VAL-05**: `table_parser_mode` är konfigurerbart: `auto|text|pos` (auto kör A och fallback till B).
+- [x] **VAL-01**: `sum(line_items.netto)` matchar “Nettobelopp exkl. moms” inom ±0,50 SEK.
+- [x] **VAL-02**: `netto + moms` matchar “Att betala” inom ±0,50 SEK.
+- [x] **VAL-03**: Om VAL‑01 fallerar körs **table‑parser mode B** (position/kolumn‑baserad andra pass).
+- [x] **VAL-04**: Om mismatch kvarstår → status REVIEW och **debug‑artefakter** sparas (tabellblockets råtext + tolkade rader).
+- [x] **VAL-05**: `table_parser_mode` är konfigurerbart: `auto|text|pos` (auto kör A och fallback till B).
 
 ### Fakturaboundaries
 
-- [ ] **BOUND-01**: Fakturor segmenteras genom att läsa fakturanummer per sida och groupby `invoice_no`.
-- [ ] **BOUND-02**: Sidnummer (“Sida 1/2”, “Sida 2/2”) används som hjälp för att samla sidor per faktura.
-- [ ] **BOUND-03**: Segmentering ska inte bero på “total found”.
+- [x] **BOUND-01**: Fakturor segmenteras genom att läsa fakturanummer per sida och groupby `invoice_no`.
+- [x] **BOUND-02**: Sidnummer (“Sida 1/2”, “Sida 2/2”) används som hjälp för att samla sidor per faktura.
+- [x] **BOUND-03**: Segmentering ska inte bero på “total found”.
 
 ### AI‑policy
 
-- [ ] **AI-01**: AI används **endast** som fallback för fält utan mönster eller ovanliga layouter.
-- [ ] **AI-02**: För EDI‑liknande fakturor med text‑layer ska parsing vara deterministisk och AI inte vara normalväg.
+- [x] **AI-01**: AI används **endast** som fallback för fält utan mönster eller ovanliga layouter.
+- [x] **AI-02**: För EDI‑liknande fakturor med text‑layer ska parsing vara deterministisk och AI inte vara normalväg.
 
 ---
 
@@ -85,21 +85,23 @@
 | BOUND-01 | Phase 18: Fakturaboundaries | Complete |
 | BOUND-02 | Phase 18: Fakturaboundaries | Complete |
 | BOUND-03 | Phase 18: Fakturaboundaries | Complete |
-| NUM-01 | Phase 19: Svensk talnormalisering | Pending |
-| NUM-02 | Phase 19: Svensk talnormalisering | Pending |
-| NUM-03 | Phase 19: Svensk talnormalisering | Pending |
-| NUM-04 | Phase 19: Svensk talnormalisering | Pending |
+| NUM-01 | Phase 19: Svensk talnormalisering | Complete |
+| NUM-02 | Phase 19: Svensk talnormalisering | Complete |
+| NUM-03 | Phase 19: Svensk talnormalisering | Complete |
+| NUM-04 | Phase 19: Svensk talnormalisering | Complete |
 | TABLE-01 | Phase 20: Tabellsegment & kolumnregler | Complete |
 | TABLE-02 | Phase 20: Tabellsegment & kolumnregler | Complete |
 | TABLE-03 | Phase 20: Tabellsegment & kolumnregler | Complete ⚠️ 25% only |
 | TABLE-04 | Phase 20: Tabellsegment & kolumnregler | Complete ⚠️ 25% only |
-| LINE-01 | Phase 21: Multi-line items | Pending |
-| LINE-02 | Phase 21: Multi-line items | Pending |
-| VAL-01 | Phase 22: Valideringsdriven om-extraktion | Pending |
-| VAL-02 | Phase 22: Valideringsdriven om-extraktion | Pending |
-| VAL-03 | Phase 22: Valideringsdriven om-extraktion | Pending |
-| VAL-04 | Phase 22: Valideringsdriven om-extraktion | Pending |
-| VAL-05 | Phase 22: Valideringsdriven om-extraktion | Pending |
+| LINE-01 | Phase 21: Multi-line items | Complete |
+| LINE-02 | Phase 21: Multi-line items | Complete |
+| VAL-01 | Phase 22: Valideringsdriven om-extraktion | Complete |
+| VAL-02 | Phase 22: Valideringsdriven om-extraktion | Complete |
+| VAL-03 | Phase 22: Valideringsdriven om-extraktion | Complete |
+| VAL-04 | Phase 22: Valideringsdriven om-extraktion | Complete |
+| VAL-05 | Phase 22: Valideringsdriven om-extraktion | Complete |
 
 ---
-*Requirements defined: 2026-01-26*
+*Requirements defined: 2026-01-26*  
+*All v2.1 requirements complete: 2026-01-26*  
+*UAT created: 2026-01-26 (.planning/milestones/v2.1-UAT.md)*

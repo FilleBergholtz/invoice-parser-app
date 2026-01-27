@@ -6,17 +6,17 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 
 **Core value:** 100% korrekt på fakturanummer och totalsumma, eller tydlig REVIEW-status. Allt som systemet exporterar som OK är garanterat korrekt. Osäkra fall går alltid till REVIEW (ingen tyst gissning).
 
-**Current focus:** v2.1 Phase 22 planerad, redo för implementation.
+**Current focus:** v2.1 milestone komplett, UAT skapad och redo för execution.
 
 ## Current Position
 
-Milestone: **v2.1 Parsing robustness / EDI** (pågående).
+Milestone: **v2.1 Parsing robustness / EDI** (komplett, UAT pending).
 Phase: **22** — Valideringsdriven om-extraktion (klar).
 Plan: 22-01 genomförd (validering, mode B, debug artifacts).
-Status: Phase 22 komplett - alla krav uppfyllda och verifierade.
-Last activity: 2026-01-26 — Completed 22-01 implementation, verification, och SUMMARY.md.
+Status: v2.1 milestone komplett - alla phases 16-22 genomförda, UAT skapad.
+Last activity: 2026-01-26 — Created v2.1-UAT.md för milestone acceptance testing.
 
-Progress: █████████████████████ 71/71 (100%) — v1.0 (Phase 1–3) + v2.0 (Phase 5–15) + v2.1 Phase 16-21 genomförda.
+Progress: █████████████████████ 78/78 (100%) — v1.0 (Phase 1–3) + v2.0 (Phase 5–15) + v2.1 (Phase 16-22) alla genomförda.
 
 ## Accumulated Context
 
@@ -34,6 +34,7 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-26 23:45 UTC
-Stopped at: Completed 21-01-PLAN.md + implementation + tests
+Last session: 2026-01-26
+Stopped at: v2.1 milestone komplett, UAT skapad (.planning/milestones/v2.1-UAT.md)
+Next step: UAT execution eller milestone completion
 Resume file: None

@@ -8,7 +8,7 @@ v2.1 fokuserar på deterministisk parsing för EDI-liknande fakturor med text-la
 
 - ✅ **v1.0 MVP** - Phases 1-3 (shipped 2026-01-17)
 - ✅ **v2.0 Features + polish** - Phases 5-15 (shipped 2026-01-26)
-- 📋 **v2.1 Parsing robustness / EDI** - Phases 16-22 (planned)
+- ✅ **v2.1 Parsing robustness / EDI** - Phases 16-22 (complete, UAT pending)
 
 ## Phases
 
@@ -26,7 +26,7 @@ See archived roadmap: `.planning/milestones/v2.0-ROADMAP.md`.
 
 </details>
 
-### 🚧 v2.1 Parsing robustness / EDI (In progress)
+### ✅ v2.1 Parsing robustness / EDI (Complete, UAT pending)
 
 **Milestone Goal:** Deterministisk parsing för EDI‑liknande PDF:er med text‑layer, robust tabellsegmentering och valideringsdriven om‑extraktion.
 
