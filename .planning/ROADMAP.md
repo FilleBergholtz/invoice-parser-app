@@ -123,6 +123,7 @@ Plans:
   1. Nettosumma och moms kontrolleras mot fakturans totalsummor inom ±0,50 SEK.
   2. Vid valideringsfel körs table-parser mode B enligt konfigurerat läge.
   3. Vid kvarstående mismatch markeras REVIEW och debug-artefakter sparas.
+**Research**: Complete (2026-01-26) - Gap-based column detection, hybrid position+content, token-to-column mapping
 **Plans**: 1 plan
 
 Plans:
