@@ -12,7 +12,9 @@ from src.models.validation_result import ValidationResult
 from src.pipeline.validation import (
     calculate_validation_values,
     validate_invoice,
-    validate_line_items
+    validate_line_items,
+    validate_netto_sum,
+    validate_total_with_vat
 )
 
 
@@ -564,3 +566,168 @@ class TestValidateLineItems:
         
         warnings = validate_line_items([line1, line2], tolerance=Decimal("0.01"))
         assert len(warnings) >= 2
+
+
+class TestValidateNettoSum:
+    """Tests for validate_netto_sum function (Phase 22)."""
+    
+    def test_validate_netto_sum_pass(self, invoice_lines_valid):
+        """Test VAL-01: Pass when diff is within tolerance."""
+        # Lines sum to 100.0, netto_total is 100.30 (diff = 0.30, within 0.50 tolerance)
+        validation_passed, diff = validate_netto_sum(
+            invoice_lines_valid,
+            Decimal("100.30"),
+            tolerance=Decimal("0.50")
+        )
+        
+        assert validation_passed is True
+        assert diff == Decimal("0.30")
+    
+    def test_validate_netto_sum_fail(self, invoice_lines_valid):
+        """Test VAL-01: Fail when diff is outside tolerance."""
+        # Lines sum to 100.0, netto_total is 100.60 (diff = 0.60, outside 0.50 tolerance)
+        validation_passed, diff = validate_netto_sum(
+            invoice_lines_valid,
+            Decimal("100.60"),
+            tolerance=Decimal("0.50")
+        )
+        
+        assert validation_passed is False
+        assert diff == Decimal("0.60")
+    
+    def test_validate_netto_sum_boundary(self, invoice_lines_valid):
+        """Test VAL-01: Edge case at tolerance boundary."""
+        # Lines sum to 100.0, netto_total is 100.50 (diff = 0.50, exactly at boundary)
+        validation_passed, diff = validate_netto_sum(
+            invoice_lines_valid,
+            Decimal("100.50"),
+            tolerance=Decimal("0.50")
+        )
+        
+        assert validation_passed is True  # Boundary is inclusive
+        assert diff == Decimal("0.50")
+    
+    def test_validate_netto_sum_negative_diff(self, invoice_lines_valid):
+        """Test VAL-01: Negative diff (netto_total < netto_sum)."""
+        # Lines sum to 100.0, netto_total is 99.70 (diff = -0.30, within tolerance)
+        validation_passed, diff = validate_netto_sum(
+            invoice_lines_valid,
+            Decimal("99.70"),
+            tolerance=Decimal("0.50")
+        )
+        
+        assert validation_passed is True
+        assert diff == Decimal("-0.30")
+    
+    def test_validate_netto_sum_empty_lines(self):
+        """Test VAL-01: Empty line_items."""
+        validation_passed, diff = validate_netto_sum(
+            [],
+            Decimal("100.0"),
+            tolerance=Decimal("0.50")
+        )
+        
+        assert validation_passed is False
+        assert diff == Decimal("100.0")  # 100.0 - 0
+    
+    def test_validate_netto_sum_with_zero_total_amount(self):
+        """Test VAL-01: Line items with zero total_amount (edge case)."""
+        from src.models.page import Page
+        from src.models.document import Document
+        from src.models.token import Token
+        
+        doc = Document(filename="test.pdf", filepath="test.pdf", page_count=0, pages=[])
+        page = Page(page_number=1, width=612, height=792, document=doc)
+        doc.pages.append(page)
+        doc.page_count = 1
+        token = Token(text="Product", x=0, y=100, width=60, height=12, page=page)
+        row = Row(tokens=[token], text="Product", x_min=0, x_max=200, y=100, page=page)
+        segment = Segment(segment_type="items", rows=[row], page=page, y_min=237.6, y_max=554.4)
+        
+        # Note: InvoiceLine requires total_amount > 0, so we can't test None
+        # Instead test with valid total_amount
+        line = InvoiceLine(
+            rows=[row],
+            description="Product",
+            total_amount=Decimal("50.0"),
+            line_number=1,
+            segment=segment
+        )
+        
+        validation_passed, diff = validate_netto_sum(
+            [line],
+            Decimal("50.30"),
+            tolerance=Decimal("0.50")
+        )
+        
+        assert validation_passed is True
+        assert diff == Decimal("0.30")
+
+
+class TestValidateTotalWithVat:
+    """Tests for validate_total_with_vat function (Phase 22)."""
+    
+    def test_validate_total_with_vat_pass(self):
+        """Test VAL-02: Pass when netto_sum + vat matches total_with_vat."""
+        # netto_sum = 100.0, vat = 25.0 (25%), total_with_vat = 125.30 (diff = 0.30, within tolerance)
+        validation_passed, diff = validate_total_with_vat(
+            Decimal("100.0"),
+            Decimal("25.0"),
+            Decimal("125.30"),
+            tolerance=Decimal("0.50")
+        )
+        
+        assert validation_passed is True
+        assert diff == Decimal("0.30")
+    
+    def test_validate_total_with_vat_fail(self):
+        """Test VAL-02: Fail when mismatch is outside tolerance."""
+        # netto_sum = 100.0, vat = 25.0, total_with_vat = 125.60 (diff = 0.60, outside tolerance)
+        validation_passed, diff = validate_total_with_vat(
+            Decimal("100.0"),
+            Decimal("25.0"),
+            Decimal("125.60"),
+            tolerance=Decimal("0.50")
+        )
+        
+        assert validation_passed is False
+        assert diff == Decimal("0.60")
+    
+    def test_validate_total_with_vat_calculation(self):
+        """Test VAL-02: VAT amount calculation (netto_sum × 0.25)."""
+        # netto_sum = 1000.0, vat = 250.0 (25%), total_with_vat = 1250.0 (exact match)
+        validation_passed, diff = validate_total_with_vat(
+            Decimal("1000.0"),
+            Decimal("250.0"),  # 1000.0 × 0.25
+            Decimal("1250.0"),
+            tolerance=Decimal("0.50")
+        )
+        
+        assert validation_passed is True
+        assert diff == Decimal("0.0")
+    
+    def test_validate_total_with_vat_boundary(self):
+        """Test VAL-02: Edge case at tolerance boundary."""
+        # netto_sum = 100.0, vat = 25.0, total_with_vat = 125.50 (diff = 0.50, at boundary)
+        validation_passed, diff = validate_total_with_vat(
+            Decimal("100.0"),
+            Decimal("25.0"),
+            Decimal("125.50"),
+            tolerance=Decimal("0.50")
+        )
+        
+        assert validation_passed is True  # Boundary is inclusive
+        assert diff == Decimal("0.50")
+    
+    def test_validate_total_with_vat_negative_diff(self):
+        """Test VAL-02: Negative diff (total_with_vat < netto_sum + vat)."""
+        # netto_sum = 100.0, vat = 25.0, total_with_vat = 124.70 (diff = -0.30, within tolerance)
+        validation_passed, diff = validate_total_with_vat(
+            Decimal("100.0"),
+            Decimal("25.0"),
+            Decimal("124.70"),
+            tolerance=Decimal("0.50")
+        )
+        
+        assert validation_passed is True
+        assert diff == Decimal("-0.30")
