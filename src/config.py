@@ -304,5 +304,51 @@ def _load_ai_config_from_file() -> None:
         os.environ['AI_KEY'] = config['api_key']
 
 
+def get_table_parser_mode() -> str:
+    """Get table parser mode from active profile.
+    
+    Returns:
+        "auto" | "text" | "pos"
+        - "auto": Run mode A (text-based), fallback to mode B (position-based) on validation failure
+        - "text": Always use mode A (text-based)
+        - "pos": Always use mode B (position-based)
+        
+    Default: "auto"
+    """
+    try:
+        from .config.profile_manager import get_profile
+        profile = get_profile()
+        mode = profile.table_parser_mode
+        # Validate mode
+        if mode not in ("auto", "text", "pos"):
+            logger.warning(f"Invalid table_parser_mode '{mode}', using 'auto'")
+            return "auto"
+        return mode
+    except Exception as e:
+        logger.warning(f"Failed to get table_parser_mode from profile: {e}, using 'auto'")
+        return "auto"
+
+
+def set_table_parser_mode(mode: str) -> None:
+    """Set table parser mode (for testing/debugging).
+    
+    Args:
+        mode: "auto" | "text" | "pos"
+        
+    Note:
+        This sets the mode on the current profile instance, but does not persist
+        to YAML file. For persistent configuration, edit the profile YAML file.
+    """
+    if mode not in ("auto", "text", "pos"):
+        raise ValueError(f"Invalid table_parser_mode: {mode} (must be 'auto', 'text', or 'pos')")
+    
+    try:
+        from .config.profile_manager import get_profile
+        profile = get_profile()
+        profile.table_parser_mode = mode
+    except Exception as e:
+        logger.warning(f"Failed to set table_parser_mode: {e}")
+
+
 # Load saved config at module import
 _load_ai_config_from_file()

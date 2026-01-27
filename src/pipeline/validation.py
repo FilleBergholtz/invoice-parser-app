@@ -210,3 +210,75 @@ def validation_passed(result: Optional[ValidationResult]) -> bool:
     if result.diff is None:
         return False
     return abs(result.diff) <= result.tolerance
+
+
+def validate_netto_sum(
+    line_items: List[InvoiceLine],
+    netto_total: Decimal,
+    tolerance: Decimal = Decimal("0.50")
+) -> Tuple[bool, Decimal]:
+    """Validate that sum of line item net amounts matches netto total from footer.
+    
+    Args:
+        line_items: List of InvoiceLine objects (total_amount is netto exkl. moms)
+        netto_total: Netto total from footer ("Nettobelopp exkl. moms")
+        tolerance: Validation tolerance in SEK (default 0.50)
+        
+    Returns:
+        Tuple of (validation_passed, diff) where:
+        - validation_passed: True if abs(diff) <= tolerance
+        - diff: netto_total - netto_sum (signed difference)
+        
+    Note:
+        Uses line.total_amount as netto (line items are exkl. moms per Phase 20).
+        If line.total_amount is None, uses Decimal("0") for that line.
+    """
+    # Calculate sum of line item net amounts
+    netto_sum = sum(
+        (_to_decimal(line.total_amount) or Decimal("0") for line in line_items),
+        Decimal("0")
+    )
+    
+    # Calculate difference
+    diff = netto_total - netto_sum
+    
+    # Validation passes if difference is within tolerance
+    validation_passed = abs(diff) <= tolerance
+    
+    return validation_passed, diff
+
+
+def validate_total_with_vat(
+    netto_sum: Decimal,
+    vat_amount: Decimal,
+    total_with_vat: Decimal,
+    tolerance: Decimal = Decimal("0.50")
+) -> Tuple[bool, Decimal]:
+    """Validate that netto_sum + vat_amount matches total_with_vat from footer.
+    
+    Args:
+        netto_sum: Sum of line item net amounts (exkl. moms)
+        vat_amount: VAT amount (typically netto_sum × 0.25 for 25% VAT)
+        total_with_vat: Total with VAT from footer ("Att betala")
+        tolerance: Validation tolerance in SEK (default 0.50)
+        
+    Returns:
+        Tuple of (validation_passed, diff) where:
+        - validation_passed: True if abs(diff) <= tolerance
+        - diff: total_with_vat - (netto_sum + vat_amount) (signed difference)
+        
+    Note:
+        For Swedish invoices, VAT is typically 25% of netto_sum.
+        This function validates that the calculated total (netto + VAT) matches
+        the extracted "Att betala" amount from footer.
+    """
+    # Calculate expected total with VAT
+    calculated_total = netto_sum + vat_amount
+    
+    # Calculate difference
+    diff = total_with_vat - calculated_total
+    
+    # Validation passes if difference is within tolerance
+    validation_passed = abs(diff) <= tolerance
+    
+    return validation_passed, diff

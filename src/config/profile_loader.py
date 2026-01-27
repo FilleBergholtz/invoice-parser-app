@@ -17,6 +17,7 @@ class ProfileConfig:
     tolerances: Dict[str, float] = field(default_factory=dict)
     ocr_routing: Dict[str, Any] = field(default_factory=dict)
     ai_policy: Dict[str, Any] = field(default_factory=dict)
+    table_parser_mode: str = "auto"  # "auto" | "text" | "pos"
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'ProfileConfig':
@@ -29,7 +30,8 @@ class ProfileConfig:
             zones=data.get('zones', {}),
             tolerances=data.get('tolerances', {}),
             ocr_routing=data.get('ocr_routing', {}),
-            ai_policy=data.get('ai_policy', {})
+            ai_policy=data.get('ai_policy', {}),
+            table_parser_mode=data.get('table_parser_mode', 'auto')
         )
     
     def to_dict(self) -> Dict[str, Any]:
@@ -42,7 +44,8 @@ class ProfileConfig:
             'zones': self.zones,
             'tolerances': self.tolerances,
             'ocr_routing': self.ocr_routing,
-            'ai_policy': self.ai_policy
+            'ai_policy': self.ai_policy,
+            'table_parser_mode': self.table_parser_mode
         }
 
 
@@ -127,5 +130,6 @@ def get_default_profile() -> ProfileConfig:
             header={},
             footer={},
             zones={},
-            tolerances={}
+            tolerances={},
+            table_parser_mode="auto"
         )

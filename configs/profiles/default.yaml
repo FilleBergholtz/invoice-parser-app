@@ -147,3 +147,9 @@ ai_policy:
     - "\\bPris\\b"
     - "\\bBelopp\\b"
     - "\\bAmount\\b"
+
+# Table parser mode (Phase 22)
+# - auto: Run mode A (text-based), fallback to mode B (position-based) on validation failure
+# - text: Always use mode A (text-based)
+# - pos: Always use mode B (position-based)
+table_parser_mode: auto

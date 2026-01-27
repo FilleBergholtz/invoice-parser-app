@@ -2,13 +2,19 @@
 
 import re
 from decimal import Decimal
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from ..models.invoice_line import InvoiceLine
 from ..models.row import Row
 from ..models.segment import Segment
+from ..models.token import Token
 from ..pipeline.number_normalizer import normalize_swedish_decimal
 from ..pipeline.wrap_detection import detect_wrapped_rows, consolidate_wrapped_description
+from ..pipeline.column_detection import (
+    detect_columns_gap_based,
+    map_columns_from_header,
+    assign_tokens_to_columns
+)
 
 
 # HARD footer keywords: always classify as footer (15-DISCUSS D6).
@@ -809,3 +815,382 @@ def _extract_line_from_row(
         line_number=line_number,
         segment=segment
     )
+
+
+def extract_invoice_lines_mode_b(items_segment: Segment) -> List[InvoiceLine]:
+    """Extract invoice lines using position-based parsing (mode B).
+    
+    Mode B uses spatial analysis (column detection) combined with content patterns
+    (VAT% patterns, unit keywords) for robust field extraction. This is a fallback
+    for mode A when validation fails.
+    
+    Args:
+        items_segment: Items segment containing table rows
+        
+    Returns:
+        List of InvoiceLine objects extracted using position-based parsing
+        
+    Algorithm:
+        1. Detect columns via gap-based detection
+        2. Map columns to fields via header row (if available)
+        3. For each row:
+           a. Assign tokens to columns
+           b. Extract fields using hybrid approach (position + content)
+           c. Use VAT%-anchored net amount extraction (same as mode A)
+        4. Apply wrap detection (same as mode A)
+        
+    Fallback:
+        If column detection fails, falls back to mode A (text-based parsing).
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    # Get table block rows (same as mode A)
+    table_rows, use_table_rules = _get_table_block_rows(items_segment.rows)
+    
+    if not table_rows:
+        return []
+    
+    # Step 1: Detect columns via gap-based detection
+    column_centers = detect_columns_gap_based(table_rows)
+    
+    if not column_centers:
+        logger.warning("Mode B: Column detection failed, falling back to mode A")
+        return extract_invoice_lines(items_segment)
+    
+    # Step 2: Map columns to fields via header row (if available)
+    column_map = None
+    header_row = None
+    data_rows_start = 0
+    
+    # Find header row (first row with "nettobelopp" + column keywords)
+    for idx, row in enumerate(table_rows):
+        if _is_table_header_row(row.text.lower()):
+            header_row = row
+            data_rows_start = idx + 1
+            column_map = map_columns_from_header(header_row, column_centers)
+            break
+    
+    # Step 3: Extract line items row-by-row
+    invoice_lines = []
+    line_number = 1
+    processed_row_indices = set()
+    
+    for row_index, row in enumerate(table_rows[data_rows_start:], start=data_rows_start):
+        # Skip rows already processed as wraps
+        if row_index in processed_row_indices:
+            continue
+        
+        # Skip footer rows
+        if _is_footer_row(row):
+            continue
+        
+        # Assign tokens to columns
+        column_tokens = assign_tokens_to_columns(row, column_centers)
+        
+        # Extract line item using hybrid approach
+        invoice_line = _extract_line_from_row_mode_b(
+            row,
+            column_tokens,
+            column_map,
+            items_segment,
+            line_number,
+            require_moms=use_table_rules
+        )
+        
+        if invoice_line:
+            # Detect wrapped rows (same as mode A)
+            following_rows = table_rows[row_index + 1:]
+            wrapped_rows = detect_wrapped_rows(
+                row,
+                following_rows,
+                items_segment.page,
+                all_rows=table_rows
+            )
+            
+            # Mark wrapped rows as processed
+            for wrapped_row in wrapped_rows:
+                wrapped_index = table_rows.index(wrapped_row)
+                processed_row_indices.add(wrapped_index)
+            
+            # Update InvoiceLine with wrapped rows
+            if wrapped_rows:
+                invoice_line.rows.extend(wrapped_rows)
+                invoice_line.description = consolidate_wrapped_description(row, wrapped_rows)
+            
+            invoice_lines.append(invoice_line)
+            line_number += 1
+    
+    return invoice_lines
+
+
+def _extract_line_from_row_mode_b(
+    row: Row,
+    column_tokens: Dict[int, List[Token]],
+    column_map: Optional[Dict[str, int]],
+    segment: Segment,
+    line_number: int,
+    require_moms: bool = False
+) -> Optional[InvoiceLine]:
+    """Extract InvoiceLine from row using position-based parsing (mode B).
+    
+    Uses hybrid approach: position (column mapping) + content (VAT% patterns, unit keywords).
+    
+    Args:
+        row: Row object to analyze
+        column_tokens: Dict mapping column index to list of tokens in that column
+        column_map: Optional dict mapping field names to column indices (from header)
+        segment: Items segment reference
+        line_number: Line number for ordering
+        require_moms: If True, require VAT% pattern for valid line item
+        
+    Returns:
+        InvoiceLine if row contains amount (product row), None otherwise
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    # Hybrid approach: Use position (column_map) when available, fallback to content
+    
+    # Step 1: Extract netto amount (VAT%-anchored, same as mode A)
+    result = _extract_amount_from_row_text(row, require_moms=require_moms)
+    if result is None:
+        return None
+    
+    total_amount, discount, amount_token_idx = result
+    
+    # Step 2: Extract description
+    description = _extract_description_mode_b(row, column_tokens, column_map, amount_token_idx)
+    
+    # Step 3: Extract quantity, unit, unit_price using hybrid approach
+    quantity, unit, unit_price = _extract_quantity_unit_price_mode_b(
+        row,
+        column_tokens,
+        column_map,
+        amount_token_idx
+    )
+    
+    # Step 4: Extract VAT rate (if available)
+    vat_rate = _extract_vat_rate_mode_b(row, column_tokens, column_map)
+    
+    # Create InvoiceLine
+    return InvoiceLine(
+        rows=[row],
+        description=description or "Unknown",
+        quantity=_ensure_decimal(quantity),
+        unit=unit,
+        unit_price=_ensure_decimal(unit_price),
+        discount=_ensure_decimal(discount),
+        total_amount=_ensure_decimal(total_amount) or Decimal("0"),
+        vat_rate=_ensure_decimal(vat_rate),
+        line_number=line_number,
+        segment=segment
+    )
+
+
+def _extract_description_mode_b(
+    row: Row,
+    column_tokens: Dict[int, List[Token]],
+    column_map: Optional[Dict[str, int]],
+    amount_token_idx: Optional[int]
+) -> str:
+    """Extract description using position-based approach.
+    
+    Uses column mapping if available, otherwise falls back to content-based extraction.
+    """
+    # Try position-based: use mapped column if available
+    if column_map and 'description' in column_map:
+        col_idx = column_map['description']
+        if col_idx in column_tokens:
+            desc_tokens = column_tokens[col_idx]
+            # Skip article numbers (same logic as mode A)
+            description = _filter_description_tokens(desc_tokens)
+            if description:
+                return description
+    
+    # Fallback: content-based (same as mode A)
+    tokens = row.tokens or []
+    description_tokens = tokens[:amount_token_idx] if amount_token_idx is not None else tokens
+    description_start_idx = 0
+    
+    # Skip leading numeric/article number tokens (same logic as mode A)
+    for i, token in enumerate(description_tokens[:5]):
+        token_text = token.text.strip()
+        if re.match(r'^0?\d{1,3}$', token_text):
+            if i + 1 < len(description_tokens):
+                next_token = description_tokens[i + 1].text.strip()
+                if re.match(r'^[A-Z0-9]{4,}', next_token) or re.match(r'^\d{6,}', next_token):
+                    description_start_idx = i + 1
+                    break
+        elif re.match(r'^[A-Z0-9]{4,}$', token_text) or re.match(r'^\d{6,}$', token_text):
+            description_start_idx = i + 1
+            break
+        elif token_text.lower() in ['pos', 'rad', 'obj']:
+            description_start_idx = i + 1
+            continue
+        else:
+            break
+    
+    description_tokens = description_tokens[description_start_idx:]
+    return " ".join(t.text for t in description_tokens).strip()
+
+
+def _filter_description_tokens(tokens: List[Token]) -> str:
+    """Filter tokens to extract description, skipping article numbers and line numbers."""
+    if not tokens:
+        return ""
+    
+    description_tokens = []
+    for token in tokens:
+        token_text = token.text.strip()
+        # Skip line numbers, article numbers, position markers
+        if (re.match(r'^0?\d{1,3}$', token_text) or
+            re.match(r'^[A-Z0-9]{4,}$', token_text) or
+            re.match(r'^\d{6,}$', token_text) or
+            token_text.lower() in ['pos', 'rad', 'obj']):
+            continue
+        description_tokens.append(token)
+    
+    return " ".join(t.text for t in description_tokens).strip()
+
+
+def _extract_quantity_unit_price_mode_b(
+    row: Row,
+    column_tokens: Dict[int, List[Token]],
+    column_map: Optional[Dict[str, int]],
+    amount_token_idx: Optional[int]
+) -> Tuple[Optional[Decimal], Optional[str], Optional[Decimal]]:
+    """Extract quantity, unit, and unit_price using hybrid approach.
+    
+    Returns:
+        Tuple of (quantity, unit, unit_price)
+    """
+    quantity = None
+    unit = None
+    unit_price = None
+    
+    tokens = row.tokens or []
+    
+    # Unit keywords (same as mode A)
+    unit_keywords = [
+        'st', 'kg', 'h', 'm²', 'm2', 'm3', 'm³', 'tim', 'timmar', 'pcs', 'pkt',
+        'day', 'days', 'dagar', 'ea', 'ltr', 'liter', 'liters', 'månad', 'månader',
+        'xpa', 'pkt', 'paket', 'box', 'burk', 'flaska', 'flaskor',
+        'bdag', 'bdagar', 'businessday', 'businessdays',
+        'bd', 'byggdagar', 'byggdag',
+        'dgr', 'dgr.', 'dagar',
+        'enh', 'enhet', 'unit', 'units',
+        'm²', 'm2', 'kvadratmeter', 'm³', 'm3', 'kubikmeter',
+        'l', 'liter', 'kg', 'gram', 'g', 'ton', 't',
+    ]
+    
+    # Try position-based extraction first (if column_map available)
+    if column_map:
+        # Extract quantity
+        if 'quantity' in column_map:
+            col_idx = column_map['quantity']
+            if col_idx in column_tokens:
+                qty_tokens = column_tokens[col_idx]
+                if qty_tokens:
+                    qty_text = " ".join(t.text for t in qty_tokens)
+                    quantity = _parse_numeric_value(qty_text)
+        
+        # Extract unit
+        if 'unit' in column_map:
+            col_idx = column_map['unit']
+            if col_idx in column_tokens:
+                unit_tokens = column_tokens[col_idx]
+                if unit_tokens:
+                    unit_text = unit_tokens[0].text.strip().lower()
+                    if unit_text in unit_keywords:
+                        unit = unit_text
+        
+        # Extract unit_price
+        if 'unit_price' in column_map:
+            col_idx = column_map['unit_price']
+            if col_idx in column_tokens:
+                price_tokens = column_tokens[col_idx]
+                if price_tokens:
+                    price_text = " ".join(t.text for t in price_tokens)
+                    unit_price = _parse_numeric_value(price_text)
+    
+    # Fallback: content-based extraction (same as mode A)
+    # Find unit token first (use as anchor)
+    unit_token_idx = None
+    for i, token in enumerate(tokens):
+        if amount_token_idx is not None and i >= amount_token_idx:
+            break
+        token_text = token.text.strip()
+        token_lower = token_text.lower()
+        
+        if token_lower in unit_keywords:
+            unit = token_lower
+            unit_token_idx = i
+            # Check if previous token is quantity
+            if i > 0:
+                prev_token = tokens[i - 1].text.strip()
+                if re.match(r'^\d+$', prev_token):
+                    potential_quantity = _parse_numeric_value(prev_token)
+                    if potential_quantity is not None and 1 <= potential_quantity <= 100000:
+                        quantity = potential_quantity
+            break
+    
+    # Extract quantity/unit_price if not found via position
+    if unit_token_idx is not None:
+        # Look for quantity before unit
+        if quantity is None:
+            for i in range(unit_token_idx - 1, -1, -1):
+                if amount_token_idx is not None and i >= amount_token_idx:
+                    break
+                token = tokens[i]
+                token_text = token.text.strip()
+                if re.match(r'^\d+([.,]\d+)?$', token_text.replace(' ', '')):
+                    numeric_value = _parse_numeric_value(token_text)
+                    if numeric_value is not None and 1 <= numeric_value <= 100000:
+                        quantity = numeric_value
+                        break
+        
+        # Look for unit_price after unit
+        if unit_price is None and amount_token_idx is not None:
+            for i in range(unit_token_idx + 1, amount_token_idx):
+                token = tokens[i]
+                token_text = token.text.strip()
+                if re.match(r'^\d+([.,]\d+)?$', token_text.replace(' ', '')):
+                    numeric_value = _parse_numeric_value(token_text)
+                    if numeric_value is not None and Decimal("0.01") <= numeric_value <= Decimal("1000000"):
+                        unit_price = numeric_value
+                        break
+    
+    return quantity, unit, unit_price
+
+
+def _extract_vat_rate_mode_b(
+    row: Row,
+    column_tokens: Dict[int, List[Token]],
+    column_map: Optional[Dict[str, int]]
+) -> Optional[Decimal]:
+    """Extract VAT rate using hybrid approach.
+    
+    Returns:
+        VAT rate as Decimal (e.g., 0.25 for 25%), or None
+    """
+    # Try position-based: use mapped column if available
+    if column_map and 'vat_percent' in column_map:
+        col_idx = column_map['vat_percent']
+        if col_idx in column_tokens:
+            vat_tokens = column_tokens[col_idx]
+            if vat_tokens:
+                vat_text = " ".join(t.text for t in vat_tokens)
+                # Look for VAT% pattern (25.00, 25,00, etc.)
+                vat_match = _MOMS_RATE_PATTERN.search(vat_text)
+                if vat_match:
+                    return Decimal("0.25")  # 25% VAT
+    
+    # Fallback: content-based (search row text for VAT% pattern)
+    row_text = row.text
+    vat_match = _MOMS_RATE_PATTERN.search(row_text)
+    if vat_match:
+        return Decimal("0.25")  # 25% VAT
+    
+    return None
+
