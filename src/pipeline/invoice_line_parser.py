@@ -27,6 +27,7 @@ from ..pipeline.column_detection import (
 )
 from ..pipeline.validation import validate_netto_sum, validate_total_with_vat
 from ..pipeline.footer_extractor import extract_netto_total_from_footer
+from ..debug.table_debug import save_table_debug_artifacts
 
 logger = logging.getLogger(__name__)
 
