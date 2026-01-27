@@ -13,6 +13,7 @@ from ..config import (
     get_ai_enabled,
     get_ai_key,
 )
+from decimal import Decimal
 from ..models.invoice_header import InvoiceHeader
 from ..models.invoice_line import InvoiceLine
 from ..models.row import Row
@@ -747,3 +748,105 @@ def extract_total_amount(
     invoice_header.total_confidence = final_score
     invoice_header.total_traceability = traceability
     # total_candidates already set in Step 3
+
+
+def extract_netto_total_from_footer(
+    footer_segment: Optional[Segment],
+    rows_above_footer: Optional[List[Row]] = None
+) -> Optional[Decimal]:
+    """Extract "Nettobelopp exkl. moms" from footer segment.
+    
+    Args:
+        footer_segment: Footer segment (or None if not found)
+        rows_above_footer: Optional rows immediately above footer
+        
+    Returns:
+        Netto total (exkl. moms) as Decimal, or None if not found
+        
+    Note:
+        This is a simplified extraction for validation purposes.
+        Uses same patterns as extract_total_amount but only looks for
+        "without_vat" keyword type amounts.
+    """
+    if footer_segment is None or not footer_segment.rows:
+        return None
+    
+    # Keywords for total WITHOUT VAT (same as in extract_total_amount)
+    total_without_vat_patterns = [
+        r"nettobelopp\s+exkl\.?\s*moms",
+        r"nettobeloppet\s+exkl\.?\s*moms",
+        r"totalt\s+exkl\.?\s*moms",
+        r"total\s+exkl\.?\s*moms",
+        r"totalt\s+exklusive\s+moms",
+        r"total\s+exklusive\s+moms",
+        r"exkl\.?\s*moms",
+        r"exklusive\s+moms",
+        r"exkl\s+moms",
+        r"totalt\s+utan\s+moms",
+        r"total\s+utan\s+moms",
+        r"utan\s+moms",
+        r"delsumma",
+        r"subtotal",
+        r"summa\s+exkl\.?\s*moms",
+        r"summa\s+exklusive\s+moms",
+        r"momsfri\s+summa",
+        r"momsfritt\s+belopp",
+        r"netto",
+        r"netto\s+exkl\.?\s*moms"
+    ]
+    
+    # Amount pattern (same as in extract_total_amount)
+    amount_pattern = re.compile(
+        r'\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|'
+        r'\d+\.\d{1,2}(?!\d)|'
+        r'\d{1,3}(?:\s+\d{3})*(?:[.,]\d{1,2})?|'
+        r'\d+(?:,\d{1,2})?'
+    )
+    
+    # Check rows above footer for keyword type
+    keyword_type_above: Optional[str] = None
+    if rows_above_footer:
+        for r in reversed(rows_above_footer):
+            t = r.text.lower()
+            if any(re.search(p, t, re.IGNORECASE) for p in total_without_vat_patterns):
+                keyword_type_above = "without_vat"
+                break
+    
+    # Search footer rows for "without_vat" amounts
+    for row_index, row in enumerate(footer_segment.rows):
+        row_lower = row.text.lower()
+        
+        # Check if row contains "without VAT" keywords
+        has_keyword = any(
+            re.search(pattern, row_lower, re.IGNORECASE)
+            for pattern in total_without_vat_patterns
+        )
+        
+        # Extract amounts
+        row_text = row.text
+        amount_matches = list(amount_pattern.finditer(row_text))
+        use_row = row
+        
+        # If keyword row has no amount, check next row
+        if has_keyword and not amount_matches and row_index + 1 < len(footer_segment.rows):
+            next_row = footer_segment.rows[row_index + 1]
+            amount_matches = list(amount_pattern.finditer(next_row.text))
+            use_row = next_row
+        
+        # Use keyword from row above footer if first footer row has amounts only
+        use_keyword_type = "without_vat" if has_keyword else None
+        if not has_keyword and amount_matches and row_index == 0 and keyword_type_above == "without_vat":
+            use_keyword_type = "without_vat"
+        
+        # If we found a "without_vat" amount, return it
+        if use_keyword_type == "without_vat" and amount_matches:
+            for match in amount_matches:
+                amount_text = match.group(0)
+                try:
+                    amount = normalize_swedish_decimal(amount_text)
+                    if amount > 0:
+                        return amount
+                except ValueError:
+                    continue
+    
+    return None

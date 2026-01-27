@@ -2,12 +2,22 @@
 
 import re
 from decimal import Decimal
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+
+import logging
 
 from ..models.invoice_line import InvoiceLine
 from ..models.row import Row
 from ..models.segment import Segment
 from ..models.token import Token
+# Import get_table_parser_mode with try/except for linter compatibility
+try:
+    from ..config import get_table_parser_mode 
+except ImportError:
+    # Fallback for testing
+    def get_table_parser_mode() -> str:
+        return "auto"
 from ..pipeline.number_normalizer import normalize_swedish_decimal
 from ..pipeline.wrap_detection import detect_wrapped_rows, consolidate_wrapped_description
 from ..pipeline.column_detection import (
@@ -15,6 +25,10 @@ from ..pipeline.column_detection import (
     map_columns_from_header,
     assign_tokens_to_columns
 )
+from ..pipeline.validation import validate_netto_sum, validate_total_with_vat
+from ..pipeline.footer_extractor import extract_netto_total_from_footer
+
+logger = logging.getLogger(__name__)
 
 
 # HARD footer keywords: always classify as footer (15-DISCUSS D6).
@@ -382,11 +396,19 @@ def _extract_amount_from_row_text(
     return (total_amount, discount, amount_token_idx)
 
 
-def extract_invoice_lines(items_segment: Segment) -> List[InvoiceLine]:
+def extract_invoice_lines(
+    items_segment: Segment,
+    footer_segment: Optional[Segment] = None,
+    rows_above_footer: Optional[List[Row]] = None,
+    artifacts_dir: Optional[Path] = None,
+    invoice_id: Optional[str] = None
+) -> List[InvoiceLine]:
     """Extract line items from items segment using layout-driven approach.
     
     Args:
         items_segment: Segment object with segment_type='items'
+        footer_segment: Optional footer segment for validation (Phase 22)
+        rows_above_footer: Optional rows immediately above footer for validation
         
     Returns:
         List of InvoiceLine objects
@@ -396,12 +418,27 @@ def extract_invoice_lines(items_segment: Segment) -> List[InvoiceLine]:
     - For each row, check if it contains a numeric amount (total_amount)
     - Rule: "rad med belopp = produktrad" - if row contains amount, it's a product row
     - Extract fields from row tokens using spatial information
+    
+    Phase 22: Validation-driven re-extraction (mode B):
+    - If table_parser_mode is "auto", validate after mode A extraction
+    - If validation fails, fallback to mode B (position-based)
+    - If table_parser_mode is "pos", use mode B directly
+    - If table_parser_mode is "text", use mode A only (no fallback)
     """
     if items_segment.segment_type != "items":
         raise ValueError(
             f"Segment must be of type 'items', got '{items_segment.segment_type}'"
         )
     
+    # Get table parser mode from config
+    parser_mode = get_table_parser_mode()
+    
+    # If mode is "pos", use mode B directly
+    if parser_mode == "pos":
+        logger.debug("Mode B (position-based) selected via config")
+        return extract_invoice_lines_mode_b(items_segment)
+    
+    # Extract with mode A (text-based)
     invoice_lines = []
     line_number = 1
     processed_row_indices = set()  # Track rows already processed as wraps
@@ -449,6 +486,102 @@ def extract_invoice_lines(items_segment: Segment) -> List[InvoiceLine]:
             
             invoice_lines.append(invoice_line)
             line_number += 1
+    
+    # Phase 22: Validation-driven re-extraction (mode B fallback)
+    if parser_mode == "auto" and footer_segment is not None:
+        # Extract "Nettobelopp exkl. moms" from footer
+        netto_total = extract_netto_total_from_footer(footer_segment, rows_above_footer)
+        
+        if netto_total is not None:
+            # Validate nettosumma (VAL-01)
+            validation_passed, diff = validate_netto_sum(
+                invoice_lines,
+                netto_total,
+                tolerance=Decimal("0.50")
+            )
+            
+            if not validation_passed:
+                logger.info(
+                    f"Mode A validation failed: diff={diff:.2f} SEK, "
+                    f"falling back to mode B (position-based)"
+                )
+                # Fallback to mode B
+                mode_b_lines = extract_invoice_lines_mode_b(items_segment)
+                
+                # Validate mode B result
+                if mode_b_lines:
+                    validation_passed_b, diff_b = validate_netto_sum(
+                        mode_b_lines,
+                        netto_total,
+                        tolerance=Decimal("0.50")
+                    )
+                    
+                    if validation_passed_b:
+                        logger.info(
+                            f"Mode B validation passed: diff={diff_b:.2f} SEK, "
+                            f"using mode B result"
+                        )
+                        return mode_b_lines
+                    else:
+                        logger.warning(
+                            f"Mode B validation also failed: diff={diff_b:.2f} SEK, "
+                            f"keeping mode A result"
+                        )
+                        
+                        # Save debug artifacts if mismatch persists (VAL-04)
+                        if artifacts_dir and invoice_id:
+                            # Create ValidationResult for debug artifacts
+                            from ..models.validation_result import ValidationResult
+                            validation_result = ValidationResult(
+                                status="REVIEW",
+                                lines_sum=sum((line.total_amount for line in mode_b_lines), Decimal("0")),
+                                diff=diff_b,
+                                tolerance=Decimal("0.50"),
+                                hard_gate_passed=False,
+                                errors=[f"Mode B validation failed: diff={diff_b:.2f} SEK"],
+                                warnings=[f"Mode A also failed: diff={diff:.2f} SEK"]
+                            )
+                            
+                            # Get table rows for debug artifacts
+                            table_rows, _ = _get_table_block_rows(items_segment.rows)
+                            
+                            # Save debug artifacts
+                            save_table_debug_artifacts(
+                                artifacts_dir=artifacts_dir,
+                                invoice_id=invoice_id,
+                                table_rows=table_rows,
+                                line_items=mode_b_lines,
+                                validation_result=validation_result,
+                                netto_total=netto_total,
+                                mode_used="B"
+                            )
+                else:
+                    logger.warning("Mode B returned no lines, keeping mode A result")
+                    
+                    # Save debug artifacts for mode A failure if mismatch persists
+                    if artifacts_dir and invoice_id:
+                        from ..models.validation_result import ValidationResult
+                        validation_result = ValidationResult(
+                            status="REVIEW",
+                            lines_sum=sum((line.total_amount for line in invoice_lines), Decimal("0")),
+                            diff=diff,
+                            tolerance=Decimal("0.50"),
+                            hard_gate_passed=False,
+                            errors=[f"Mode A validation failed: diff={diff:.2f} SEK"],
+                            warnings=["Mode B returned no lines"]
+                        )
+                        
+                        table_rows, _ = _get_table_block_rows(items_segment.rows)
+                        
+                        save_table_debug_artifacts(
+                            artifacts_dir=artifacts_dir,
+                            invoice_id=invoice_id,
+                            table_rows=table_rows,
+                            line_items=invoice_lines,
+                            validation_result=validation_result,
+                            netto_total=netto_total,
+                            mode_used="A"
+                        )
     
     return invoice_lines
 
