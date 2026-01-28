@@ -353,7 +353,8 @@ def _select_invoice_number_candidate(
     candidate_re = re.compile(r"\b([A-Z0-9][A-Z0-9\-]{3,19})\b", re.IGNORECASE)
     
     candidates: List[Dict[str, Any]] = []
-    header_rows = set(header_segment.rows) if header_segment and header_segment.rows else set()
+    # Use list instead of set since Row objects are not hashable
+    header_rows = header_segment.rows if header_segment and header_segment.rows else []
     
     for idx, row in enumerate(rows):
         if not label_re.search(row.text):
