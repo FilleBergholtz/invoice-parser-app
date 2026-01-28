@@ -6,17 +6,17 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 
 **Core value:** 100% korrekt på fakturanummer och totalsumma, eller tydlig REVIEW-status. Allt som systemet exporterar som OK är garanterat korrekt. Osäkra fall går alltid till REVIEW (ingen tyst gissning).
 
-**Current focus:** v2.1 Phase 23 — Confidence calibration robustness.
+**Current focus:** v2.1 milestone komplett, redo för nästa milestone.
 
 ## Current Position
 
-Milestone: **v2.1 Parsing robustness / EDI** (in progress).
-Phase: **23** — Confidence calibration robustness (not started).
-Plan: TBD (run /gsd:plan-phase 23).
-Status: Phase 22 komplett, Phase 23 tillagd för kalibreringsförbättringar.
-Last activity: 2026-01-28 — Added Phase 23 for calibration robustness improvements.
+Milestone: **v2.1 Parsing robustness / EDI** (komplett).
+Phase: **23** — Confidence calibration robustness (komplett).
+Plan: 23-01 genomförd (CAL-01 to CAL-06).
+Status: v2.1 milestone komplett med alla phases 16-23 genomförda.
+Last activity: 2026-01-28 — Implemented CAL-01 to CAL-06 calibration improvements.
 
-Progress: █████████████████████░ 78/79 (99%) — v1.0 (Phase 1–3) + v2.0 (Phase 5–15) + v2.1 (Phase 16-22 klar, Phase 23 pending).
+Progress: █████████████████████ 79/79 (100%) — v1.0 (Phase 1–3) + v2.0 (Phase 5–15) + v2.1 (Phase 16-23) alla genomförda.
 
 ## Accumulated Context
 
@@ -27,6 +27,7 @@ Se PROJECT.md Key Decisions. v2.0-beslut: AI fallback endast vid confidence < 0,
 ### Roadmap Evolution
 
 - Phase 23 added: Confidence calibration robustness (equal-frequency binning, sample weights, supplier-global models, safe filenames, adaptive thresholds)
+- Phase 23 completed: 2026-01-28 (CAL-01 to CAL-06 implemented)
 
 ### Pending Todos
 
@@ -38,7 +39,7 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-26
-Stopped at: v2.1 milestone komplett, UAT skapad (.planning/milestones/v2.1-UAT.md)
-Next step: UAT execution eller milestone completion
+Last session: 2026-01-28
+Stopped at: Phase 23 komplett, v2.1 milestone fullständig
+Next step: UAT update eller ny milestone (v2.2)
 Resume file: None

@@ -8,7 +8,7 @@ v2.1 fokuserar på deterministisk parsing för EDI-liknande fakturor med text-la
 
 - ✅ **v1.0 MVP** - Phases 1-3 (shipped 2026-01-17)
 - ✅ **v2.0 Features + polish** - Phases 5-15 (shipped 2026-01-26)
-- 🚧 **v2.1 Parsing robustness / EDI** - Phases 16-23 (in progress)
+- ✅ **v2.1 Parsing robustness / EDI** - Phases 16-23 (complete)
 
 ## Phases
 
@@ -26,7 +26,7 @@ See archived roadmap: `.planning/milestones/v2.0-ROADMAP.md`.
 
 </details>
 
-### 🚧 v2.1 Parsing robustness / EDI (In progress)
+### ✅ v2.1 Parsing robustness / EDI (Complete)
 
 **Milestone Goal:** Deterministisk parsing för EDI‑liknande PDF:er med text‑layer, robust tabellsegmentering och valideringsdriven om‑extraktion.
 
@@ -140,10 +140,10 @@ Plans:
   4. Säkra filnamn i registry (sanitize supplier fingerprints).
   5. Adaptiva min-samples thresholds per segment-nivå.
   6. Validation tar hänsyn till datavolym vid recalibration-threshold.
-**Plans**: 0 plans
+**Plans**: 1 plan
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 23 to break down)
+- [x] 23-01: Calibration robustness (CAL-01 to CAL-06)
 
 ## Progress
 
@@ -156,4 +156,4 @@ Plans:
 | 20. Tabellsegment & kolumnregler | v2.1 | 1/1 | Complete | 2026-01-26 |
 | 21. Multi-line items | v2.1 | 1/1 | Complete | 2026-01-26 |
 | 22. Valideringsdriven om-extraktion | v2.1 | 1/1 | Complete | 2026-01-26 |
-| 23. Confidence calibration robustness | v2.1 | 0/0 | Not started | - |
+| 23. Confidence calibration robustness | v2.1 | 1/1 | Complete | 2026-01-28 |
